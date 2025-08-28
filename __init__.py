@@ -8,6 +8,7 @@ bl_info = {
     "category": "3D View",
 }
 
+
 from .setup import install, uninstall
 
 def register():

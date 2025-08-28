@@ -1,0 +1,86 @@
+[2025-08-28 07:45:26,199] INFO Received prompt: create me a simple diamond engagement ring
+[2025-08-28 07:45:26,201] DEBUG Mesh generation started
+[2025-08-28 07:45:26,203] DEBUG Mesh generated
+[2025-08-28 07:45:26,203] DEBUG Exporting STL
+[2025-08-28 07:45:26,207] INFO AI-driven design generated for prompt: create me a simple diamond engagement ring
+Exported to: C:\Users\AMD\aura\output_create_me_a_simple_diamond_engagement_ri.stl
+[2025-08-28 07:45:26,207] DEBUG STL export completed: C:\Users\AMD\aura\output_create_me_a_simple_diamond_engagement_ri.stl
+[2025-08-28 07:49:45,703] INFO Received prompt: create me a simple diamond engagement ring
+[2025-08-28 07:49:45,703] DEBUG Mesh generation started
+[2025-08-28 07:49:45,703] DEBUG Mesh generated
+[2025-08-28 07:49:45,703] DEBUG Exporting STL
+[2025-08-28 07:49:45,710] INFO AI-driven design generated for prompt: create me a simple diamond engagement ring
+Exported to: C:\Users\AMD\aura\output_create_me_a_simple_diamond_engagement_ri.stl
+[2025-08-28 07:49:45,710] DEBUG STL export completed: C:\Users\AMD\aura\output_create_me_a_simple_diamond_engagement_ri.stl
+[2025-08-28 07:50:59,179] INFO Received prompt: create me a simple diamond engagement ring
+[2025-08-28 07:50:59,181] DEBUG Mesh generation started
+[2025-08-28 07:50:59,184] DEBUG Mesh generated
+[2025-08-28 07:50:59,184] DEBUG Exporting STL
+[2025-08-28 07:50:59,190] INFO AI-driven design generated for prompt: create me a simple diamond engagement ring
+Exported to: C:\Users\AMD\aura\output_create_me_a_simple_diamond_engagement_ri.stl
+[2025-08-28 07:50:59,190] DEBUG STL export completed: C:\Users\AMD\aura\output_create_me_a_simple_diamond_engagement_ri.stl
+[2025-08-28 07:54:10,303] INFO Received prompt: create me a simple diamond engagement ring
+[2025-08-28 07:54:10,304] DEBUG Mesh generation started
+[2025-08-28 07:54:10,306] DEBUG Mesh generated
+[2025-08-28 07:54:10,307] DEBUG Exporting STL
+[2025-08-28 07:54:10,311] INFO AI-driven design generated for prompt: create me a simple diamond engagement ring
+Exported to: C:\Users\AMD\aura\output_create_me_a_simple_diamond_engagement_ri.stl
+[2025-08-28 07:54:10,313] DEBUG STL export completed: C:\Users\AMD\aura\output_create_me_a_simple_diamond_engagement_ri.stl
+[2025-08-28 08:16:52,065] INFO Received prompt: create me a simple diamond engagement ring
+[2025-08-28 08:16:52,065] DEBUG Mesh generation started
+[2025-08-28 08:16:52,073] DEBUG Mesh generated
+[2025-08-28 08:16:52,073] DEBUG Exporting STL
+[2025-08-28 08:16:52,078] INFO AI-driven design generated for prompt: create me a simple diamond engagement ring
+Exported to: C:\Users\AMD\aura\output_create_me_a_simple_diamond_engagement_ri.stl
+[2025-08-28 08:16:52,078] DEBUG STL export completed: C:\Users\AMD\aura\output_create_me_a_simple_diamond_engagement_ri.stl
+[2025-08-28 08:43:02,092] INFO Received prompt: create me a simple diamond engagement ring
+[2025-08-28 08:43:02,093] DEBUG Mesh generation started
+[2025-08-28 08:43:02,093] DEBUG Mesh generated
+[2025-08-28 08:43:02,093] DEBUG Exporting STL
+[2025-08-28 08:43:02,099] INFO AI-driven design generated for prompt: create me a simple diamond engagement ring
+Exported to: C:\Users\AMD\aura\output_create_me_a_simple_diamond_engagement_ri.stl
+[2025-08-28 08:43:02,099] DEBUG STL export completed: C:\Users\AMD\aura\output_create_me_a_simple_diamond_engagement_ri.stl
+[2025-08-28 08:55:48,269] INFO Received prompt: create me a simple diamond engagement ring --ring_size 7 --stone_carat 1 --stone_shape ROUND --metal GOLD
+[2025-08-28 08:55:48,283] DEBUG Mesh generation started
+[2025-08-28 08:55:48,283] ERROR Error in process_prompt_from_args
+Traceback (most recent call last):
+  File "C:\Users\AMD\aura\backend\aura_backend.py", line 79, in process_prompt_from_args
+    bmesh.ops.create_torus(
+    ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: BMeshOpsModule: operator "create_torus" doesn't exist
+[2025-08-28 08:56:34,912] INFO Received prompt: create me a simple diamond engagement ring --ring_size 7 --stone_carat 1 --stone_shape ROUND --metal GOLD
+[2025-08-28 08:56:34,912] DEBUG Mesh generation started
+[2025-08-28 08:56:34,929] DEBUG Exporting STL
+[2025-08-28 08:56:34,943] INFO AI-driven design generated for prompt: create me a simple diamond engagement ring --ring_size 7 --stone_carat 1 --stone_shape ROUND --metal GOLD
+Exported to: C:\Users\AMD\aura\output_create_me_a_simple_diamond_engagement_ri.stl
+[2025-08-28 08:56:34,943] DEBUG STL export completed: C:\Users\AMD\aura\output_create_me_a_simple_diamond_engagement_ri.stl
+[2025-08-28 08:59:12,299] INFO Received prompt: simple diamond engagement ring --ring_size 7 --stone_carat 1 --stone_shape ROUND --metal GOLD
+[2025-08-28 08:59:12,299] DEBUG Mesh generation started
+[2025-08-28 08:59:12,321] DEBUG Exporting STL
+[2025-08-28 08:59:12,335] INFO AI-driven design generated for prompt: simple diamond engagement ring --ring_size 7 --stone_carat 1 --stone_shape ROUND --metal GOLD
+Exported to: C:\Users\AMD\aura\models\output_simple_diamond_engagement_ring_--ring_si.stl
+[2025-08-28 08:59:12,335] DEBUG STL export completed: C:\Users\AMD\aura\models\output_simple_diamond_engagement_ring_--ring_si.stl
+[2025-08-28 09:00:03,183] INFO Received prompt: simple diamond engagement ring | Args: ['simple diamond engagement ring', '--ring_size', '7', '--stone_carat', '1', '--stone_shape', 'ROUND', '--metal', 'GOLD']
+[2025-08-28 09:00:03,185] DEBUG Mesh generation started
+[2025-08-28 09:00:03,197] DEBUG Exporting STL
+[2025-08-28 09:00:03,213] INFO AI-driven design generated for prompt: simple diamond engagement ring
+Exported to: C:\Users\AMD\aura\models\output_simple_diamond_engagement_ring.stl
+[2025-08-28 09:00:03,213] DEBUG STL export completed: C:\Users\AMD\aura\models\output_simple_diamond_engagement_ring.stl
+[2025-08-28 09:04:59,750] INFO Received prompt: diamond engagement ring | Args: ['diamond engagement ring', '--ring_size', '7', '--stone_carat', '1', '--stone_shape', 'PRINCESS', '--metal', 'PLATINUM']
+[2025-08-28 09:04:59,750] DEBUG Mesh generation started
+[2025-08-28 09:04:59,765] DEBUG Exporting STL
+[2025-08-28 09:04:59,767] INFO AI-driven design generated for prompt: diamond engagement ring
+Exported to: C:\Users\AMD\aura\models\output_diamond_engagement_ring.stl
+[2025-08-28 09:04:59,767] DEBUG STL export completed: C:\Users\AMD\aura\models\output_diamond_engagement_ring.stl
+[2025-08-28 09:06:04,913] INFO Received prompt: diamond engagement ring | Args: ['diamond engagement ring', '--ring_size', '7', '--stone_carat', '1', '--stone_shape', 'ROUND', '--metal', 'GOLD']
+[2025-08-28 09:06:04,915] DEBUG Mesh generation started
+[2025-08-28 09:06:04,930] DEBUG Exporting STL
+[2025-08-28 09:06:04,953] INFO AI-driven design generated for prompt: diamond engagement ring
+Exported to: C:\Users\AMD\aura\models\output_diamond_engagement_ring.stl
+[2025-08-28 09:06:04,955] DEBUG STL export completed: C:\Users\AMD\aura\models\output_diamond_engagement_ring.stl
+[2025-08-28 09:08:00,705] INFO Received prompt: diamond engagement ring | Args: ['diamond engagement ring', '--ring_size', '7', '--stone_carat', '1', '--stone_shape', 'PRINCESS', '--metal', 'GOLD']
+[2025-08-28 09:08:00,705] DEBUG Mesh generation started
+[2025-08-28 09:08:00,722] DEBUG Exporting STL
+[2025-08-28 09:08:00,739] INFO AI-driven design generated for prompt: diamond engagement ring
+Exported to: C:\Users\AMD\aura\models\output_diamond_engagement_ring.stl
+[2025-08-28 09:08:00,739] DEBUG STL export completed: C:\Users\AMD\aura\models\output_diamond_engagement_ring.stl

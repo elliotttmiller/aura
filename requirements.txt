@@ -1,0 +1,29 @@
+# ===================================================================
+# Requirements for Aura AI Design Assistant Development Environment
+# ===================================================================
+#
+# Use this file to set up a dedicated virtual environment:
+# > python -m venv .venv
+# > source .venv/bin/activate
+# > pip install -r requirements.txt
+#
+# IMPORTANT: After installation, these libraries must be manually
+# copied from your venv's 'site-packages' into the 'aura/vendor/'
+# directory to be packaged with the final add-on.
+# -------------------------------------------------------------------
+
+# --- Core AI Engine ---
+# Install BOTH. Our code will intelligently select the correct one at runtime
+# based on user preference and hardware availability.
+onnxruntime
+onnxruntime-gpu
+
+# --- Data & Numerics ---
+# Essential for handling mesh data and arrays.
+numpy
+
+# --- Web & Networking ---
+fastapi
+uvicorn
+requests
+certifi
