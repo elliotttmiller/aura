@@ -4,19 +4,19 @@ from backend.aura_backend import check_dependencies
 
 from .settings import install_settings, uninstall_settings
 from .preferences import AddonPreferences, install_preferences, uninstall_preferences
-from .frontend.tool_panel import UniversalChatPanel, UniversalGenerateOperator, UniversalModalOperator
-from .operators import UniversalSentientOperator
+from .frontend.tool_panel import AuraChatPanel, AuraGenerateOperator, AuraModalOperator
+from .operators import AuraSentientOperator
 
 
 ALL_CLASSES = [
     AddonPreferences,
-    UniversalChatPanel, 
-    UniversalGenerateOperator,
-    UniversalModalOperator,
-    UniversalSentientOperator,
+    AuraChatPanel, 
+    AuraGenerateOperator,
+    AuraModalOperator,
+    AuraSentientOperator,
 ]
 
-def create_universal_workspace():
+def create_aura_workspace():
     """Create the dedicated 'Design Studio' workspace with clean, focused UI."""
     print("Creating Design Studio workspace...")
     
@@ -51,11 +51,11 @@ def create_universal_workspace():
     print("Design Studio workspace created and activated")
 
 def install():
-    print("Installing Universal Design Engine V20.0...")
+    print("Installing Aura Design Engine V20.0...")
     
     # Perform dependency check
     if not check_dependencies(report_error=False):
-        print("Universal Design Engine Warning: Critical dependencies not found. Some AI features may be disabled.")
+        print("Aura Design Engine Warning: Critical dependencies not found. Some AI features may be disabled.")
 
     install_settings()
     install_preferences()
@@ -65,12 +65,12 @@ def install():
         bpy.utils.register_class(cls)
     
     # Create the Design Studio workspace
-    bpy.app.timers.register(create_universal_workspace, first_interval=0.1)
+    bpy.app.timers.register(create_aura_workspace, first_interval=0.1)
     
-    print("Universal Design Engine V20.0 installed successfully")
+    print("Aura Design Engine V20.0 installed successfully")
 
 def uninstall():
-    print("Uninstalling Universal Design Engine V20.0...")
+    print("Uninstalling Aura Design Engine V20.0...")
     
     # Unregister classes in reverse order
     for cls in reversed(ALL_CLASSES):
@@ -83,4 +83,4 @@ def uninstall():
     if "Design Studio" in bpy.data.workspaces:
         bpy.data.workspaces.remove(bpy.data.workspaces["Design Studio"])
     
-    print("Universal Design Engine V20.0 uninstalled successfully")
+    print("Aura Design Engine V20.0 uninstalled successfully")

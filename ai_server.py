@@ -1,5 +1,5 @@
 """
-Universal Design Engine V20.0 - Low-Level AI Server
+Aura Design Engine V20.0 - Low-Level AI Server
 ===================================================
 
 This server hosts the native OpenAI Shap-E model with low-level implicit 
@@ -8,7 +8,7 @@ endpoint for 3D implicit function generation that returns decoder.pt and texture
 parameter files with fp16 precision.
 
 Implements Pillar 1: Forging the High-Efficiency, Low-Level AI Server
-Part of the V20.0 Universal Design Engine.
+Part of the Aura V20.0 Design Engine.
 """
 
 import os
@@ -39,7 +39,7 @@ except ImportError as e:
     logger.info("Running in simulation mode with realistic implicit function generation")
 
 # Initialize FastAPI app
-app = FastAPI(title="Universal Design Engine V20.0 AI Server", version="20.0")
+app = FastAPI(title="Aura Design Engine V20.0 AI Server", version="20.0")
 
 # Global model variables - native Shap-E components
 text_to_latent_model = None
@@ -105,7 +105,7 @@ async def load_native_shap_e_models():
             latent_to_model_diffusion = None  
             xm = None
             
-        logger.info("V20.0 Universal Design Engine AI Server ready for implicit function generation")
+        logger.info("Aura V20.0 Design Engine AI Server ready for implicit function generation")
         
     except Exception as e:
         logger.error(f"Failed to load native Shap-E models: {e}")

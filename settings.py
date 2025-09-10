@@ -1,7 +1,7 @@
 import bpy
 
-class UniversalSceneSettings(bpy.types.PropertyGroup):
-    """Stores all session settings for the add-on. Accessed via 'context.scene.universal_settings'."""
+class SceneSettings(bpy.types.PropertyGroup):
+    """Stores all session settings for the add-on. Accessed via 'context.scene.aura_settings'."""
     
     prompt_text = bpy.props.StringProperty(
         name="Prompt",
@@ -31,9 +31,9 @@ class UniversalSceneSettings(bpy.types.PropertyGroup):
     status_message = bpy.props.StringProperty(default="Ready")
 
 def install_settings():
-    bpy.utils.register_class(UniversalSceneSettings)
-    bpy.types.Scene.universal_settings = bpy.props.PointerProperty(type=UniversalSceneSettings)
+    bpy.utils.register_class(SceneSettings)
+    bpy.types.Scene.aura_settings = bpy.props.PointerProperty(type=SceneSettings)
 
 def uninstall_settings():
-    del bpy.types.Scene.universal_settings
-    bpy.utils.unregister_class(UniversalSceneSettings)
+    del bpy.types.Scene.aura_settings
+    bpy.utils.unregister_class(SceneSettings)

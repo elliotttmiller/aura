@@ -1,6 +1,6 @@
 """
-Universal Design Engine V20.0 - Native Chat Interface
-====================================================
+Aura V20.0 Sentient Artisan Environment - Native Chat Interface
+============================================================
 
 Modern AI chat sidebar interface for real-time cognitive streaming.
 This provides a native Blender experience for procedural asset generation.
@@ -17,11 +17,11 @@ from typing import List, Dict, Any
 logger = logging.getLogger(__name__)
 
 
-class UniversalChatPanel(bpy.types.Panel):
-    """Main AI chat interface panel for V20.0 Universal Design Engine."""
+class AuraChatPanel(bpy.types.Panel):
+    """Main AI chat interface panel for Aura V20.0 Design Engine."""
     
-    bl_label = "Universal Design Engine V20.0"
-    bl_idname = "TOOL_PT_ChatPanel"
+    bl_label = "Aura Design Engine V20.0"
+    bl_idname = "AURA_PT_ChatPanel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'Design'
@@ -29,19 +29,19 @@ class UniversalChatPanel(bpy.types.Panel):
     
     def draw(self, context):
         layout = self.layout
-        settings = context.scene.universal_settings
+        settings = context.scene.aura_settings
         
         # Header with version and status
         header_box = layout.box()
-        header_box.label(text="🔧 Universal Engine V20.0", icon='TOOL_SETTINGS')
+        header_box.label(text="🔧 Design Engine V20.0", icon='TOOL_SETTINGS')
         
         status_text = "Processing..." if settings.is_processing else "Ready"
         status_icon = 'TIME' if settings.is_processing else 'CHECKMARK'
         header_box.label(text=f"Status: {status_text}", icon=status_icon)
         
-        # Start/Stop Universal Operator
-        if not self._is_universal_operator_running(context):
-            layout.operator("tool.universal_operator", text="🚀 Activate Design Engine", icon='PLAY')
+        # Start/Stop Aura Operator
+        if not self._is_aura_operator_running(context):
+            layout.operator("aura.sentient_operator", text="🚀 Activate Design Engine", icon='PLAY')
             layout.separator()
             return
         
@@ -133,7 +133,8 @@ class UniversalChatPanel(bpy.types.Panel):
         quality_col.label(text=quality_label)
         quality_col.separator()
         
-        # Asset specifications - Universal parameters
+        # Asset specifications
+        
         specs_col.prop(settings, "asset_size", text="Asset Scale")
         specs_col.prop(settings, "material_type", text="Material")
         specs_col.prop(settings, "feature_shape", text="Feature Shape")
@@ -144,35 +145,35 @@ class UniversalChatPanel(bpy.types.Panel):
         specs_col.label(text="⚙️ Preferred Generation Technique")
         specs_col.prop(settings, "preferred_technique", text="")
     
-    def _is_universal_operator_running(self, context):
-        """Check if the universal operator is currently running."""
+    def _is_aura_operator_running(self, context):
+        """Check if the aura operator is currently running."""
         # This would be implemented to check the modal operator state
-        # For now, assume it's running if universal_settings exists and is initialized
-        return hasattr(context.scene, 'universal_settings') and context.scene.universal_settings is not None
+        # For now, assume it's running if aura_settings exists and is initialized
+        return hasattr(context.scene, 'aura_settings') and context.scene.aura_settings is not None
 
 
-class UniversalGenerateOperator(bpy.types.Operator):
+class AuraGenerateOperator(bpy.types.Operator):
     """Operator to trigger AI design generation or refinement."""
     
-    bl_idname = "tool.generate_design"
+    bl_idname = "aura.generate_design"
     bl_label = "Generate Design"
     bl_description = "Generate or refine a procedural asset design using AI"
     
     is_refinement: bpy.props.BoolProperty(default=False)
     
     def execute(self, context):
-        settings = context.scene.universal_settings
+        settings = context.scene.aura_settings
         prompt = settings.current_prompt.strip()
         
         if not prompt:
             self.report({'WARNING'}, "Please enter a design request")
             return {'CANCELLED'}
         
-        # Find and call the universal operator
-        universal_ops = [op for op in context.window_manager.operators if hasattr(op, 'start_ai_processing')]
+        # Find and call the aura operator
+        aura_ops = [op for op in context.window_manager.operators if hasattr(op, 'start_ai_processing')]
         
-        if universal_ops:
-            universal_operator = universal_ops[0]
+        if aura_ops:
+            aura_operator = aura_ops[0]
             
             # Add user message to chat
             try:
@@ -187,7 +188,7 @@ class UniversalGenerateOperator(bpy.types.Operator):
                 pass
             
             # Start AI processing
-            universal_operator.start_ai_processing(prompt, self.is_refinement)
+            aura_operator.start_ai_processing(prompt, self.is_refinement)
             
             # Clear the prompt
             settings.current_prompt = ""
@@ -195,17 +196,17 @@ class UniversalGenerateOperator(bpy.types.Operator):
             action_text = "Refinement" if self.is_refinement else "Generation"
             self.report({'INFO'}, f"{action_text} started: {prompt}")
         else:
-            self.report({'ERROR'}, "Universal Design Engine not active. Please activate the Design Engine first.")
+            self.report({'ERROR'}, "Aura Design Engine not active. Please activate the Design Engine first.")
             return {'CANCELLED'}
         
         return {'FINISHED'}
 
 
-class UniversalModalOperator(bpy.types.Operator):
+class AuraModalOperator(bpy.types.Operator):
     """Lightweight modal operator for UI responsiveness."""
     
-    bl_idname = "tool.modal_ui"
-    bl_label = "Universal Modal UI"
+    bl_idname = "aura.modal_ui"
+    bl_label = "Aura Modal UI"
     bl_description = "Modal operator for responsive UI updates"
     
     def execute(self, context):
@@ -224,8 +225,8 @@ class UniversalModalOperator(bpy.types.Operator):
 
 
 # Enhanced settings for V20.0
-class UniversalEngineSettings(bpy.types.PropertyGroup):
-    """Extended settings for V20.0 Universal Design Engine."""
+class AuraEngineSettings(bpy.types.PropertyGroup):
+    """Extended settings for Aura V20.0 Design Engine."""
     
     # Core system properties
     is_processing: bpy.props.BoolProperty(
@@ -257,7 +258,7 @@ class UniversalEngineSettings(bpy.types.PropertyGroup):
         step=16
     )
     
-    # Universal asset specifications
+    # Asset specifications
     asset_size: bpy.props.FloatProperty(
         name="Asset Scale",
         description="Overall scale factor for the generated asset",
@@ -314,11 +315,11 @@ class UniversalEngineSettings(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.utils.register_class(UniversalEngineSettings)
-    bpy.types.Scene.universal_settings = bpy.props.PointerProperty(type=UniversalEngineSettings)
+    bpy.utils.register_class(AuraEngineSettings)
+    bpy.types.Scene.aura_settings = bpy.props.PointerProperty(type=AuraEngineSettings)
 
 
 def unregister():
-    if hasattr(bpy.types.Scene, 'universal_settings'):
-        del bpy.types.Scene.universal_settings
-    bpy.utils.unregister_class(UniversalEngineSettings)
+    if hasattr(bpy.types.Scene, 'aura_settings'):
+        del bpy.types.Scene.aura_settings
+    bpy.utils.unregister_class(AuraEngineSettings)

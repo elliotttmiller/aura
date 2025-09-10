@@ -36,7 +36,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     def draw(self, context):
         layout = self.layout
         box = layout.box()
-        box.label(text="Universal Design Engine V20.0 Configuration")
+        box.label(text="Aura Design Engine V20.0 Configuration")
         box.prop(self, "model_path")
         box.prop(self, "compute_device")
         box.prop(self, "use_fp16")

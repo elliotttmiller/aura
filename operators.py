@@ -1,6 +1,6 @@
 """
-Universal Design Engine V20.0 - Master Modal Operator
-=====================================================
+Aura V20.0 Sentient Symbiote Environment - Master Modal Operator
+==============================================================
 
 The core asynchronous modal operator that manages the AI conversation 
 and real-time 3D implicit surface updates with smooth Shape Key transitions.
@@ -17,18 +17,18 @@ import json
 import logging
 from typing import Dict, Any, Optional
 
-from .backend.universal_orchestrator import UniversalOrchestrator
+from .backend.orchestrator import AuraOrchestrator
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class UniversalSentientOperator(bpy.types.Operator):
-    """Master Modal Operator for V20.0 Universal Design Engine."""
+class AuraSentientOperator(bpy.types.Operator):
+    """Master Modal Operator for Aura V20.0 Design Engine."""
     
-    bl_idname = "tool.universal_operator"
-    bl_label = "Universal Design Engine V20.0 Operator"
+    bl_idname = "aura.sentient_operator"
+    bl_label = "Aura Design Engine V20.0 Operator"
     bl_description = "Master asynchronous operator for implicit function-based AI design"
     
     def __init__(self):
@@ -40,11 +40,11 @@ class UniversalSentientOperator(bpy.types.Operator):
         self.current_shape_key_animation = None
         
     def execute(self, context):
-        """Start the universal operator in modal mode."""
-        logger.info("Starting Universal Design Engine V20.0")
+        """Start the aura operator in modal mode."""
+        logger.info("Starting Aura Design Engine V20.0")
         
         # Initialize the orchestrator
-        self.orchestrator = UniversalOrchestrator()
+        self.orchestrator = AuraOrchestrator()
         
         # Start modal operation
         context.window_manager.modal_handler_add(self)
@@ -58,9 +58,9 @@ class UniversalSentientOperator(bpy.types.Operator):
         )
         
         # Update UI to show we're active
-        context.scene.universal_settings.is_processing = False
-        context.scene.universal_settings.chat_messages = json.dumps([
-            {"role": "system", "content": "Universal Design Engine V20.0 activated. Revolutionary implicit function-based AI collaboration ready."}
+        context.scene.aura_settings.is_processing = False
+        context.scene.aura_settings.chat_messages = json.dumps([
+            {"role": "system", "content": "Aura Design Engine V20.0 activated. Revolutionary implicit function-based AI collaboration ready."}
         ])
         
         return {'RUNNING_MODAL'}
@@ -106,13 +106,13 @@ class UniversalSentientOperator(bpy.types.Operator):
         """Update the chat UI with new content."""
         try:
             scene = bpy.context.scene
-            current_messages = json.loads(scene.universal_settings.chat_messages or "[]")
+            current_messages = json.loads(scene.aura_settings.chat_messages or "[]")
             current_messages.append({
                 "role": "assistant", 
                 "content": content, 
                 "timestamp": time.time()
             })
-            scene.universal_settings.chat_messages = json.dumps(current_messages)
+            scene.aura_settings.chat_messages = json.dumps(current_messages)
             
             # Force UI redraw
             for area in bpy.context.screen.areas:
@@ -185,7 +185,7 @@ class UniversalSentientOperator(bpy.types.Operator):
             return
         
         # Update UI to show processing state
-        bpy.context.scene.universal_settings.is_processing = True
+        bpy.context.scene.aura_settings.is_processing = True
         self.update_chat_ui(f"Processing: {user_prompt}")
         
         # Start worker thread
@@ -224,7 +224,7 @@ class UniversalSentientOperator(bpy.types.Operator):
         result = message['result']
         
         # Update UI
-        bpy.context.scene.universal_settings.is_processing = False
+        bpy.context.scene.aura_settings.is_processing = False
         
         if result.get('success'):
             self.update_chat_ui("Design completed successfully!")
@@ -234,20 +234,20 @@ class UniversalSentientOperator(bpy.types.Operator):
                 self.message_queue.put({
                     'type': 'shape_key_created',
                     'object_name': result['object_name'],
-                    'shape_key_name': result.get('shape_key_name', 'UniversalModification')
+                    'shape_key_name': result.get('shape_key_name', 'AuraModification')
                 })
         else:
             self.update_chat_ui(f"Error: {result.get('error', 'Unknown error')}")
     
     def handle_error(self, error_message: str):
         """Handle errors from worker thread."""
-        bpy.context.scene.universal_settings.is_processing = False
+        bpy.context.scene.aura_settings.is_processing = False
         self.update_chat_ui(f"Error: {error_message}")
         logger.error(f"Worker thread error: {error_message}")
     
     def cancel(self, context):
         """Cancel the modal operator and clean up."""
-        logger.info("Cancelling Universal Design Engine Operator")
+        logger.info("Cancelling Aura Design Engine Operator")
         
         self.is_running = False
         
@@ -266,14 +266,14 @@ class UniversalSentientOperator(bpy.types.Operator):
             pass
         
         # Clean up UI
-        context.scene.universal_settings.is_processing = False
+        context.scene.aura_settings.is_processing = False
         
         return {'CANCELLED'}
 
 
-# Properties for the Universal Design Engine system
-class UniversalEngineBaseSettings(bpy.types.PropertyGroup):
-    """Settings for the Universal Design Engine V20.0 system."""
+# Properties for the Aura Design Engine system
+class AuraEngineBaseSettings(bpy.types.PropertyGroup):
+    """Settings for the Aura Design Engine V20.0 system."""
     
     is_processing: bpy.props.BoolProperty(
         name="Is Processing",
@@ -295,11 +295,11 @@ class UniversalEngineBaseSettings(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.utils.register_class(UniversalEngineBaseSettings)
-    bpy.types.Scene.universal_settings_base = bpy.props.PointerProperty(type=UniversalEngineBaseSettings)
+    bpy.utils.register_class(AuraEngineBaseSettings)
+    bpy.types.Scene.aura_settings_base = bpy.props.PointerProperty(type=AuraEngineBaseSettings)
 
 
 def unregister():
-    if hasattr(bpy.types.Scene, 'universal_settings_base'):
-        del bpy.types.Scene.universal_settings_base
-    bpy.utils.unregister_class(UniversalEngineBaseSettings)
+    if hasattr(bpy.types.Scene, 'aura_settings_base'):
+        del bpy.types.Scene.aura_settings_base
+    bpy.utils.unregister_class(AuraEngineBaseSettings)
