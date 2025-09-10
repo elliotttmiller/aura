@@ -1,5 +1,5 @@
 # ===================================================================
-# Requirements for Aura AI Design Assistant Development Environment
+# Requirements for Aura V5.0 Autonomous Cognitive Architecture
 # ===================================================================
 #
 # Use this file to set up a dedicated virtual environment:
@@ -17,6 +17,12 @@
 # based on user preference and hardware availability.
 onnxruntime
 onnxruntime-gpu
+
+# --- V5.0 AI Models ---
+# For OpenAI Shap-E 3D generation model
+torch
+transformers
+openai
 
 # --- Data & Numerics ---
 # Essential for handling mesh data and arrays.
