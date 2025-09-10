@@ -1,0 +1,81 @@
+# Aura V14.0 Sentient Artisan Environment - .gitignore
+# =====================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Blender specific
+*.blend1
+*.blend2
+*.blend*~
+
+# Output files (generated content)
+output/*.stl
+output/*.obj
+output/*.png
+models/generated/*.obj
+models/fallback/*.obj
+
+# Logs and debug files
+*.log
+*_debug.log
+validation_results.txt
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# AI model files (external)
+models/*.pkl
+models/*.onnx
+models/*.pt
+models/*.pth
+
+# Keep folder structure but ignore content
+output/.gitkeep
+models/generated/.gitkeep
+models/fallback/.gitkeep
