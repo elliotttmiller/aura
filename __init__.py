@@ -1,10 +1,10 @@
 bl_info = {
-    "name": "Design Engine V20.0",
-    "author": "Design Engine Development Team",
-    "version": (20, 0, 0),
+    "name": "Aura V24 Autonomous Design Engine",
+    "author": "Aura Development Team",
+    "version": (24, 0, 0),
     "blender": (3, 0, 0),
-    "location": "View3D > Sidebar > Design",
-    "description": "V20.0 Design Engine - State-of-the-art implicit function-based AI co-pilot with real-time cognitive streaming and Marching Cubes surface extraction for procedural asset generation",
+    "location": "View3D > Sidebar > Aura",
+    "description": "V24 Autonomous & Holistic Design Engine - State-of-the-art AI-driven 3D creation with sentient transparency, autonomous cognitive authority, and flawless end-to-end integration",
     "category": "3D View",
 }
 

@@ -47,12 +47,12 @@ logger = logging.getLogger(__name__)
 
 def execute_construction_plan(construction_plan: List[Dict], context: Dict) -> bpy.types.Object:
     """
-    V22.0 Core Innovation: Dynamic Construction Plan Executor
+    V24 Enhanced Dynamic Construction Plan Executor with robust error handling.
     
     This is the revolutionary "Robotic Arm" that receives a list of operations from the AI
     and executes them sequentially by calling functions from procedural_knowledge.py.
     
-    The AI decides what to build, the Blender Engine executes it with zero creative fallbacks.
+    V24 Enhancement: Comprehensive error handling and graceful degradation for unknown operations.
     
     Args:
         construction_plan: List of operations from AI Master Blueprint
@@ -60,31 +60,40 @@ def execute_construction_plan(construction_plan: List[Dict], context: Dict) -> b
         
     Returns:
         Final assembled object after executing all operations
+        
+    Raises:
+        RuntimeError: If no operations can be executed successfully
     """
-    logger.info("=== V22.0 DYNAMIC CONSTRUCTION PLAN EXECUTION ===")
+    logger.info("=== V24 ENHANCED DYNAMIC CONSTRUCTION PLAN EXECUTION ===")
     logger.info(f"Executing {len(construction_plan)} operations from AI Master Planner")
     
-    # Import procedural knowledge base
-    import sys
-    import os
-    addon_root = os.path.dirname(os.path.abspath(__file__))
-    backend_path = os.path.join(addon_root, "backend")
-    if backend_path not in sys.path:
-        sys.path.append(backend_path)
-    
-    from procedural_knowledge import execute_operation
+    # V24: Import procedural knowledge base with error handling
+    try:
+        import sys
+        import os
+        addon_root = os.path.dirname(os.path.abspath(__file__))
+        backend_path = os.path.join(addon_root, "backend")
+        if backend_path not in sys.path:
+            sys.path.append(backend_path)
+        
+        from procedural_knowledge import execute_operation
+        logger.info("V24: Procedural knowledge base loaded successfully")
+    except ImportError as e:
+        logger.error(f"V24: Critical error - Cannot load procedural knowledge base: {e}")
+        raise RuntimeError(f"Blender Engine initialization failed: {e}")
     
     # Initialize context objects for inter-operation communication
     context_objects = {"base": None}
     final_object = None
+    successful_operations = 0
     
-    # Execute each operation in the construction plan
+    # V24: Execute each operation with individual error handling
     for i, operation in enumerate(construction_plan):
         operation_name = operation.get('operation', 'unknown')
         parameters = operation.get('parameters', {})
         
-        logger.info(f"Operation {i+1}/{len(construction_plan)}: {operation_name}")
-        logger.info(f"Parameters: {parameters}")
+        logger.info(f"V24: Operation {i+1}/{len(construction_plan)}: {operation_name}")
+        logger.info(f"V24: Parameters: {parameters}")
         
         try:
             # Execute the operation using procedural knowledge
@@ -94,20 +103,28 @@ def execute_construction_plan(construction_plan: List[Dict], context: Dict) -> b
                 final_object = result_object
                 context_objects['base'] = result_object
                 context_objects[f'step_{i+1}'] = result_object
-                logger.info(f"✅ Operation {operation_name} completed successfully")
+                successful_operations += 1
+                logger.info(f"✅ V24: Operation {operation_name} completed successfully")
             else:
-                logger.warning(f"⚠️ Operation {operation_name} returned no object")
+                logger.warning(f"⚠️ V24: Operation {operation_name} returned no object")
                 
         except Exception as e:
-            logger.error(f"❌ Operation {operation_name} failed: {e}")
-            # Continue with next operation - no creative fallbacks
+            logger.error(f"❌ V24: Operation {operation_name} failed: {e}")
+            # V24: Continue with next operation - graceful degradation
             continue
     
+    # V24: Comprehensive validation of execution results
     if final_object is None:
-        logger.error("❌ No operations produced a valid object - construction plan failed")
-        raise RuntimeError("Construction plan execution failed - no valid objects created")
+        logger.error("❌ V24: No operations produced a valid object - construction plan failed")
+        raise RuntimeError("V24: Construction plan execution failed - no valid objects created")
     
-    logger.info(f"✅ Construction plan execution completed - Final object: {final_object.name}")
+    if successful_operations == 0:
+        logger.error("❌ V24: Zero operations executed successfully")
+        raise RuntimeError("V24: Construction plan execution failed - no operations succeeded")
+    
+    logger.info(f"✅ V24: Construction plan execution completed successfully")
+    logger.info(f"V24: Final object: {final_object.name}, Operations completed: {successful_operations}/{len(construction_plan)}")
+    
     return final_object
 
 
