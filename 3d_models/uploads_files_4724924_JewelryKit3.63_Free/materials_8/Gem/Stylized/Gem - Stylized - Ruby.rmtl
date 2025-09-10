@@ -1,0 +1,322 @@
+<xml>
+	<material auto-delete="false" hidden="false" notes="" plug-in-id="16592D58-4A2F-401D-BF5E-3B87741C1B1B" reference="false" render-engine-id="99999999-9999-9999-9999-999999999999" tags="" type-id="E6CD1973-B739-496E-AB69-32957FA48492" type-name="double-sided-material">
+		<parameters-v8>
+			<parameter name="dummy" type="bool">false</parameter>
+		</parameters-v8>
+		<parameters>
+			<dummy type="bool">false</dummy>
+		</parameters>
+		<simulation>
+			<ambient type="color">0,0,0,1</ambient>
+			<diffuse type="color">0.580392181873322,0.223529413342476,0.250980406999588,1</diffuse>
+			<emission type="color">0.341176480054855,0.0980392172932625,0.0980392172932625,1</emission>
+			<specular type="color">1,1,1,1</specular>
+			<shine type="double">0</shine>
+			<transparency type="double">0.1</transparency>
+			<reflectivity type="double">0.8</reflectivity>
+			<ior type="double">1</ior>
+			<fresnel-enabled type="bool">false</fresnel-enabled>
+			<polish-amount type="double">0.85</polish-amount>
+			<clarity-amount type="double">1</clarity-amount>
+			<reflection type="color">0.674509823322296,0.309803932905197,0.337254911661148,1</reflection>
+			<transparent type="color">1,1,1,1</transparent>
+			<Texture-1-filename type="string">C:\Users\Owner\AppData\Local\McNeel\Rhinoceros\8.0\Texture$Cache$\rdk$0200-0200-10AEF3DD.tiff</Texture-1-filename>
+			<Texture-1-on type="bool">true</Texture-1-on>
+			<Texture-1-amount type="double">0.3</Texture-1-amount>
+			<Texture-1-filter type="int">1</Texture-1-filter>
+			<Texture-1-mode type="int">3</Texture-1-mode>
+			<Texture-1-uvw type="matrix">1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1</Texture-1-uvw>
+			<Texture-1-type type="int">86</Texture-1-type>
+			<Texture-1-wrap-u type="int">0</Texture-1-wrap-u>
+			<Texture-1-wrap-v type="int">0</Texture-1-wrap-v>
+			<is-physically-based type="bool">false</is-physically-based>
+		</simulation>
+		<material auto-delete="false" child-slot-name="front" group-id="C4BEE7B4-039B-4ADB-A709-7B471DFA6287" hidden="false" instance-name="RubyFront" notes="" plug-in-id="16592D58-4A2F-401D-BF5E-3B87741C1B1B" reference="false" render-engine-id="99999999-9999-9999-9999-999999999999" tags="" type-id="BA51C000-BA51-C000-BA51-C0BA51C00000" type-name="rcm-basic-material">
+			<parameters-v8>
+				<parameter name="version" type="int">2</parameter>
+				<parameter name="diffuse" type="color">0.580392181873322,0.223529413342476,0.250980406999588,1</parameter>
+				<parameter name="specular" type="color">1,1,1,1</parameter>
+				<parameter name="shine" type="double">0</parameter>
+				<parameter name="transparency" type="double">0.1</parameter>
+				<parameter name="reflectivity" type="double">0.8</parameter>
+				<parameter name="ior" type="double">1</parameter>
+				<parameter name="transparency-color" type="color">1,1,1,1</parameter>
+				<parameter name="reflectivity-color" type="color">0.674509823322296,0.309803932905197,0.337254911661148,1</parameter>
+				<parameter name="emission" type="color">0.341176480054855,0.0980392172932625,0.0980392172932625,1</parameter>
+				<parameter name="ambient" type="color">0,0,0,1</parameter>
+				<parameter name="flamingo-library" type="string" />
+				<parameter name="disable-lighting" type="bool">false</parameter>
+				<parameter name="fresnel-enabled" type="bool">false</parameter>
+				<parameter name="polish-amount" type="double">0.85</parameter>
+				<parameter name="clarity-amount" type="double">1</parameter>
+				<parameter name="alpha-transparency" type="bool">true</parameter>
+				<parameter name="bitmap-texture" type="" />
+				<parameter name="bitmap-texture-on" type="bool">false</parameter>
+				<parameter name="bitmap-texture-double-amount" type="double">1</parameter>
+				<parameter name="bitmap-texture-amount" type="double">1</parameter>
+				<parameter name="bump-texture" type="" />
+				<parameter name="bump-texture-on" type="bool">false</parameter>
+				<parameter name="bump-texture-double-amount" type="double">0.3</parameter>
+				<parameter name="bump-texture-amount" type="double">0.3</parameter>
+				<parameter name="transparency-texture" type="" />
+				<parameter name="transparency-texture-on" type="bool">false</parameter>
+				<parameter name="transparency-texture-double-amount" type="double">1</parameter>
+				<parameter name="transparency-texture-amount" type="double">1</parameter>
+				<parameter name="environment-texture" type="" />
+				<parameter name="environment-texture-on" type="bool">true</parameter>
+				<parameter name="environment-texture-double-amount" type="double">0.3</parameter>
+				<parameter name="environment-texture-amount" type="double">0.3</parameter>
+			</parameters-v8>
+			<parameters>
+				<version type="int">2</version>
+				<diffuse type="color">0.580392181873322,0.223529413342476,0.250980406999588,1</diffuse>
+				<specular type="color">1,1,1,1</specular>
+				<shine type="double">0</shine>
+				<transparency type="double">0.1</transparency>
+				<reflectivity type="double">0.8</reflectivity>
+				<ior type="double">1</ior>
+				<transparency-color type="color">1,1,1,1</transparency-color>
+				<reflectivity-color type="color">0.674509823322296,0.309803932905197,0.337254911661148,1</reflectivity-color>
+				<emission type="color">0.341176480054855,0.0980392172932625,0.0980392172932625,1</emission>
+				<ambient type="color">0,0,0,1</ambient>
+				<flamingo-library type="string" />
+				<disable-lighting type="bool">false</disable-lighting>
+				<fresnel-enabled type="bool">false</fresnel-enabled>
+				<polish-amount type="double">0.85</polish-amount>
+				<clarity-amount type="double">1</clarity-amount>
+				<alpha-transparency type="bool">true</alpha-transparency>
+				<bitmap-texture type="" />
+				<bitmap-texture-on type="bool">false</bitmap-texture-on>
+				<bitmap-texture-double-amount type="double">1</bitmap-texture-double-amount>
+				<bitmap-texture-amount type="double">1</bitmap-texture-amount>
+				<bump-texture type="" />
+				<bump-texture-on type="bool">false</bump-texture-on>
+				<bump-texture-double-amount type="double">0.3</bump-texture-double-amount>
+				<bump-texture-amount type="double">0.3</bump-texture-amount>
+				<transparency-texture type="" />
+				<transparency-texture-on type="bool">false</transparency-texture-on>
+				<transparency-texture-double-amount type="double">1</transparency-texture-double-amount>
+				<transparency-texture-amount type="double">1</transparency-texture-amount>
+				<environment-texture type="" />
+				<environment-texture-on type="bool">true</environment-texture-on>
+				<environment-texture-double-amount type="double">0.3</environment-texture-double-amount>
+				<environment-texture-amount type="double">0.3</environment-texture-amount>
+			</parameters>
+			<simulation>
+				<ambient type="color">0,0,0,1</ambient>
+				<diffuse type="color">0.580392181873322,0.223529413342476,0.250980406999588,1</diffuse>
+				<emission type="color">0.341176480054855,0.0980392172932625,0.0980392172932625,1</emission>
+				<specular type="color">1,1,1,1</specular>
+				<shine type="double">0</shine>
+				<transparency type="double">0.1</transparency>
+				<reflectivity type="double">0.8</reflectivity>
+				<ior type="double">1</ior>
+				<fresnel-enabled type="bool">false</fresnel-enabled>
+				<polish-amount type="double">0.85</polish-amount>
+				<clarity-amount type="double">1</clarity-amount>
+				<reflection type="color">0.674509823322296,0.309803932905197,0.337254911661148,1</reflection>
+				<transparent type="color">1,1,1,1</transparent>
+				<Texture-1-filename type="string">C:\Users\Owner\AppData\Local\McNeel\Rhinoceros\8.0\Texture$Cache$\rdk$0200-0200-10AEF3DD.tiff</Texture-1-filename>
+				<Texture-1-on type="bool">true</Texture-1-on>
+				<Texture-1-amount type="double">0.3</Texture-1-amount>
+				<Texture-1-filter type="int">1</Texture-1-filter>
+				<Texture-1-mode type="int">3</Texture-1-mode>
+				<Texture-1-uvw type="matrix">1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1</Texture-1-uvw>
+				<Texture-1-type type="int">86</Texture-1-type>
+				<Texture-1-wrap-u type="int">0</Texture-1-wrap-u>
+				<Texture-1-wrap-v type="int">0</Texture-1-wrap-v>
+				<is-physically-based type="bool">false</is-physically-based>
+			</simulation>
+			<texture auto-delete="false" child-slot-name="environment-texture" group-id="476AF11E-AD2C-4462-96FB-0A17F005D0B4" hidden="false" instance-name="peppermint_powerplant_2_1k (2)" notes="" plug-in-id="16592D58-4A2F-401D-BF5E-3B87741C1B1B" reference="false" render-engine-id="99999999-9999-9999-9999-999999999999" tags="" type-id="F28C2D86-0466-40D4-89EE-A54B6C5E9288" type-name="rdk-hdr-texture">
+				<parameters-v8>
+					<parameter name="rdk-texture-preview-in-3D" type="bool">false<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-preview-local-mapping" type="bool">false<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-display-in-viewport" type="bool">false<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-repeat-locked" type="bool">true<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-offset-locked" type="bool">false<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-mapping-channel" type="int">1<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-wrap-type" type="int">1<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-projection-mode" type="int">0<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-environment-mapping-mode" type="int">0<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-repeat" type="vector3d">1,1,1<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-size" type="vector3d">1,1,1<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-offset" type="vector3d">0,0,0<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-rotation" type="vector3d">0,0,0<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-adjust-invert" type="bool">false<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-adjust-grayscale" type="bool">false<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-adjust-clamp" type="bool">false<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-adjust-scale-to-clamp" type="bool">false<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-adjust-multiplier" type="double">1<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-adjust-clamp-min" type="double">0<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-adjust-clamp-max" type="double">1<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-adjust-gain" type="double">0.5<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-adjust-gamma" type="double">1.99999997054679<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-adjust-saturation" type="double">0.5<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="rdk-texture-adjust-hue-shift" type="double">0<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="input-projection" type="string">equirect<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="output-projection" type="string">same-as-input<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="filename" type="string">C:\Users\Owner\AppData\Local\McNeel\Rhinoceros\8.0\UnpackedFiles\peppermint_powerplant_2_1k.hdr<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="multiplier" type="double">1<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="azimuth" type="double">0<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="altitude" type="double">0<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+					<parameter name="filter" type="bool">true<parent name="filename" type="string" /><parameter name="filename" type="string">bbbb</parameter></parameter>
+				</parameters-v8>
+				<parameters>
+					<rdk-texture-preview-in-3D type="bool">false</rdk-texture-preview-in-3D>
+					<rdk-texture-preview-local-mapping type="bool">false</rdk-texture-preview-local-mapping>
+					<rdk-texture-display-in-viewport type="bool">false</rdk-texture-display-in-viewport>
+					<rdk-texture-repeat-locked type="bool">true</rdk-texture-repeat-locked>
+					<rdk-texture-offset-locked type="bool">false</rdk-texture-offset-locked>
+					<rdk-texture-mapping-channel type="int">1</rdk-texture-mapping-channel>
+					<rdk-texture-wrap-type type="int">1</rdk-texture-wrap-type>
+					<rdk-texture-projection-mode type="int">0</rdk-texture-projection-mode>
+					<rdk-texture-environment-mapping-mode type="int">0</rdk-texture-environment-mapping-mode>
+					<rdk-texture-repeat type="vector3d">1,1,1</rdk-texture-repeat>
+					<rdk-texture-size type="vector3d">1,1,1</rdk-texture-size>
+					<rdk-texture-offset type="vector3d">0,0,0</rdk-texture-offset>
+					<rdk-texture-rotation type="vector3d">0,0,0</rdk-texture-rotation>
+					<rdk-texture-adjust-invert type="bool">false</rdk-texture-adjust-invert>
+					<rdk-texture-adjust-grayscale type="bool">false</rdk-texture-adjust-grayscale>
+					<rdk-texture-adjust-clamp type="bool">false</rdk-texture-adjust-clamp>
+					<rdk-texture-adjust-scale-to-clamp type="bool">false</rdk-texture-adjust-scale-to-clamp>
+					<rdk-texture-adjust-multiplier type="double">1</rdk-texture-adjust-multiplier>
+					<rdk-texture-adjust-clamp-min type="double">0</rdk-texture-adjust-clamp-min>
+					<rdk-texture-adjust-clamp-max type="double">1</rdk-texture-adjust-clamp-max>
+					<rdk-texture-adjust-gain type="double">0.5</rdk-texture-adjust-gain>
+					<rdk-texture-adjust-gamma type="double">1.99999997054679</rdk-texture-adjust-gamma>
+					<rdk-texture-adjust-saturation type="double">0.5</rdk-texture-adjust-saturation>
+					<rdk-texture-adjust-hue-shift type="double">0</rdk-texture-adjust-hue-shift>
+					<input-projection type="string">equirect</input-projection>
+					<output-projection type="string">same-as-input</output-projection>
+					<filename type="string">C:\Users\Owner\AppData\Local\McNeel\Rhinoceros\8.0\UnpackedFiles\peppermint_powerplant_2_1k.hdr</filename>
+					<multiplier type="double">1</multiplier>
+					<azimuth type="double">0</azimuth>
+					<altitude type="double">0</altitude>
+					<filter type="bool">true</filter>
+				</parameters>
+				<simulation>
+					<filename type="string">C:\Users\Owner\AppData\Local\McNeel\Rhinoceros\8.0\Texture$Cache$\rdk$0200-0200-10AEF3DD.tiff</filename>
+					<offset type="vector2d">0,0</offset>
+					<repeat type="vector2d">1,1</repeat>
+					<rotation type="double">0</rotation>
+					<wrap-type type="int">1</wrap-type>
+					<mapping-channel type="int">1</mapping-channel>
+					<projection-mode type="int">0</projection-mode>
+					<has-trans-color type="bool">false</has-trans-color>
+					<trans-color type="color">0,0,0,1</trans-color>
+					<trans-color-sensitivity type="double">0</trans-color-sensitivity>
+					<on type="bool">true</on>
+					<treat-as-linear type="bool">false</treat-as-linear>
+					<blend-constant-a type="double">1</blend-constant-a>
+					<transparency-texture-id type="uuid">00000000-0000-0000-0000-000000000000</transparency-texture-id>
+					<type type="int">1</type>
+					<mode type="int">1</mode>
+					<min-filter type="int">1</min-filter>
+					<mag-filter type="int">1</mag-filter>
+				</simulation>
+			</texture>
+		</material>
+		<material auto-delete="false" child-slot-name="back" group-id="A242C893-8A22-4D80-9626-B678F3B4252B" hidden="false" instance-name="RubyBack" notes="" plug-in-id="16592D58-4A2F-401D-BF5E-3B87741C1B1B" reference="false" render-engine-id="99999999-9999-9999-9999-999999999999" tags="" type-id="BA51C000-BA51-C000-BA51-C0BA51C00000" type-name="rcm-basic-material">
+			<parameters-v8>
+				<parameter name="version" type="int">2</parameter>
+				<parameter name="diffuse" type="color">0.509803950786591,0.364705890417099,0.498039215803146,1</parameter>
+				<parameter name="specular" type="color">1,1,1,1</parameter>
+				<parameter name="shine" type="double">0</parameter>
+				<parameter name="transparency" type="double">0.1</parameter>
+				<parameter name="reflectivity" type="double">0.9</parameter>
+				<parameter name="ior" type="double">1</parameter>
+				<parameter name="transparency-color" type="color">1,1,1,1</parameter>
+				<parameter name="reflectivity-color" type="color">0.498039215803146,0.121568627655506,0.121568627655506,1</parameter>
+				<parameter name="emission" type="color">0.200000002980232,0.10196078568697,0.10196078568697,1</parameter>
+				<parameter name="ambient" type="color">0,0,0,1</parameter>
+				<parameter name="flamingo-library" type="string" />
+				<parameter name="disable-lighting" type="bool">false</parameter>
+				<parameter name="fresnel-enabled" type="bool">false</parameter>
+				<parameter name="polish-amount" type="double">0.85</parameter>
+				<parameter name="clarity-amount" type="double">1</parameter>
+				<parameter name="alpha-transparency" type="bool">true</parameter>
+				<parameter name="bitmap-texture" type="" />
+				<parameter name="bitmap-texture-on" type="bool">false</parameter>
+				<parameter name="bitmap-texture-double-amount" type="double">1</parameter>
+				<parameter name="bitmap-texture-amount" type="double">1</parameter>
+				<parameter name="bump-texture" type="" />
+				<parameter name="bump-texture-on" type="bool">false</parameter>
+				<parameter name="bump-texture-double-amount" type="double">0.3</parameter>
+				<parameter name="bump-texture-amount" type="double">0.3</parameter>
+				<parameter name="transparency-texture" type="" />
+				<parameter name="transparency-texture-on" type="bool">false</parameter>
+				<parameter name="transparency-texture-double-amount" type="double">1</parameter>
+				<parameter name="transparency-texture-amount" type="double">1</parameter>
+				<parameter name="environment-texture" type="" />
+				<parameter name="environment-texture-on" type="bool">false</parameter>
+				<parameter name="environment-texture-double-amount" type="double">1</parameter>
+				<parameter name="environment-texture-amount" type="double">1</parameter>
+			</parameters-v8>
+			<parameters>
+				<version type="int">2</version>
+				<diffuse type="color">0.509803950786591,0.364705890417099,0.498039215803146,1</diffuse>
+				<specular type="color">1,1,1,1</specular>
+				<shine type="double">0</shine>
+				<transparency type="double">0.1</transparency>
+				<reflectivity type="double">0.9</reflectivity>
+				<ior type="double">1</ior>
+				<transparency-color type="color">1,1,1,1</transparency-color>
+				<reflectivity-color type="color">0.498039215803146,0.121568627655506,0.121568627655506,1</reflectivity-color>
+				<emission type="color">0.200000002980232,0.10196078568697,0.10196078568697,1</emission>
+				<ambient type="color">0,0,0,1</ambient>
+				<flamingo-library type="string" />
+				<disable-lighting type="bool">false</disable-lighting>
+				<fresnel-enabled type="bool">false</fresnel-enabled>
+				<polish-amount type="double">0.85</polish-amount>
+				<clarity-amount type="double">1</clarity-amount>
+				<alpha-transparency type="bool">true</alpha-transparency>
+				<bitmap-texture type="" />
+				<bitmap-texture-on type="bool">false</bitmap-texture-on>
+				<bitmap-texture-double-amount type="double">1</bitmap-texture-double-amount>
+				<bitmap-texture-amount type="double">1</bitmap-texture-amount>
+				<bump-texture type="" />
+				<bump-texture-on type="bool">false</bump-texture-on>
+				<bump-texture-double-amount type="double">0.3</bump-texture-double-amount>
+				<bump-texture-amount type="double">0.3</bump-texture-amount>
+				<transparency-texture type="" />
+				<transparency-texture-on type="bool">false</transparency-texture-on>
+				<transparency-texture-double-amount type="double">1</transparency-texture-double-amount>
+				<transparency-texture-amount type="double">1</transparency-texture-amount>
+				<environment-texture type="" />
+				<environment-texture-on type="bool">false</environment-texture-on>
+				<environment-texture-double-amount type="double">1</environment-texture-double-amount>
+				<environment-texture-amount type="double">1</environment-texture-amount>
+			</parameters>
+			<simulation>
+				<ambient type="color">0,0,0,1</ambient>
+				<diffuse type="color">0.509803950786591,0.364705890417099,0.498039215803146,1</diffuse>
+				<emission type="color">0.200000002980232,0.10196078568697,0.10196078568697,1</emission>
+				<specular type="color">1,1,1,1</specular>
+				<shine type="double">0</shine>
+				<transparency type="double">0.1</transparency>
+				<reflectivity type="double">0.9</reflectivity>
+				<ior type="double">1</ior>
+				<fresnel-enabled type="bool">false</fresnel-enabled>
+				<polish-amount type="double">0.85</polish-amount>
+				<clarity-amount type="double">1</clarity-amount>
+				<reflection type="color">0.498039215803146,0.121568627655506,0.121568627655506,1</reflection>
+				<transparent type="color">1,1,1,1</transparent>
+				<is-physically-based type="bool">false</is-physically-based>
+			</simulation>
+		</material>
+		<preview>
+			<scene-scale type="double">1</scene-scale>
+			<angle-x type="double">38.6746511713306</angle-x>
+			<angle-y type="double">35.2369044005456</angle-y>
+			<rotation-type type="string">camera</rotation-type>
+			<geometry type="string">material-scene</geometry>
+			<background type="string">material-scene</background>
+			<lighting type="string">skylighting</lighting>
+		</preview>
+	</material>
+	<meta-data>
+		<renderer-name>Generic</renderer-name>
+		<type-name>Double Sided</type-name>
+	</meta-data>
+	<thumbnail compressed-size="5623" compression="none" encoding="base64" format="jpeg" height="256" original-size="5623" width="256">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</thumbnail>
+</xml>

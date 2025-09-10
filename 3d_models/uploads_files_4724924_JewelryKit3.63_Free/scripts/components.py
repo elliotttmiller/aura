@@ -1,0 +1,186 @@
+#! python 2
+import Eto
+import Eto.Drawing as drawing
+import Eto.Forms as forms
+from sliders import SliderGroup
+
+
+class ComponentGenerator:
+
+    padding = drawing.Padding(2,2)
+    padding2 = drawing.Padding(2, 2, 2, 10)
+    checkbox_padding = drawing.Padding(2,3)
+
+    @staticmethod
+    def CreateButton(text, handler):
+            btn = forms.Button()
+            btn.Text = text
+            btn.Click += handler
+            return btn
+
+    @staticmethod
+    def CreateCheckBox(checked, handler):
+        cb = forms.CheckBox()
+        cb.Checked = checked
+        cb.CheckedChanged += handler
+        return cb
+
+    @staticmethod        
+    def CreateCheckBoxGroup(text, label_width, checked, handler):
+        pnl = forms.Panel()
+        pnl.Padding = ComponentGenerator.padding2
+        lbl = ComponentGenerator.CreateLabel(text, label_width)
+        cb = ComponentGenerator.CreateCheckBox(checked, handler)
+        cb.Checked = checked
+        
+        pnl_layout = forms.DynamicLayout()
+        pnl_layout.DefaultSpacing = drawing.Size(5,5)
+        pnl_layout.BeginHorizontal()
+        pnl_layout.AddAutoSized(lbl)
+        pnl_layout.AddAutoSized(cb)
+        pnl_layout.EndHorizontal()
+        pnl.Content = pnl_layout
+        
+        return pnl, cb
+
+    @staticmethod        
+    def CreateDropDown(data, handler, default_index = 0):
+        dd = forms.DropDown()
+        if data:
+            dd.DataStore = data
+        dd.SelectedIndex = default_index
+        dd.SelectedValueChanged += handler
+        return dd
+
+    @staticmethod        
+    def CreateDropDownGroup(text, label_width, choices, handler, default_index = 0):
+        pnl = forms.Panel()
+        pnl.Padding = ComponentGenerator.padding
+        lbl = ComponentGenerator.CreateLabel(text, label_width)
+        dd = ComponentGenerator.CreateDropDown(choices, handler, default_index)
+        
+        pnl_layout = forms.DynamicLayout()
+        pnl_layout.DefaultSpacing = drawing.Size(5,5)
+        pnl_layout.BeginHorizontal()
+        pnl_layout.AddAutoSized(lbl)
+        pnl_layout.AddAutoSized(dd)
+        pnl_layout.EndHorizontal()
+        pnl.Content = pnl_layout
+        
+        return pnl, dd
+
+    @staticmethod
+    def CreateHR():
+        pnl = forms.Panel()
+        pnl.Height = 2
+        pnl.BackgroundColor = drawing.Colors.DarkGray
+
+        return pnl
+
+    @staticmethod        
+    def CreateLabel(text, width=None):
+        lbl = forms.Label()
+        lbl.Text = text
+        if width: lbl.Width = width
+        lbl.TextAlignment = forms.TextAlignment.Right
+        return lbl
+
+    @staticmethod
+    def CreateLabelGroup(text1, text2, width=None):
+        pnl = forms.Panel()
+        pnl.Padding = ComponentGenerator.padding
+        lbl1 = ComponentGenerator.CreateLabel(text1, width)
+        lbl2 = ComponentGenerator.CreateLabel(text2, None)
+
+        pnl_layout = forms.DynamicLayout()
+        pnl_layout.DefaultSpacing = drawing.Size(5,5)
+        pnl_layout.BeginHorizontal()
+        pnl_layout.AddAutoSized(lbl1)
+        pnl_layout.AddAutoSized(lbl2)
+        pnl_layout.EndHorizontal()
+        pnl.Content = pnl_layout
+
+        return pnl, lbl2
+
+    @staticmethod        
+    def CreateSliderGroup(text, label_width, min, max, decimals, value, handler):
+        sg = SliderGroup()
+        sg.Label.Text = text
+        sg.Label.Width = label_width
+        sg.SetMinMax(min, max)
+        sg.SetDecimalPlaces(decimals)
+        sg.SetValue(value)
+        sg.Slider.TickFrequency = 0
+        sg.Subscribe(handler)
+        return sg
+
+    @staticmethod
+    def CreateRadioButtonListGroup(text, label_width, choices, handler, default_index = 0):
+        pnl = forms.Panel()
+        pnl.Padding = ComponentGenerator.padding
+
+        lbl = ComponentGenerator.CreateLabel(text, label_width)
+
+        rbl = forms.RadioButtonList()
+        rbl.Spacing = drawing.Size(10,10)
+        rbl.Padding = drawing.Padding(0, 5, 0, 5)
+        rbl.DataStore = choices
+        rbl.Orientation = forms.Orientation.Horizontal
+        rbl.SelectedIndex = default_index
+        rbl.SelectedIndexChanged += handler
+
+        pnl_layout = forms.DynamicLayout()
+        pnl_layout.DefaultSpacing = drawing.Size(5,5)
+        pnl_layout.BeginHorizontal()
+        pnl_layout.AddAutoSized(lbl)
+        pnl_layout.AddAutoSized(rbl)
+        pnl_layout.EndHorizontal()
+        pnl.Content = pnl_layout
+
+        return pnl, rbl
+
+
+    @staticmethod
+    def CreateTextBoxGroup(label_text, label_width, values, handler):
+        pnl = forms.Panel()
+        pnl.Padding = ComponentGenerator.padding
+        lbl = ComponentGenerator.CreateLabel(label_text, label_width)
+        tb = forms.TextBox()
+        tb.Width = 254
+        tb.Text = values
+        tb.TextChanged += handler
+
+        pnl_layout = forms.DynamicLayout()
+        pnl_layout.DefaultSpacing = drawing.Size(5,5)
+        pnl_layout.BeginHorizontal()
+        pnl_layout.AddAutoSized(lbl)
+        pnl_layout.AddAutoSized(tb)
+        pnl_layout.EndHorizontal()
+        pnl.Content = pnl_layout
+
+        return pnl, tb
+
+    @staticmethod
+    def CreateTextDot(text, location):
+        td = rg.TextDot(text, location)
+        td.FontHeight = 1
+        return td
+
+    @staticmethod        
+    def CreateVerticalSpacer(height = 10, width = 10):
+        pnl = forms.Panel()
+        pnl.Height = height
+        pnl.Width = width
+        return pnl
+
+    @staticmethod
+    def SetControlSettings(controls):
+        system_font = Eto.Drawing.SystemFonts.Default()
+        font = Eto.Drawing.Font(system_font.FamilyName, 12.0)
+        for control in controls:
+            control.Font = font
+
+            if isinstance(control, forms.Button):
+                control.Height = 35
+                if control.Width < 100:
+                    control.Width = 100

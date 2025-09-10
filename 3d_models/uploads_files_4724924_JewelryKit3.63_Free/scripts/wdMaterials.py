@@ -1,0 +1,282 @@
+#! python 2
+
+import rhinoscriptsyntax as rs
+import scriptcontext as sc
+import Rhino
+import Rhino.RhinoApp as app
+import Rhino.Render as rr
+import os
+import Eto
+import Eto.Drawing as drawing
+import Eto.Forms as forms
+import threading
+from components import ComponentGenerator as cg
+
+
+macro = rs.AliasMacro('wdGem')
+wd1gem_script = macro.replace('!_-RunPythonScript ', '')
+wd1gem_script = wd1gem_script.replace('"', '')
+script_folder = os.path.dirname(wd1gem_script)
+kit_folder = os.path.dirname(script_folder)
+
+materials_rhino_version = '8' if rs.ExeVersion() > 8 else str(rs.ExeVersion())
+materials_folder = os.path.abspath(os.path.join(kit_folder, "materials_" + materials_rhino_version))
+
+is_free = False
+if "Free" in kit_folder:
+    is_free = True
+
+class wdDialog(forms.Dialog):
+
+    def __init__(self, materials_folder):
+        super(wdDialog, self).__init__()
+        
+        if rs.ExeVersion() >= 8:
+            Rhino.UI.EtoExtensions.UseRhinoStyle(self)
+
+        self.materials_folder = materials_folder
+        self.material_types = ['Enamel', 'Gem', 'Metal', 'Pearl', 'Plastic']
+        self.sub_types_gems = ['Opaque', 'Realistic', 'Stylized']
+        self.sub_types_plastics = ['Gem', 'Metal']
+
+
+        self.Width = 340
+#        self.Height = 460
+        self.Padding = drawing.Padding(15,15)
+        self.Title = "Material Loader"
+        
+        self.lbl_full_version_msg = forms.Label(Text="The full version has 59 more materials.")
+        self.lbl_full_version_msg.TextAlignment = forms.TextAlignment.Center
+        self.lbl_full_version_msg.TextColor = drawing.Colors.Red
+
+        self.label1 = forms.Label()
+        self.label1.Text = "Type: "
+        self.label1.Width = 64
+        self.label1.TextAlignment = forms.TextAlignment.Right
+
+        self.dropdown1 = forms.DropDown()
+        self.dropdown1.DataStore = self.material_types
+        self.dropdown1.SelectedIndex = 0
+        self.dropdown1.SelectedValueChanged += self.HandleTypeSelectionChanged
+        
+
+        self.label2 = forms.Label()
+        self.label2.Text = "Sub-type: "
+        self.label2.Width = 64
+        self.label2.TextAlignment = forms.TextAlignment.Right
+
+        self.dropdown2 = forms.DropDown()
+        self.dropdown2.DataStore = None
+        self.dropdown2.Enabled = False
+        self.dropdown2.SelectedValueChanged += self.HandleSubTypeSelectionChanged
+
+        self.label3 = forms.Label()
+        self.label3.Text = "Materials: "
+        self.label3.Width = 64
+        self.label3.VerticalAlignment = forms.VerticalAlignment.Top
+        self.label3.TextAlignment = forms.TextAlignment.Right
+
+        self.gridview1 = forms.GridView()
+        self.gridview1.Height = 290
+        self.gridview1.ShowHeader = False
+        self.gridview1.AllowMultipleSelection = True
+
+        self.column1 = forms.GridColumn()
+        if rs.ExeVersion() > 6:
+            self.column1.Expand = True
+        self.column1.Editable = False
+        self.column1.DataCell = forms.TextBoxCell(0)
+        self.gridview1.Columns.Add(self.column1)
+
+        self.closeButton = forms.Button()
+        self.closeButton.Width = 80
+        self.closeButton.Text = "Close"
+        self.closeButton.Click += self.HandleCloseButtonClick
+
+        self.loadButton = forms.Button()
+        self.loadButton.Width = 80
+        self.loadButton.Text = "Load"
+        self.loadButton.Click += self.HandleLoadButtonClick
+        
+        self.AbortButton = self.closeButton
+        self.DefaultButton = self.closeButton
+
+        self.Layout()
+        self.PopulateMaterialsList()
+
+    def HandleCloseButtonClick(self, sender, e):
+        Rhino.RhinoApp.WriteLine(str(self.Screen))
+        self.Close()
+
+    def HandleLoadButtonClick(self, sender, e):
+        selected_materials = []
+        for item in self.gridview1.SelectedItems:
+            selected_materials.append(item[0])
+        
+        if len (selected_materials) > 0:
+            self.paths = []
+            for item in selected_materials:
+                material_path = os.path.join(self.materials_folder, self.dropdown1.SelectedValue)
+                if self.dropdown2.DataStore:
+                    material_path = os.path.join(material_path, self.dropdown2.SelectedValue)
+                material_path = os.path.join(material_path, item + ".rmtl")
+                self.paths.append(material_path)
+
+            self.LoadMaterials()
+
+            self.gridview1.DataStore = None
+            self.gridview1.DataStore = self.materials_list
+
+    def HandleTypeSelectionChanged(self, sender, e):
+        if self.dropdown1.SelectedValue == 'Gem':
+            try:
+                self.dropdown2.DataStore = None
+                self.dropdown2.DataStore = self.sub_types_gems
+                self.dropdown2.Enabled = True
+                self.dropdown2.SelectedIndex = 0
+            except Exception as e:
+                print(e)
+        elif self.dropdown1.SelectedValue == 'Plastic':
+            try:
+                self.dropdown2.DataStore = None
+                self.dropdown2.DataStore = self.sub_types_plastics
+                self.dropdown2.Enabled = True
+                self.dropdown2.SelectedIndex = 0
+            except Exception as e:
+                print(e)
+        else:
+            self.dropdown2.DataStore = None
+            self.dropdown2.Enabled = False
+            self.PopulateMaterialsList()
+        
+
+    def HandleSubTypeSelectionChanged(self, sender, e):
+        self.PopulateMaterialsList()
+
+    def Layout(self):
+        layout = forms.DynamicLayout()        
+        layout.DefaultSpacing = drawing.Size(5,5)
+        
+        layout.BeginVertical()
+        layout.AddRow(self.label1, self.dropdown1)
+        layout.AddRow(self.label2, self.dropdown2)
+        layout.AddRow(self.label3, self.gridview1) 
+        layout.EndVertical()
+
+        
+        layout.AddRow(cg.CreateVerticalSpacer(5))
+        layout.AddSpace()
+        layout.AddSeparateRow(None, self.loadButton, self.closeButton)
+        
+        if is_free:
+            layout.AddRow(cg.CreateVerticalSpacer(5))
+            layout.AddSpace()
+            layout.AddSeparateRow(self.lbl_full_version_msg)
+
+        self.Content = layout
+
+    def AddBitmapTextureToMaterial(self, mtl, bm_path):
+        # create tex for front mtl
+        bm_texture_type_guid = rr.ContentUuids.BitmapTextureType
+        bmtex = rr.RenderContentType.NewContentFromTypeId(bm_texture_type_guid)        
+        
+        # bmtex.Filename is not available in Rhino6
+        # so we use this as it works in Rhino6 and up
+        bmtex.SetParameter('filename', bm_path)
+        
+        # set texture on the mtl and turn it on
+        mtl.SetChild(bmtex, 'bitmap-texture')
+        mtl.SetParameter('bitmap-texture-on', True)
+
+    def AddEnvironmentTextureToMaterial(self, mtl, hdr_path, isFiery = False):
+        # create tex for front mtl
+        hdr_texture_type_guid = rr.ContentUuids.HDRTextureType
+        hdrtex = rr.RenderContentType.NewContentFromTypeId(hdr_texture_type_guid)
+        hdrtex.Filename = hdr_path
+        # hdrtex.SetParameter('filename', hdr_path) / for Rhino6
+
+        if isFiery:
+            sat = 1.3 if rs.ExeVersion() == 7 else 2.0
+            hdrtex.SetParameter('rdk-texture-adjust-multiplier', 1.5)
+            hdrtex.SetParameter('rdk-texture-adjust-saturation', sat)
+        else:
+            hdrtex.SetParameter('rdk-texture-adjust-saturation', 0.0)
+
+
+        # set texture on the mtl and turn it on
+        mtl.SetChild(hdrtex, 'environment-texture')
+        mtl.SetParameter('environment-texture-on', True)
+
+    def LoadMaterials(self):
+        for path in self.paths:
+            mtl = rr.RenderContent.LoadFromFile(path)
+            
+            # v6 will use embedded textures
+            # v7 and up will load textures on the fly
+            if rs.ExeVersion() > 6:            
+                # handle stylized gems (double-sided mtls with env textures)
+                if 'Stylized' in path:
+
+                    # set isFiery switch
+                    isFiery = True if 'Fiery' in path else False
+
+                    # set hdr path
+                    hdr_folder = os.path.join(kit_folder, 'images', 'hdrs')
+                    diamond_hdr_path = os.path.join(hdr_folder, 'fiery_diamond_reflection.hdr')
+                    gem_hdr_path = os.path.join(hdr_folder, 'peppermint_powerplant_2_1k.hdr')
+                    hdr_path = diamond_hdr_path if 'Diamond' in path else gem_hdr_path  
+
+                    # add the environment texture to the front and back materials
+                    fmtl = mtl.FindChild('front')
+                    self.AddEnvironmentTextureToMaterial(fmtl, hdr_path, isFiery)
+
+                    bmtl = mtl.FindChild('back')
+                    self.AddEnvironmentTextureToMaterial(bmtl, hdr_path)
+
+                # handle opaque gems (single-sided mtls with color bitmap textures)
+                if 'Opaque' in path and not 'Onyx' in path:
+                    bm_folder = os.path.join(kit_folder, 'images', 'textures')
+                    bm_name = ""
+                    if 'Turquoise 1' in path: bm_name = 'turquoise1.png'
+                    elif 'Turquoise 2' in path: bm_name = 'turquoise2.png'
+                    elif 'Tigers Eye 1' in path: bm_name = 'tigers_eye_quartz1.png'
+                    elif 'Tigers Eye 2' in path: bm_name = 'tigers_eye_quartz2.png'
+                    bm_path = os.path.join(bm_folder, bm_name)
+                    self.AddBitmapTextureToMaterial(mtl, bm_path)
+
+            # add double-sided mtl to doc
+            sc.doc.RenderMaterials.Add(mtl)   
+            app.Wait()
+
+        material_count = len(self.paths)
+        if material_count > 0:
+            if material_count == 1:
+                rs.MessageBox('Material loaded.')
+            else:
+                rs.MessageBox(str(material_count) + ' materials loaded.')
+
+    def PopulateMaterialsList(self):
+        self.path = os.path.join(self.materials_folder, self.dropdown1.SelectedValue)
+        if self.dropdown2.DataStore:
+            self.path = os.path.join(self.path, self.dropdown2.SelectedValue)
+        materials_list = os.listdir(self.path)
+        materials_list2 = []
+        for item in materials_list:
+            item = item.replace(".rmtl", "")
+            materials_list2.append([item])
+
+        self.materials_list = materials_list2
+        self.gridview1.DataStore = self.materials_list
+
+        
+# the main code
+if __name__ == "__main__":        
+    dialog = wdDialog(materials_folder)
+    if rs.ExeVersion() > 6:
+        parent = Rhino.UI.RhinoEtoApp.MainWindowForDocument(sc.doc)
+    else:
+        parent = Rhino.UI.RhinoEtoApp.MainWindow
+    Rhino.UI.EtoExtensions.ShowSemiModal(dialog, sc.doc, parent)
+
+
+

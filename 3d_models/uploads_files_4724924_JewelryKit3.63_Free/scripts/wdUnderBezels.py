@@ -1,0 +1,527 @@
+#! python 2
+
+import System
+from System.Collections.Generic import List
+import rhinoscriptsyntax as rs
+import scriptcontext as sc
+import Rhino
+import Rhino.Geometry as rg
+import os
+import Eto
+import Eto.Drawing as drawing
+import Eto.Forms as forms
+import math
+from sliders import SliderGroup
+import SpatialData
+import Rhino.RhinoApp as app
+from components import ComponentGenerator as cg
+from pipeline import DrawConduit
+from pipeline import ColorsAndMaterials as cam
+
+macro = rs.AliasMacro('wdGem')
+wd1gem_script = macro.replace('!_-RunPythonScript ', '')
+wd1gem_script = wd1gem_script.replace('"', '')
+script_folder = os.path.dirname(wd1gem_script)
+data_folder = os.path.join(script_folder, "data")
+
+is_free = True if "Free" in script_folder else False
+
+def IsGem(rhino_ob, geo, component_index):
+    is_gem = False
+    name = rhino_ob.Name
+    if name == 'wdGem': is_gem = True
+    return is_gem
+               
+class wdDialog(forms.Dialog):
+    def __init__(self):
+        super(wdDialog, self).__init__()
+        # form stuff        
+        self.LabelWidth = 90
+        self.Title = 'Under Bezel Builder'
+        self.Padding = drawing.Padding(15)
+        self.AutoSize = True
+        self.Layout = None
+        self.Closing += self.OnDialogClosing
+        if rs.ExeVersion() >= 8:
+            Rhino.UI.EtoExtensions.UseRhinoStyle(self)
+
+        # overlay visualization stuff
+        self.Conduit = DrawConduit(self)
+        self.Conduit.Enabled = True
+        self.RenderObjects = []
+        self.EdgeCurves = []
+        self.Conduit.EdgeColor = cam.ProngColor
+
+        # handy variables
+        self.BaseOutline = None
+        self.GemIDs = []
+        self.Shape = None
+        self.TopOutlines = []
+        self.MiddleOutlines = []
+        self.BottomOutlines = []
+        self.UnderBezels = []
+        self.UnderBezelMeshes = []
+       
+        # input controls
+        self.OffsetModeDropDownGroup, self.OffsetModeDropDown = cg.CreateDropDownGroup('Offset Mode: ', self.LabelWidth, ['Percentage', 'Distance'], self.OnFormChanged)
+        self.UseHeartBaseCheckBoxGroup, self.UseHeartBaseCheckBox = cg.CreateCheckBoxGroup('Use heart base: ', self.LabelWidth, False, self.OnFormChanged)
+        self.HOffsetFSliderGroup = cg.CreateSliderGroup('H Offset: ', self.LabelWidth, -1.0, 1.0, 2, 0.0, self.Solve)        
+        self.VOffsetSliderGroup = cg.CreateSliderGroup('V Offset: ', self.LabelWidth, -0.2, 0.2, 2, 0.0, self.Solve)
+        self.DepthFSliderGroup = cg.CreateSliderGroup('Depth: ', self.LabelWidth, 0.1, 10.0, 2, 0.5, self.Solve)
+        self.StretchSliderGroup = cg.CreateSliderGroup('Stretch: ', self.LabelWidth, 0.0, 0.4, 2, 0, self.Solve)
+        self.ThicknessSliderGroup = cg.CreateSliderGroup('Thickness: ', self.LabelWidth, 0.5, 3.0, 2, 1.0, self.Solve)
+        
+        self.TaperXSliderGroup = cg.CreateSliderGroup('Taper X: ', self.LabelWidth, 0.0, 0.5, 2, 0.0, self.Solve)
+        self.TaperYSliderGroup = cg.CreateSliderGroup('Taper Y: ', self.LabelWidth, 0.0, 0.5, 2, 0.0, self.Solve)
+        self.LockTaperCheckBoxGroup, self.LockTaperCheckBox = cg.CreateCheckBoxGroup('Lock: ', self.LabelWidth, True, self.OnFormChanged)
+
+        self.BulgeLocSliderGroup = cg.CreateSliderGroup('Bulge Location: ', self.LabelWidth, 0.3, 0.6, 2, 0.5, self.Solve)
+        self.BulgeXSliderGroup = cg.CreateSliderGroup('Bulge X: ', self.LabelWidth, 0.0, 0.5, 2, 0.0, self.Solve)  
+        self.BulgeYSliderGroup = cg.CreateSliderGroup('Bulge Y: ', self.LabelWidth, 0.0, 0.5, 2, 0.0, self.Solve)  
+        self.LockBulgeCheckBoxGroup, self.LockBulgeCheckBox = cg.CreateCheckBoxGroup('Lock: ', self.LabelWidth, True, self.OnFormChanged)        
+
+        # bottom buttons
+        self.SetButton = cg.CreateButton('Set Gems', self.OnSetButtonClick)
+        self.FinalizeButton = cg.CreateButton('Finalize', self.OnFinalizeButtonClick)
+        self.CancelButton = cg.CreateButton('Cancel', self.OnCancelButtonClick)
+
+        # the default button must be set for Macs (might as well set the abort button, too.)
+        self.DefaultButton = self.SetButton
+        self.AbortButton = self.CancelButton
+        
+        # lay it out and run the solver
+        self.LayoutForm()
+        self.Solve(self)
+        
+    def LayoutForm(self):
+        if self.Layout:
+            self.Layout.Clear()
+
+        self.Layout = forms.DynamicLayout()
+        self.Layout.DefaultSpacing = drawing.Size(5,5)
+
+        self.Layout.BeginVertical()
+        # self.Layout.AddRow(self.OffsetModeDropDownGroup) 
+        self.Layout.AddRow(self.HOffsetFSliderGroup)
+        self.Layout.AddRow(self.VOffsetSliderGroup)
+        self.Layout.AddRow(self.ThicknessSliderGroup)
+        self.Layout.AddRow(self.DepthFSliderGroup)
+        self.Layout.AddRow(self.StretchSliderGroup)
+        if self.Shape == 'Heart' or self.Shape == 'Heart Base':
+            self.Layout.AddRow(self.UseHeartBaseCheckBoxGroup)
+        self.Layout.AddRow(cg.CreateVerticalSpacer(5))
+        self.Layout.AddRow(cg.CreateHR())
+        self.Layout.AddRow(cg.CreateVerticalSpacer(5))
+        self.Layout.AddRow(self.TaperXSliderGroup) 
+        self.Layout.AddRow(self.TaperYSliderGroup)
+        self.Layout.AddRow(self.LockTaperCheckBoxGroup)
+        self.Layout.AddRow(cg.CreateVerticalSpacer(5))
+        self.Layout.AddRow(cg.CreateHR())
+        self.Layout.AddRow(cg.CreateVerticalSpacer(5))
+        self.Layout.AddRow(self.BulgeLocSliderGroup)
+        self.Layout.AddRow(self.BulgeXSliderGroup)
+        self.Layout.AddRow(self.BulgeYSliderGroup)
+        self.Layout.AddRow(self.LockBulgeCheckBoxGroup)        
+        self.Layout.AddRow(cg.CreateVerticalSpacer(5))
+        self.Layout.EndVertical()
+        
+        self.Layout.BeginVertical()
+        self.Layout.AddRow(forms.Label())
+        self.Layout.AddRow(None, self.SetButton, self.FinalizeButton, self.CancelButton)
+        self.Layout.EndVertical()
+
+        self.Layout.Create()        
+        self.Content = self.Layout
+
+    def LoadBaseOutline(self, shape):
+        filename = shape + ".3dm"
+        gem_folder = script_folder.replace("scripts", "gems")
+        outline_folder = os.path.join(gem_folder, '5Outlines')
+        fullpath = os.path.join(outline_folder, filename)
+        outline_file = Rhino.FileIO.File3dm.Read(fullpath)
+        self.BaseOutline = outline_file.Objects.FindByLayer('gem profiles')[0].Geometry
+
+    def OnCancelButtonClick(self, sender, e):
+        self.Close()
+       
+    def OnDialogClosing(self, sender, e):
+        self.Conduit.Enabled = False
+
+    def OnFinalizeButtonClick(self, sender, e):
+        if len(self.UnderBezels) > 0:
+            layer_name = 'bezels'
+            if not rs.IsLayer(layer_name):
+                rs.AddLayer(layer_name, cam.ProngColor)
+            
+            layer = sc.doc.Layers.FindName(layer_name)
+            atts = Rhino.DocObjects.ObjectAttributes()
+            atts.LayerIndex = layer.Index
+                
+            ub_ids = []
+            for ub in self.UnderBezels:            
+                ubid = sc.doc.Objects.AddBrep(ub, atts)
+                rs.ObjectName(ubid, 'wdUnderBezel')
+                ub_ids.append(ubid)
+
+            # make group
+            if len(ub_ids) > 1:
+                grp = rs.AddGroup()
+                rs.AddObjectsToGroup(ub_ids, grp)
+
+            sc.doc.Views.Redraw()
+
+        self.DisposeAll()            
+        self.Close()
+
+    def OnFormChanged(self, sender, e):
+        self.UseHeartBase = self.UseHeartBaseCheckBox.Checked
+
+        if sender == self.UseHeartBaseCheckBox:
+            if self.UseHeartBase:
+                self.Shape = 'Heart Base'
+            else:
+                self.Shape = 'Heart'
+            self.LoadBaseOutline(self.Shape)
+
+        self.LayoutForm()
+        self.Solve(sender)
+
+    def OnSetButtonClick(self, sender, e):
+        Rhino.UI.EtoExtensions.PushPickButton(self, self.OnPushPickButton)
+        
+    def OnPushPickButton(self, sender, e):
+        try:
+            self.SetGems(sender)
+        except Exception as e:
+            app.WriteLine("line 221")
+        
+    def SetGems(self, sender):
+        shape = None
+        gem_ids = []
+
+        selected_obs = rs.GetObjects('Select one or more gems to add underbezels to', rs.filter.polysurface, preselect = True, select = False, custom_filter = IsGem)
+        if selected_obs:
+            for ob in selected_obs:
+                name = rs.ObjectName(ob)
+                if name == 'wdGem':
+                    gem_ids.append(ob)
+            rs.UnselectAllObjects()
+
+        if len(gem_ids) == 0:
+            rs.MessageBox('No gems were selected.')
+            shape = None
+        else:
+            # check that all selected gems have same shape
+            for i in range(len(gem_ids)):
+                if i == 0:
+                    shape = rs.GetUserText(gem_ids[i], 'shape')
+                else:
+                    if rs.GetUserText(gem_ids[i], 'shape') != shape:
+                        shape = None
+                        rs.MessageBox('All selected gems must have the same shape.')
+                        break
+
+            if shape:
+                self.Shape = shape
+                try:
+                    self.LoadBaseOutline(self.Shape)
+                    self.LayoutForm()
+                except Exception as e:
+                    Rhino.RhinoApp.WriteLine('line 225: ' + str(e))
+                
+                self.GemIDs = gem_ids
+
+
+        self.Solve(sender)
+
+    def DisposeAll(self):
+        self.DisposeObjects([self.TopOutlines, self.MiddleOutlines, self.BottomOutlines, self.UnderBezels])
+
+    def DisposeObjects(self, objects):
+        for obj in objects:
+            if hasattr(obj, 'Dispose'): obj.Dispose()
+
+    def AddToRenderObjects(self, objects, mtl):
+        for obj in objects:
+            self.RenderObjects.append([obj, mtl])
+
+    def MeshFromBrep(self, brep):
+        meshing_params = Rhino.Geometry.MeshingParameters.QualityRenderMesh
+        meshes = Rhino.Geometry.Mesh.CreateFromBrep(brep, meshing_params)
+        the_mesh = Rhino.Geometry.Mesh()
+        for mesh in meshes:
+            the_mesh.Append(mesh)
+        the_mesh.Normals.ComputeNormals()
+        return the_mesh
+
+    def AddEdgeCurves(self, brep):
+        for edge in brep.Edges:
+            crv = edge.DuplicateCurve()
+            if crv.IsValid:
+                self.EdgeCurves.append(crv)
+
+    def Solve(self, sender):
+        self.DisposeAll()
+
+        self.TopOutlines = []
+        self.MiddleOutlines = []
+        self.BottomOutlines = []
+
+        for obj in self.UnderBezels:
+            if hasattr(obj, 'Dispose'): obj.Dispose()
+        self.UnderBezels = []
+
+        for obj in self.UnderBezelMeshes:
+            if hasattr(obj, 'Dispose'): obj.Dispose()
+        self.UnderBezelMeshes = []
+
+        for crv in self.EdgeCurves:
+            if hasattr(crv, 'Dispose'): crv.Dispose()
+            self.EdgeCurves = []
+
+        self.RenderObjects = []
+
+        if sender == self.LockTaperCheckBox or sender == self:
+            if self.LockTaperCheckBox.Checked:
+                self.TaperYSliderGroup.Unsubscribe(self.Solve)
+                self.TaperYSliderGroup.SetEnabled(False)
+                self.TaperYSliderGroup.SetValue(self.TaperXSliderGroup.Value)
+            else:
+                self.TaperYSliderGroup.Subscribe(self.Solve)
+                self.TaperYSliderGroup.SetEnabled(True)
+
+        if self.LockTaperCheckBox.Checked:
+            if sender == self.TaperXSliderGroup:
+                self.TaperYSliderGroup.SetValue(self.TaperXSliderGroup.Value)   
+
+        if sender == self.LockBulgeCheckBox or sender == self:
+            if self.LockBulgeCheckBox.Checked:
+                self.BulgeYSliderGroup.Unsubscribe(self.Solve)
+                self.BulgeYSliderGroup.SetEnabled(False)
+                self.BulgeYSliderGroup.SetValue(self.BulgeXSliderGroup.Value)
+            else:
+                self.BulgeYSliderGroup.Subscribe(self.Solve)
+                self.BulgeYSliderGroup.SetEnabled(True)   
+
+        if self.LockBulgeCheckBox.Checked:
+            if sender == self.BulgeXSliderGroup:
+                self.BulgeYSliderGroup.SetValue(self.BulgeXSliderGroup.Value)                 
+
+        for gem_id in self.GemIDs:
+            # get outline object and gem
+            gem = rs.coercebrep(gem_id)
+
+            # get gem's plane
+            x_axis, y_axis, z_axis = SpatialData.GetAxisLinesFromData(gem_id)
+            gem_pln = SpatialData.GetPlane(gem_id)
+
+            # get gem's length and width
+            gem_bbox = gem.GetBoundingBox(gem_pln)
+            gem_width = gem_bbox.Max.X - gem_bbox.Min.X
+            gem_length = gem_bbox.Max.Y - gem_bbox.Min.Y
+            gem_depth = gem_bbox.Max.Z - gem_bbox.Min.Z
+            gem_pavilion_depth = 0 - gem_bbox.Min.Z
+
+            # TOP OUTLINE
+            top_outline = self.BaseOutline.DuplicateCurve()
+            top_outline = top_outline.ToNurbsCurve()
+
+            # scale top outline to gem size
+            top_outline_bbox = top_outline.GetBoundingBox(True)
+            top_outline_width = top_outline_bbox.Max.X - top_outline_bbox.Min.X
+            top_outline_length = top_outline_bbox.Max.Y - top_outline_bbox.Min.Y
+            xform = rg.Transform.Scale(rg.Plane.WorldXY, gem_width/top_outline_width, gem_length/top_outline_length, 1)
+            top_outline.Transform(xform)
+
+            # add a horizontal offset, if needed
+            try:
+                hoffset = self.HOffsetFSliderGroup.Value
+                top_outline_width_new = gem_width + (2*hoffset)
+                top_outline_length_new = gem_length + (2*hoffset)
+                if hoffset != 0:   
+                    xfactor = top_outline_width_new / gem_width
+                    yfactor = top_outline_length_new / gem_length
+                    xform = rg.Transform.Scale(rg.Plane.WorldXY, xfactor, yfactor, 1)
+                    top_outline.Transform(xform)
+            except Exception as e:
+                app.WriteLine('line 351: ' + str(e))
+
+
+            # move outline up or down
+            voffset = self.VOffsetSliderGroup.Value
+            if self.OffsetModeDropDown.SelectedValue == 'Percentage':
+                voffset = self.VOffsetSliderGroup.Value * gem_depth                
+            xform = rg.Transform.Translation(0, 0, -voffset)
+            top_outline.Transform(xform)     
+            
+            # BOTTOM OUTLINE
+            bottom_outline = top_outline.DuplicateCurve()
+            bottom_outline = bottom_outline.ToNurbsCurve()
+
+            # scale bottom outline to make taper
+            taperSFX = 1 - self.TaperXSliderGroup.Value
+            taperSFY = 1 - self.TaperYSliderGroup.Value
+            xform = rg.Transform.Scale(rg.Plane.WorldXY, taperSFX, taperSFY, 1)
+            bottom_outline.Transform(xform)
+
+            # move bottom outline down
+            bottom_depth = self.DepthFSliderGroup.Value
+            xform = rg.Transform.Translation(0, 0, -bottom_depth)
+            bottom_outline.Transform(xform)
+
+            # MIDDLE OUTLINE
+            middle_outline = top_outline.DuplicateCurve()
+            middle_outline = middle_outline.ToNurbsCurve()
+
+            middle_depth = self.BulgeLocSliderGroup.Value * bottom_depth
+            middleSFX = 1 - (self.BulgeLocSliderGroup.Value * (1-taperSFX))
+            middleSFY = 1 - (self.BulgeLocSliderGroup.Value * (1-taperSFY))
+
+            # scale middle outline to match taper
+            xform = rg.Transform.Scale(rg.Plane.WorldXY, middleSFX, middleSFY, 1)
+            middle_outline.Transform(xform)
+
+            # scale middle outline to make bulge
+            middleSFX2 = 1 + self.BulgeXSliderGroup.Value
+            middleSFY2 = 1 + self.BulgeYSliderGroup.Value
+            xform = rg.Transform.Scale(rg.Plane.WorldXY, middleSFX2, middleSFY2, 1)
+            middle_outline.Transform(xform)
+
+            # move middle outline down
+            xform = rg.Transform.Translation(0, 0, -middle_depth)
+            middle_outline.Transform(xform)
+
+            # stretch the bezels
+            stretchSF = 1+self.StretchSliderGroup.Value
+            xform = rg.Transform.Scale(rg.Plane.WorldXY, stretchSF, 1, 1)
+            top_outline.Transform(xform)
+            middle_outline.Transform(xform)
+            bottom_outline.Transform(xform)
+
+            # make the bezels
+            # underbezel = None
+            # if self.BulgeFSliderGroup.Value == 0:
+            #     underbezel = rg.Brep.CreateFromLoft([top_outline, bottom_outline], rg.Point3d.Unset, rg.Point3d.Unset, rg.LoftType.Loose, False)[0]
+            # else:
+            underbezel = rg.Brep.CreateFromLoft([top_outline, middle_outline, bottom_outline], rg.Point3d.Unset, rg.Point3d.Unset, rg.LoftType.Loose, False)[0]
+            underbezel = underbezel.CapPlanarHoles(0.001)
+
+            # the normals must be pointing outward or the shelling operation
+            # will not work correctly
+            if underbezel.SolidOrientation == rg.BrepSolidOrientation.Inward:
+                underbezel.Flip()
+
+            # # try to hollow it out          
+            # thickness = self.ThicknessSliderGroup.Value
+            # hole_size_width = top_outline_width_new - (2 * thickness)
+            # hole_size_length = top_outline_length_new - (2 * thickness)
+            # if hoffset != 0 and hole_size_width >= 0.4 and hole_size_length >= 0.4:
+            #     try:
+            #         underbezel2 = rg.Brep.CreateShell(underbezel, [1,2], thickness, 0.001)
+            #         if underbezel2: underbezel = underbezel2[0]
+            #     except Exception as e:
+            #         app.WriteLine('line 470: ' + str(e))
+
+            # try to hollow it out
+
+            # try to make the center cutter 
+            try:
+                inner_top_outline = None
+                inner_middle_outline = None
+                inner_bottom_outline = None
+                center_cutter = None          
+                btm_outline_bbox = bottom_outline.GetBoundingBox(True)
+                btm_outline_width = btm_outline_bbox.Max.X - btm_outline_bbox.Min.X
+                btm_outline_length = btm_outline_bbox.Max.Y - btm_outline_bbox.Min.Y
+
+                thickness = self.ThicknessSliderGroup.Value
+                min_size = 0.4 + (2 * thickness)            
+                if btm_outline_width >= min_size and btm_outline_length >= min_size:
+                    center_cutter = None     
+                    corner_style = rg.CurveOffsetCornerStyle.Smooth if self.Shape == 'Heart' else rg.CurveOffsetCornerStyle.Sharp
+                    result = top_outline.Offset(rg.Point3d.Origin, rg.Plane.WorldXY.ZAxis, thickness, 0.001, corner_style)
+                    if result and len(result) > 0:
+                        inner_top_outline = result[0]
+                        inner_top_outline.Translate(0, 0, 0.02)
+
+                    result = middle_outline.Offset(rg.Point3d.Origin, rg.Plane.WorldXY.ZAxis, thickness, 0.001, corner_style)
+                    if result and len(result) > 0:
+                        inner_middle_outline = result[0]
+
+                    result = bottom_outline.Offset(rg.Point3d.Origin, rg.Plane.WorldXY.ZAxis, thickness, 0.001, corner_style)
+                    if result and len(result) > 0:
+                        inner_bottom_outline = result[0]
+                        inner_bottom_outline.Translate(0, 0, -0.02)
+
+                    if inner_top_outline and inner_middle_outline and inner_bottom_outline:
+                        result = rg.Brep.CreateFromLoft([inner_top_outline, inner_middle_outline, inner_bottom_outline], rg.Point3d.Unset, rg.Point3d.Unset, rg.LoftType.Loose, False)
+                        if result and len(result) > 0:
+                            center_cutter = result[0]
+                            center_cutter = center_cutter.CapPlanarHoles(0.001)
+                            if center_cutter.SolidOrientation == rg.BrepSolidOrientation.Inward:
+                                center_cutter.Flip()
+                            center_cutter.Faces.SplitKinkyFaces()
+
+                    # cut out the center, if possible
+                    # if something goes wrong, we will just return
+                    # a solid bezel as that is better than crashing
+                    underbezel2 = None
+                    if center_cutter:
+                        try:
+                            underbezel2 = rg.Brep.CreateBooleanDifference(underbezel, center_cutter, 0.001)[0]
+                        except Exception as e:
+                            app.WriteLine('line 464: ' + str(e))
+                    if underbezel2: underbezel = underbezel2
+            except Exception as e:
+                app.WriteLine('line 467: ' + str(e))
+
+            # transfer objects to gem's plane
+            xform = rg.Transform.PlaneToPlane(rg.Plane.WorldXY, gem_pln) 
+            top_outline.Transform(xform)
+            if middle_outline:
+                middle_outline.Transform(xform)  
+            bottom_outline.Transform(xform)
+            underbezel.Transform(xform) 
+
+            if underbezel.SolidOrientation == rg.BrepSolidOrientation.Inward:
+                underbezel.Flip()
+
+            # correct some rendering issues if there are kinky faces
+            # this also seems to help with shelling...so it must be 
+            # called BEFORE the CreateShell() function
+            underbezel.Faces.SplitKinkyFaces()            
+
+
+            # append the objects to their lists
+            self.TopOutlines.append(top_outline)
+            if middle_outline:
+                self.MiddleOutlines.append(middle_outline)
+            self.BottomOutlines.append(bottom_outline)
+            self.UnderBezels.append(underbezel)
+
+        # render objects
+        # self.AddToRenderObjects(self.TopOutlines, cam.CurveColor)
+        self.AddToRenderObjects(self.MiddleOutlines, cam.CurveColor)
+        # self.AddToRenderObjects(self.BottomOutlines, cam.CurveColor)
+        # self.AddToRenderObjects(self.UnderBezels, cam.ProngMaterial)
+
+        for bezel in self.UnderBezels:
+            bezel_mesh = self.MeshFromBrep(bezel)
+            self.UnderBezelMeshes.append(bezel_mesh)
+            self.AddEdgeCurves(bezel)
+
+        self.AddToRenderObjects(self.UnderBezelMeshes, cam.ProngMaterial)
+
+
+        # redraw                
+        sc.doc.Views.Redraw()
+
+        
+# the main code
+if __name__ == "__main__":        
+    dialog = wdDialog()
+    if rs.ExeVersion() > 6:
+        parent = Rhino.UI.RhinoEtoApp.MainWindowForDocument(sc.doc)
+    else:
+        parent = Rhino.UI.RhinoEtoApp.MainWindow
+    Rhino.UI.EtoExtensions.ShowSemiModal(dialog, sc.doc, parent)

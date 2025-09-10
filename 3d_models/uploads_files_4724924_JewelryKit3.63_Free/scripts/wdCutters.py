@@ -1,0 +1,584 @@
+#! python 2
+
+import System
+from System.Collections.Generic import List
+import rhinoscriptsyntax as rs
+import scriptcontext as sc
+import Rhino
+import Rhino.Geometry as rg
+import os
+import Eto
+import Eto.Drawing as drawing
+import Eto.Forms as forms
+import math
+from sliders import SliderGroup
+from components import ComponentGenerator as cg
+import SpatialData
+from Rhino import RhinoApp as app
+from pipeline import DrawConduit
+from pipeline import ColorsAndMaterials as cam
+
+macro = rs.AliasMacro('wdGem')
+wd1gem_script = macro.replace('!_-RunPythonScript ', '')
+wd1gem_script = wd1gem_script.replace('"', '')
+script_folder = os.path.dirname(wd1gem_script)
+data_folder = os.path.join(script_folder, "data")
+
+is_free = False
+if "Free" in script_folder:
+    is_free = True
+
+def IsGem(rhino_ob, geo, component_index):
+    is_gem = False
+    name = rhino_ob.Name
+    if name == 'wdGem': is_gem = True
+    return is_gem
+    
+class wdDialog(forms.Dialog):
+    def __init__(self):
+        super(wdDialog, self).__init__()
+        # form stuff        
+        self.LabelWidth = 90
+        self.Title = 'Gem Cutters'
+        self.Padding = drawing.Padding(15)
+        if rs.ExeVersion() < 7:
+            self.AutoSize = False
+        else:
+            self.AutoSize = True
+        self.Layout = None
+        self.Closing += self.OnDialogClosing
+        if rs.ExeVersion() >= 8:
+            Rhino.UI.EtoExtensions.UseRhinoStyle(self)
+
+        # overlay visualization stuff
+        self.Conduit = DrawConduit(self)
+        self.Conduit.Enabled = True
+        self.RenderObjects = []
+        self.EdgeCurves = []
+        self.Conduit.EdgeColor = System.Drawing.Color.FromArgb(230, 150, 0)
+
+        # background stuff
+        self.BaseGems = []
+        self.BaseCutters = []
+        self.BaseOutlines = []
+
+        # inputs
+        self.CutterStyle = 'Notch Cutter'
+        self.AddHandle = True
+        self.BezelCutterHeight = 1.0
+        self.AzureOffsetF = 0.5
+        self.AzureTaperF = 0.5
+        self.AzureFlareF = 0.5
+        self.AzureDepthF = 2.0
+        self.AzureStyle = 'None'
+        self.UseHeartBase = False
+        self.Flip = False
+
+        # outputs
+        self.GemIDs = []
+        self.Cutters = []
+        self.CutterOffset = 0.0
+       
+        # input controls
+        self.CutterStyleDropDownGroup, self.CutterStyleDropDown = cg.CreateDropDownGroup('Cutter Style: ', self.LabelWidth, ['Notch Cutter', 'Bezel Cutter'], self.OnFormChanged)
+        self.UseHeartBaseCheckBoxGroup, self.UseHeartBaseCheckBox = cg.CreateCheckBoxGroup('Use heart base? ', self.LabelWidth, self.UseHeartBase, self.OnFormChanged)
+        self.AddHandleCheckBoxGroup, self.AddHandleCheckBox = cg.CreateCheckBoxGroup('Add Handle: ', self.LabelWidth, self.AddHandle, self.OnFormChanged)
+        self.AzureStyleDropDownGroup, self.AzureStyleDropDown = cg.CreateDropDownGroup('Azure Style: ', self.LabelWidth, ['None', 'Basic', 'Tapered', 'Flared'], self.OnFormChanged)
+        self.AzureOffsetFSliderGroup = cg.CreateSliderGroup('Azure Size %: ', self.LabelWidth, 10, 90, 0, self.AzureOffsetF * 100, self.Solve)
+        self.AzureTaperFSliderGroup = cg.CreateSliderGroup('Azure Taper: ', self.LabelWidth, 0.0, 0.9, 2, self.AzureTaperF, self.Solve)
+        self.AzureFlareFSliderGroup = cg.CreateSliderGroup('Azure Flare: ', self.LabelWidth, 0.0, 2.0, 2, self.AzureFlareF, self.Solve)
+        self.AzureDepthFSliderGroup = cg.CreateSliderGroup('Azure Depth: ', self.LabelWidth, 0.1, 10.0, 2, self.AzureDepthF, self.Solve)
+        self.CutterOffsetSliderGroup = cg.CreateSliderGroup('Cutter Offset: ', self.LabelWidth, 0.0, 0.5, 2, self.CutterOffset, self.Solve)
+        self.BezelCutterHeightSliderGroup = cg.CreateSliderGroup('Cutter Height: ', self.LabelWidth, 1.0, 4.0, 2, self.BezelCutterHeight, self.Solve)
+        self.FlipCheckBoxGroup, self.FlipCheckBox = cg.CreateCheckBoxGroup('Flip Cutters: ', self.LabelWidth, False, self.OnFormChanged) 
+
+        # bottom buttons
+        self.SetButton = cg.CreateButton('Set Gems', self.OnSetButtonClick)
+        self.FinalizeButton = cg.CreateButton('Finalize', self.OnFinalizeButtonClick)
+        self.CancelButton = cg.CreateButton('Cancel', self.OnCancelButtonClick)
+
+        # the default button must be set for Macs (might as well set the abort button, too.)
+        self.DefaultButton = self.SetButton
+        self.AbortButton = self.CancelButton
+        
+        # lay it out and run the solver
+        self.LayoutForm()
+        self.Solve(self)
+
+    def CreateBaseGems(self, gem_ids):
+        self.DisposeObjects(self.BaseGems)
+        self.BaseGems = []
+        for gem_id in gem_ids:
+            gem_type = rs.GetUserText(gem_id, 'type')
+            gem_shape = rs.GetUserText(gem_id, 'shape')
+            gem = None
+            gem = self.LoadBaseGem(gem_type, gem_shape)
+            self.BaseGems.append(gem)
+
+
+    def CreateBaseCutters(self, gem_ids):
+        # clear the base cutters
+        self.DisposeObjects(self.BaseCutters)
+        self.BaseCutters = []
+
+        # if the cutter style is 'Notch', then make notch-style base cutters
+        # otherwise make bezel-style base cutters
+        if 'Notch' in self.CutterStyleDropDown.SelectedValue:
+            for gem_id in gem_ids:
+                gem_type = rs.GetUserText(gem_id, 'type')
+                gem_shape = rs.GetUserText(gem_id, 'shape')
+                base_cutter = self.LoadBaseNotchCutter(gem_type, gem_shape)
+                self.BaseCutters.append(base_cutter)
+        else:
+            for gem_id in gem_ids:
+                gem_type = rs.GetUserText(gem_id, 'type')
+                gem_shape = rs.GetUserText(gem_id, 'shape')
+                base_cutter = self.LoadBaseBezelCutter(gem_type, gem_shape)
+                self.BaseCutters.append(base_cutter)
+
+    def CreateBaseOutlines(self, gem_ids):
+        self.DisposeObjects(self.BaseOutlines)            
+        self.BaseOutlines = []
+        for gem_id in gem_ids:
+            gem_type = rs.GetUserText(gem_id, 'type')
+            gem_shape = rs.GetUserText(gem_id, 'shape')
+            gem = self.LoadBaseOutline(gem_shape)
+            self.BaseOutlines.append(gem)
+
+    def DisposeObject(self, ob):
+        if hasattr(ob,'Dispose'): ob.Dispose()
+
+    def DisposeObjects(self, obs):
+        for ob in obs:
+            self.DisposeObject(ob)
+
+    def DisposeRenderObjects(self):
+        if hasattr(self, 'RenderObjects'):
+            for ob in self.RenderObjects:
+                self.DisposeObject(ob)
+
+        if hasattr(self, 'OverlayObjects'):
+            for ob in self.OverlayObjects:
+                self.DisposeObject(ob)
+
+        if hasattr(self, 'EdgeCurves'):
+            for ob in self.EdgeCurves:
+                self.DisposeObject(ob)
+
+    def LayoutForm(self):
+        if self.Layout:
+            self.Layout.Clear()
+
+        self.Layout = forms.DynamicLayout()
+        self.Layout.DefaultSpacing = drawing.Size(5,5)
+
+        self.Layout.BeginVertical()
+        self.Layout.AddRow(self.CutterStyleDropDownGroup)
+        self.Layout.AddRow(self.FlipCheckBoxGroup)
+
+        if len(self.GemIDs) > 0:
+            has_heart = False
+            for gem_id in self.GemIDs:
+                shape = rs.GetUserText(gem_id, 'shape')
+                if shape == 'Heart':
+                    has_heart = True
+                    break
+            if has_heart:
+                self.Layout.AddRow(self.UseHeartBaseCheckBoxGroup)
+
+        self.Layout.AddRow(self.AddHandleCheckBoxGroup)
+        self.Layout.AddRow(self.AzureStyleDropDownGroup) 
+        
+        if rs.ExeVersion() < 7: self.Height = 270
+
+        if self.AzureStyle == 'Basic':
+            self.Layout.AddRow(self.AzureOffsetFSliderGroup)
+            self.Layout.AddRow(self.AzureDepthFSliderGroup)
+            if rs.ExeVersion() < 7: self.Height += 67
+        elif self.AzureStyle == 'Tapered':
+            self.Layout.AddRow(self.AzureOffsetFSliderGroup)
+            self.Layout.AddRow(self.AzureTaperFSliderGroup)
+            self.Layout.AddRow(self.AzureDepthFSliderGroup)
+            if rs.ExeVersion() < 7: self.Height += 100
+        elif self.AzureStyle == 'Flared':
+            self.Layout.AddRow(self.AzureOffsetFSliderGroup)
+            self.Layout.AddRow(self.AzureFlareFSliderGroup)
+            self.Layout.AddRow(self.AzureDepthFSliderGroup)
+            if rs.ExeVersion() < 7: self.Height += 100
+        
+        if self.CutterStyle == 'Bezel Cutter':
+            self.Layout.AddRow(self.BezelCutterHeightSliderGroup)
+            if rs.ExeVersion() < 7: self.Height += 32
+        self.Layout.AddRow(self.CutterOffsetSliderGroup)        
+        self.Layout.EndVertical()
+        
+        self.Layout.BeginVertical()
+        self.Layout.AddRow(cg.CreateVerticalSpacer(15))
+        self.Layout.AddSpace()
+        self.Layout.AddRow(None, self.SetButton, self.FinalizeButton, self.CancelButton)
+        self.Layout.EndVertical()
+
+        self.Layout.Create()        
+        self.Content = self.Layout
+
+    def LoadBaseNotchCutter(self, gem_type, gem_shape):
+        if gem_shape == 'Heart' and self.UseHeartBaseCheckBox.Checked:
+            gem_shape = 'Heart Base'
+        base_cutter = None
+        gem_folder = script_folder.replace("scripts", "gems")
+
+        if 'Cabochon' in gem_type:
+            cutter_folder = os.path.join(gem_folder, '4Cabochons')
+            filename = gem_shape + ".3dm"
+            fullpath = os.path.join(cutter_folder, filename)
+            cutter_file = Rhino.FileIO.File3dm.Read(fullpath) 
+            base_cutter = cutter_file.Objects.FindByLayer('gems')[0].Geometry
+        else:
+            cutter_folder = os.path.join(gem_folder, '3Cutters')            
+            filename = gem_shape + ".3dm"
+            fullpath = os.path.join(cutter_folder, filename)
+            cutter_file = Rhino.FileIO.File3dm.Read(fullpath) 
+            base_cutter = cutter_file.Objects.FindByLayer('cutters')[0].Geometry
+
+        return base_cutter
+
+    def LoadBaseBezelCutter(self, gem_type, gem_shape):
+        if gem_shape == 'Heart' and self.UseHeartBaseCheckBox.Checked:
+            gem_shape = 'Heart Base'
+        base_cutter = None
+        gem_folder = script_folder.replace("scripts", "gems")
+        if 'Cabochon' not in gem_type:
+            cutter_folder = os.path.join(gem_folder, '3Cutters', 'Bezel')
+            filename = gem_shape + ".3dm"
+            fullpath = os.path.join(cutter_folder, filename)
+            cutter_file = Rhino.FileIO.File3dm.Read(fullpath) 
+            base_cutter = cutter_file.Objects.FindByLayer('cutters')[0].Geometry
+        else:
+            # we will return an outline in this case, which will later be used to create the cutter
+            # in the Solve() function
+            outline_folder = os.path.join(gem_folder, '5Outlines', 'Cabochons')
+            filename = gem_shape + '.3dm'
+            fullpath = os.path.join(outline_folder, filename)
+            outline_file = Rhino.FileIO.File3dm.Read(fullpath)
+            base_cutter = outline_file.Objects.FindByLayer('gem profiles')[0].Geometry
+        return base_cutter
+
+    def LoadBaseGem(self, gem_type, gem_shape):
+        if gem_shape == 'Heart' and self.UseHeartBaseCheckBox.Checked:
+            gem_shape = 'Heart Base'
+        base_cutter = None
+        folder = script_folder.replace("scripts", "gems")
+        if 'Fancy' in gem_type: gem_folder_name = '1Fancy'
+        elif 'Simple' in gem_type: gem_folder_name = '2Simple'
+        elif 'Cabochon' in gem_type: gem_folder_name = '4Cabochons'
+        gem_folder = os.path.join(folder, gem_folder_name)            
+        filename = gem_shape + ".3dm"
+        fullpath = os.path.join(gem_folder, filename)
+        gem_file = Rhino.FileIO.File3dm.Read(fullpath) 
+        base_gem = gem_file.Objects.FindByLayer('gems')[0].Geometry
+        return base_gem    
+
+    def LoadBaseOutline(self, gem_shape):
+        if gem_shape == 'Heart' and self.UseHeartBaseCheckBox.Checked:
+            gem_shape = 'Heart Base'
+        base_outline = None
+        gem_folder = script_folder.replace("scripts", "gems")
+        outline_folder = os.path.join(gem_folder, '5Outlines')
+        filename = gem_shape + '.3dm'
+        fullpath = os.path.join(outline_folder, filename)
+        outline_file = Rhino.FileIO.File3dm.Read(fullpath)
+        base_outline = outline_file.Objects.FindByLayer('gem profiles')[0].Geometry
+        return base_outline
+
+    def OnCancelButtonClick(self, sender, e):
+        self.Close()
+       
+    def OnDialogClosing(self, sender, e):
+        self.Conduit.Enabled = False
+
+    def OnFinalizeButtonClick(self, sender, e):
+        if len(self.Cutters) > 0:
+            # layer stuff
+            layer_name = 'cutters'
+            if not rs.IsLayer(layer_name):
+                rs.AddLayer(layer_name, System.Drawing.Color.FromArgb(135, 230, 150, 0), True, False, None)
+
+            layer = sc.doc.Layers.FindName(layer_name)
+            atts = Rhino.DocObjects.ObjectAttributes()
+            atts.LayerIndex = layer.Index
+
+            cutter_ids = []
+            for cutter in self.Cutters:
+                cutter_id = sc.doc.Objects.AddBrep(cutter, atts)
+                rs.ObjectName(cutter_id, 'wdCutter')
+                cutter_ids.append(cutter_id)
+                cutter.Dispose()
+
+            # make group
+            if len(cutter_ids) > 1:
+                grp = rs.AddGroup()
+                rs.AddObjectsToGroup(cutter_ids, grp)
+
+        sc.doc.Views.Redraw()
+        self.DisposeObjects(self.BaseGems)
+        self.DisposeObjects(self.BaseCutters)
+        self.DisposeObjects(self.BaseOutlines)
+        self.DisposeObjects(self.Cutters)
+        self.DisposeRenderObjects()
+        self.Close()
+
+    def OnFormChanged(self, sender, e):
+        self.CutterStyle = self.CutterStyleDropDown.SelectedValue
+        self.UseHeartBase = self.UseHeartBaseCheckBox.Checked
+
+        if sender == self.CutterStyleDropDown or sender == self.UseHeartBaseCheckBox:
+            if len(self.GemIDs) > 0:
+                self.CreateBaseCutters(self.GemIDs)
+
+        if sender == self.AzureStyleDropDown:
+            self.AzureStyle = self.AzureStyleDropDown.SelectedValue
+
+        self.LayoutForm()
+        self.Solve(sender)
+
+    def OnSetButtonClick(self, sender, e):
+        Rhino.UI.EtoExtensions.PushPickButton(self, self.OnPushPickButton)
+        
+    def OnPushPickButton(self, sender, e):
+        self.SetGems(sender)
+        
+    def SetGems(self, sender):
+        gem_shape = None
+        gem_type = None
+        gem_ids = []
+
+        # select gems
+        selected_obs = rs.GetObjects('Select one or more gems to add cutters to', rs.filter.polysurface, preselect = True, select = False, custom_filter = IsGem)
+        if selected_obs:
+            for ob in selected_obs:
+                name = rs.ObjectName(ob)
+                if name == 'wdGem':
+                    gem_ids.append(ob)
+            rs.UnselectAllObjects()
+
+        # if no gems were selected, alert user
+        # otherwise, create the base cutters
+        if len(gem_ids) == 0:
+            rs.MessageBox('No gems were selected.')
+            gem_type = None
+            gem_shape = None
+        else: 
+            self.GemIDs = gem_ids
+            self.CreateBaseOutlines(gem_ids)
+            try:
+                self.CreateBaseGems(gem_ids)
+            except Exception as e:
+                app.WriteLine('Line 349: could not create base gem: ' + str(e))
+            
+            self.CreateBaseCutters(gem_ids)
+            self.LayoutForm()
+            self.Solve(sender)
+
+    def MeshFromBrep(self, brep):
+        meshing_params = Rhino.Geometry.MeshingParameters.FastRenderMesh
+        meshes = Rhino.Geometry.Mesh.CreateFromBrep(brep, meshing_params)
+        the_mesh = Rhino.Geometry.Mesh()
+        for mesh in meshes:
+            the_mesh.Append(mesh)
+        the_mesh.Normals.ComputeNormals()
+        return the_mesh
+
+    def AddEdgeCurves(self, brep):
+        for edge in brep.Edges:
+            crv = edge.DuplicateCurve()
+            if crv.IsValid:
+                self.EdgeCurves.append(crv)
+
+    def Solve(self, sender):
+        # update variables
+        self.AddHandle = self.AddHandleCheckBox.Checked
+        self.BezelCutterHeight = self.BezelCutterHeightSliderGroup.Value
+        self.CutterOffset = self.CutterOffsetSliderGroup.Value
+        self.AzureOffsetF = self.AzureOffsetFSliderGroup.Value / 100
+        self.AzureTaperF = self.AzureTaperFSliderGroup.Value
+        self.AzureFlareF = self.AzureFlareFSliderGroup.Value
+        self.AzureDepthF = self.AzureDepthFSliderGroup.Value
+        self.UseHeartBase = self.UseHeartBaseCheckBox.Checked
+        self.Flip = self.FlipCheckBox.Checked
+
+        self.DisposeObjects(self.Cutters)
+        self.DisposeRenderObjects()
+
+        self.Cutters = []
+        self.EdgeCurves = []
+        self.RenderObjects = []
+
+        if len(self.GemIDs) > 0:
+            for i in range(len(self.GemIDs)):
+                # get base gem, base cutter, base outline and actual gem (and gem id)
+                base_gem = self.BaseGems[i]
+                base_cutter = self.BaseCutters[i]
+                base_outline = self.BaseOutlines[i]
+                gem_id = self.GemIDs[i]
+                gem = rs.coercebrep(gem_id) 
+                gem_type = rs.GetUserText(gem_id, 'type')
+                gem_shape = rs.GetUserText(gem_id, 'shape')
+
+                # get size of base gem
+                base_gem_bbox = base_gem.GetBoundingBox(True)
+                base_gem_width = base_gem_bbox.Max.X - base_gem_bbox.Min.X
+                base_gem_length = base_gem_bbox.Max.Y - base_gem_bbox.Min.Y
+                base_gem_depth = base_gem_bbox.Max.Z - base_gem_bbox.Min.Z
+                base_crown_height = base_gem_bbox.Max.Z
+                base_pavilion_depth = abs(base_gem_bbox.Min.Z)  
+
+                # create cutter
+                cutter = base_cutter.DuplicateBrep()
+                if 'Notch' in self.CutterStyle:
+                    pass
+                elif 'Bezel' in self.CutterStyle:
+                    # finish building cutter
+                    crv = base_outline.DuplicateCurve()
+                    extrusion = rg.Surface.CreateExtrusion(crv, rg.Vector3d(0, 0, base_crown_height + self.BezelCutterHeight)).ToBrep()                        
+
+                    if 'Cabochon' in gem_type:                        
+                        cutter = extrusion.CapPlanarHoles(0.001)
+                    else:
+                        pavilion = self.BaseCutters[i].DuplicateBrep()
+                        uncapped_cutter = rg.Brep.JoinBreps([pavilion, extrusion], 0.001)[0]
+                        cutter = uncapped_cutter.CapPlanarHoles(0.001)
+                        if cutter.SolidOrientation == rg.BrepSolidOrientation.Inward:
+                            cutter.Flip()
+
+                # get gem's plane
+                x_axis, y_axis, z_axis = SpatialData.GetAxisLinesFromData(gem_id)
+                pln = SpatialData.GetPlane(gem_id)
+                if self.Flip:
+                    pln.Flip()
+
+                # get size of actual gem
+                gem_bbox = gem.GetBoundingBox(pln)
+                gem_width = gem_bbox.Max.X - gem_bbox.Min.X
+                gem_length = gem_bbox.Max.Y - gem_bbox.Min.Y
+                gem_depth = gem_bbox.Max.Z - gem_bbox.Min.Z
+                crown_height = gem_bbox.Max.Z
+                pavilion_depth = -gem_bbox.Min.Z
+
+                # these will remain unchanged by cutter offset
+                # and may be used by some azure or handle calculations
+                gem_width2 = gem_bbox.Max.X - gem_bbox.Min.X
+                gem_length2 = gem_bbox.Max.Y - gem_bbox.Min.Y
+                gem_depth2 = gem_bbox.Max.Z - gem_bbox.Min.Z
+
+                # adjust gem size by cutter offset
+                if self.CutterOffset > 0:
+                    gem_width -= (2*self.CutterOffset)
+                    gem_length -= (2*self.CutterOffset)
+                    gem_depth -= (2*self.CutterOffset)
+
+                # get scale factors
+                width_factor = gem_width / base_gem_width
+                length_factor = gem_length / base_gem_length
+                depth_factor = gem_depth / base_gem_depth
+
+                width_factor2 = gem_width2 / base_gem_width
+                length_factor2 = gem_length2 / base_gem_length
+                depth_factor2 = gem_depth2 / base_gem_depth
+
+                # scale the cutter object
+                xform = rg.Transform.Scale(rg.Plane.WorldXY, width_factor, length_factor, depth_factor)
+                cutter.Transform(xform)                   
+
+                # add handle
+                handle = None
+                if self.AddHandle:
+                    handle_length = 5 * depth_factor2
+                    circle = rg.Circle(rg.Plane.WorldXY, rg.Point3d(0, 0, 0.1), (gem_width/2) * 0.2)
+                    handle = rg.Cylinder(circle, handle_length).ToNurbsSurface()
+                    handle = handle.Rebuild(3, 3, 20, 5)
+                    handle = handle.ToBrep()
+                    handle = handle.CapPlanarHoles(0.001)
+                    if handle.SolidOrientation == rg.BrepSolidOrientation.Inward:
+                        handle.Flip()
+                    zvec = crown_height - 0.2 - self.CutterOffset
+                    if 'Bezel' in self.CutterStyle: zvec += self.BezelCutterHeight * depth_factor
+                    xform = rg.Transform.Translation(0, 0, zvec)
+                    handle.Transform(xform)
+                    cutter = rg.Brep.CreateBooleanUnion([cutter, handle], 0.001)[0]
+
+                # add azure
+                # get the gem outline and scale it to match gem
+                azure_outline = self.BaseOutlines[i].DuplicateCurve()
+                xform = rg.Transform.Scale(rg.Plane.WorldXY, width_factor, length_factor, 1)
+                azure_outline.Transform(xform)
+                azure_outline_xform = rg.Transform.Scale(rg.Plane.WorldXY, self.AzureOffsetF, self.AzureOffsetF, 1)
+                azure_outline.Transform(azure_outline_xform)
+                azure_depth = pavilion_depth + self.AzureDepthF
+                azure = None
+                if azure_depth < 0.01: azure_depth = self.AzureDepthF * 2
+
+                if self.AzureStyle == 'Basic':                    
+                    azure = rg.Surface.CreateExtrusion(azure_outline, rg.Vector3d(0, 0, -azure_depth)).ToBrep()
+                    azure = azure.CapPlanarHoles(0.001)
+                    if azure.SolidOrientation == rg.BrepSolidOrientation.Inward:
+                        azure.Flip()
+
+                elif self.AzureStyle == 'Tapered':
+                    azure_taper_outline = azure_outline.DuplicateCurve()
+                    azure_taper_outline_xform = rg.Transform.Scale(rg.Plane.WorldXY, 1-self.AzureTaperF, 1-self.AzureTaperF, 1)
+                    azure_taper_outline.Transform(azure_taper_outline_xform)
+
+                    azure_taper_outline_xform = rg.Transform.Translation(0, 0, -azure_depth)
+                    azure_taper_outline.Transform(azure_taper_outline_xform)
+
+                    azure = rg.Brep.CreateFromLoft([azure_outline, azure_taper_outline], rg.Point3d.Unset, rg.Point3d.Unset, rg.LoftType.Straight, False)[0]
+                    azure = azure.CapPlanarHoles(0.001)
+
+                    if azure.SolidOrientation == rg.BrepSolidOrientation.Inward:
+                        azure.Flip()
+
+                elif self.AzureStyle == 'Flared':
+                    azure_flared_outline = azure_outline.DuplicateCurve()
+                    azure_flared_outline_xform = rg.Transform.Scale(rg.Plane.WorldXY, 1+self.AzureFlareF, 1+self.AzureFlareF, 1)
+                    azure_flared_outline.Transform(azure_flared_outline_xform)
+
+                    azure_flared_outline_xform = rg.Transform.Translation(0, 0, -azure_depth)
+                    azure_flared_outline.Transform(azure_flared_outline_xform)
+
+                    azure = rg.Brep.CreateFromLoft([azure_outline, azure_flared_outline], rg.Point3d.Unset, rg.Point3d.Unset, rg.LoftType.Straight, False)[0]
+                    azure = azure.CapPlanarHoles(0.001)
+
+                    if azure.SolidOrientation == rg.BrepSolidOrientation.Inward:
+                        azure.Flip() 
+
+                if azure:
+                    cutter = rg.Brep.CreateBooleanUnion([azure, cutter], 0.001)[0]            
+
+                # move cutter to gem plane
+                xform = rg.Transform.PlaneToPlane(rg.Plane.WorldXY, pln)
+                cutter.Transform(xform) 
+
+                # split kinky faces to correct shading issues
+                cutter.Faces.SplitKinkyFaces()
+
+                # append cutter to cutter list
+                self.Cutters.append(cutter)
+
+        # render objects
+        for cutter in self.Cutters:
+            mesh = self.MeshFromBrep(cutter)
+            self.RenderObjects.append([mesh, cam.CutterMaterial])
+            self.AddEdgeCurves(cutter)
+
+        # redraw                
+        sc.doc.Views.Redraw()
+
+        
+# the main code
+if __name__ == "__main__":        
+    dialog = wdDialog()
+    if rs.ExeVersion() > 6:
+        parent = Rhino.UI.RhinoEtoApp.MainWindowForDocument(sc.doc)
+    else:
+        parent = Rhino.UI.RhinoEtoApp.MainWindow
+    Rhino.UI.EtoExtensions.ShowSemiModal(dialog, sc.doc, parent)

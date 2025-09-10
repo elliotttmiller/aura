@@ -1,0 +1,1359 @@
+#! python 2
+
+import rhinoscriptsyntax as rs
+import Rhino
+import zipfile
+import os
+import threading
+import Eto
+import Eto.Drawing as drawing
+import Eto.Forms as forms
+import shutil
+import subprocess
+import time
+import System
+import xml.etree.ElementTree as et
+import scriptcontext as sc
+
+# some enums
+class Action:
+    NewInstall = 0
+    Upgrade = 1
+    Uninstall = 2
+
+class PageType:
+    Start = "Start"
+    Choose = "Choose"
+    RemoveKit = "RemoveKit"
+    RemoveKitBeforeUpgrade = "RemoveKitBeforeUpgrade"
+    WarrantyDisclaimer = "WarrantyDisclaimer"
+    SelectFolders = "SelectFolders"
+    Install = "Install"
+    Finish = "Finish"
+
+# some custom controls
+class FolderSelector(forms.Panel):
+    def __init__(self):
+        super(FolderSelector, self).__init__()
+        
+        self.textbox = forms.TextBox()
+        self.textbox.Width = 350
+        self.textbox.ReadOnly = True
+        
+        self.button = forms.Button(Text="Browse")
+        
+        layout = forms.DynamicLayout()
+        layout.DefaultSpacing = drawing.Size(5,5)
+        layout.BeginHorizontal()
+        layout.Add(self.textbox)
+        layout.AddAutoSized(self.button)
+        layout.EndHorizontal()
+        self.Content = layout
+   
+class Page(forms.Panel):
+    def __init__(self):
+        super(Page, self).__init__()            
+            
+        self.Width = 350
+        self.controls = []
+        self.top_panel = forms.Panel()
+        self.top_panel.Height = 360
+        self.top_panel.Padding = drawing.Padding(7)
+        
+        self.btm_panel = forms.Panel()
+
+    def Create(self, title, controls, buttons):
+
+        # layout top panel
+        layout_top = forms.DynamicLayout()
+        layout_top.DefaultSpacing = drawing.Size(5,5)
+
+        layout_top.BeginVertical()
+        
+        if title:
+            lbl = forms.Label(Text = title)
+            lbl.Font = drawing.Font(lbl.Font.FamilyName, 14, drawing.FontStyle.Bold)
+            layout_top.AddRow(lbl)
+            layout_top.AddRow(Spacer())
+
+        for control in controls:
+            if control is not None:
+                self.controls.append(control)
+                if isinstance(control, forms.Button):
+                    layout_top.AddSeparateRow(control, None)
+                    layout_top.AddRow(None)
+                else:
+                    layout_top.AddRow(control)
+                    layout_top.AddRow(None)
+        layout_top.AddRow(None)
+        layout_top.EndVertical()
+        self.top_panel.Content = layout_top
+        
+        # layout bottom panel
+        layout_btm = forms.DynamicLayout()
+        layout_btm.DefaultSpacing = drawing.Size(5,5)
+        
+        layout_btm.AddSpace()
+        
+        layout_btm.BeginHorizontal()
+        layout_btm.Add(None)
+        for button in buttons:
+            layout_btm.Add(button)
+        layout_btm.EndHorizontal()
+        
+        self.btm_panel.Content = layout_btm        
+        
+        # layout entire panel
+        layout_all = forms.DynamicLayout()
+        layout_all.DefaultSpacing = drawing.Size(5,5)
+        layout_all.AddRow(self.top_panel)
+        layout_all.AddRow(self.btm_panel)
+        
+        self.Content = layout_all
+
+class Spacer(forms.Panel):
+    def __init__(self):
+        super(Spacer, self).__init__()
+        self.Height = 5
+
+class StepsPanel(forms.Panel):
+    def __init__(self):
+        super(StepsPanel, self).__init__()
+            
+        self.BackgroundColor = drawing.Colors.LightGrey
+        self.Padding = drawing.Padding(10,10)
+        self.Width = 210
+
+        self.title_lbl = forms.Label()
+        self.title_lbl.Text = "Steps"
+        self.title_lbl.Font = drawing.Font(self.title_lbl.Font.FamilyName, 12, drawing.FontStyle.Bold)
+
+
+    def AddSteps(self, steps, title = "Steps"):
+        self.title_lbl.Text = title
+        layout = forms.DynamicLayout()
+        layout.DefaultSpacing = drawing.Size(5,5)
+
+        layout.AddRow(self.title_lbl)
+
+        self.steps = []
+        for item in steps:
+            lbl = forms.Label()
+            lbl.Height = 22
+            lbl.Text = item
+            lbl.Font = drawing.Font(lbl.Font.FamilyName, 12)
+            self.steps.append(lbl)
+            layout.AddRow(lbl)
+
+        layout.AddRow(None)
+
+        self.Content = layout
+
+    def DeactivateSteps(self):
+        for step in self.steps:
+            step.BackgroundColor = drawing.Colors.LightGrey
+            step.TextColor = drawing.SystemColors.DisabledText
+            step.Font = drawing.Font(step.Font.FamilyName, 12, drawing.FontStyle.None)
+
+    def ActivateStep(self, step_number):
+        step = self.steps[step_number-1]
+        step.TextColor = drawing.Colors.DarkBlue
+        step.Font = drawing.Font(step.Font.FamilyName, 12, drawing.FontStyle.Italic) 
+        
+    def CompleteStep(self, step_number):
+        step = self.steps[step_number-1]
+        step.TextColor = drawing.Colors.DarkGreen
+        step.Font = drawing.Font(step.Font.FamilyName, 12, drawing.FontStyle.None)
+        # step.Text = "(x) " + step.Text
+      
+# trouble shooting form
+class TroubleShooter(forms.Dialog):
+    
+    tried_restarting = False
+    tried_rebooting = False
+    
+    def __init__(self):
+        super(TroubleShooter, self).__init__()
+            
+        self.Title = 'Trouble Shooter'
+        self.Padding = drawing.Padding(30)
+        self.Width = 500
+        self.Height = 570
+        
+        self.dummy_label = forms.Label()
+        
+        self.BackButton = forms.Button(Text = "Back")
+        self.BackButton.Click += self.HandleBack
+        
+        self.CloseButton = forms.Button(Text = "Close")
+        self.CloseButton.Click += self.HandleClose
+        
+        self.CopyPathButton = forms.Button(Text = "Copy Path")
+        
+        self.CopyPathLink = forms.LinkButton(Text = "(Copy Path)")
+        self.CopyPathLink.Font = drawing.Font(self.dummy_label.Font.FamilyName, 11)
+        
+        self.NextButton = forms.Button(Text = "Next")
+        self.NextButton.Click += self.HandleNext
+        
+        self.SkipCheckBox = forms.CheckBox(Text = "Skip the Delete Kit's Folder Section?")
+        self.SkipCheckBox.Font = drawing.Font(self.dummy_label.Font.FamilyName, 11)
+        
+        self.ViewPathButton = forms.Button(Text = "View Path")
+        
+        self.ViewPathLink = forms.LinkButton(Text = "(View Path)")
+        self.ViewPathLink.Font = drawing.Font(self.dummy_label.Font.FamilyName, 11)  
+        
+        self.AbortButton = self.CloseButton
+        self.DefaultButton = self.NextButton
+        
+        self.Page1()
+        
+    def Page1(self):
+        self.page = "Page1"
+        title = forms.Label(Text = 'Solution 1: Restart Rhino')
+        title.Font = drawing.Font(title.Font.FamilyName, 13, drawing.FontStyle.Bold)
+        
+        msg = forms.Label(Text = "If the kit's folder won't delete, the first thing to try is (1) restart Rhino and (2) try to delete it again via the installer script.")
+        msg.Font = drawing.Font(title.Font.FamilyName, 11)
+        
+        steps_title = forms.Label(Text = "The steps to do this are as follows:")
+        steps_title.Font = drawing.Font(title.Font.FamilyName, 11, drawing.FontStyle.None, drawing.FontDecoration.Underline)
+        
+        step1 = forms.Label(Text = "    1. Close the installer script,")
+        step1.Font = drawing.Font(title.Font.FamilyName, 11)
+        step1.TextColor = drawing.Colors.Black
+        
+        step2 = forms.Label(Text = "    2. Save your work if necessary,")
+        step2.Font = drawing.Font(title.Font.FamilyName, 11)
+        step2.TextColor = drawing.Colors.Black
+        
+        step3 = forms.Label(Text = "    3. RESTART RHINO,")
+        step3.Font = drawing.Font(title.Font.FamilyName, 11)
+        step3.TextColor = drawing.Colors.Black
+        
+        step4 = forms.Label(Text = "    4. Run the installer script again,")
+        step4.Font = drawing.Font(title.Font.FamilyName, 11)
+        step4.TextColor = drawing.Colors.Black
+        
+        step5 = forms.Label(Text = "    5. Choose either to upgrade or remove the kit,")
+        step5.Font = drawing.Font(title.Font.FamilyName, 11)
+        step5.TextColor = drawing.Colors.Black
+        
+        step6 = forms.Label(Text = "    6. Click on Delete Folder again.")
+        step6.Font = drawing.Font(title.Font.FamilyName, 11)
+        step6.TextColor = drawing.Colors.Black
+        
+        already = forms.Label(Text = "If you already tried this, click Next.\nIf not, click Close and try it now.")
+        already.Font = drawing.Font(title.Font.FamilyName, 11)
+        
+        btn_back = forms.Button(Text = "Back")
+        btn_back.Enabled = False
+        
+        btn_next = forms.Button(Text = "Next")
+        btn_next.Click += self.HandleNext
+        
+        btn_close = forms.Button(Text = "Close")
+        btn_close.Click += self.HandleClose
+        
+        self.layout = forms.DynamicLayout()
+        self.layout.DefaultSpacing = drawing.Size(5,5)
+        
+        self.layout.AddRow(title)
+        self.layout.AddRow(msg)
+        self.layout.AddRow(None)
+        self.layout.AddRow(steps_title)
+        
+        self.layout.BeginVertical(spacing = drawing.Size(0,0))
+        self.layout.AddRow(step1)
+        self.layout.AddRow(step2)
+        self.layout.AddRow(step3)
+        self.layout.AddRow(step4)
+        self.layout.AddRow(step5)
+        self.layout.AddRow(step6)
+        self.layout.EndVertical()
+        
+        self.layout.AddRow(None)
+        self.layout.AddRow(already)
+        self.layout.AddSpace()
+        self.layout.AddSeparateRow(None, btn_back, btn_next, btn_close)
+        
+        self.Content = self.layout
+        
+    def Page2(self):
+        self.page = "Page2"
+        title = forms.Label(Text = 'Solution 2: Reboot the Computer')
+        title.Font = drawing.Font(title.Font.FamilyName, 13, drawing.FontStyle.Bold)
+        
+        msg = forms.Label(Text = "If the kit's folder still won't delete after restarting Rhino, the next thing to try is to reboot the computer and try to delete it again via the installer script.")
+        msg.Font = drawing.Font(title.Font.FamilyName, 11)
+        
+        steps_title = forms.Label(Text = "The steps to do this are as follows:")
+        steps_title.Font = drawing.Font(title.Font.FamilyName, 11, drawing.FontStyle.None, drawing.FontDecoration.Underline)
+        
+        step1 = forms.Label(Text = "    1. Close the installer script,")
+        step1.Font = drawing.Font(title.Font.FamilyName, 11)
+        step1.TextColor = drawing.Colors.Black
+        
+        step2 = forms.Label(Text = "    2. Close Rhino and all other open programs\n        (saving your work as needed),")
+        step2.Font = drawing.Font(title.Font.FamilyName, 11)
+        step2.TextColor = drawing.Colors.Black
+        
+        step3 = forms.Label(Text = "    3. REBOOT THE COMPUTER,")
+        step3.Font = drawing.Font(title.Font.FamilyName, 11)
+        step3.TextColor = drawing.Colors.Black
+        
+        step4 = forms.Label(Text = "    4. Open Rhino,")
+        step4.Font = drawing.Font(title.Font.FamilyName, 11)
+        step4.TextColor = drawing.Colors.Black
+        
+        step5 = forms.Label(Text = "    5. Run the installer script again,")
+        step5.Font = drawing.Font(title.Font.FamilyName, 11)
+        step5.TextColor = drawing.Colors.Black
+        
+        step6 = forms.Label(Text = "    6. Choose either to upgrade or remove the kit,")
+        step6.Font = drawing.Font(title.Font.FamilyName, 11)
+        step6.TextColor = drawing.Colors.Black
+        
+        step7 = forms.Label(Text = "    7. Click on Delete Folder again.")
+        step7.Font = drawing.Font(title.Font.FamilyName, 11)
+        step7.TextColor = drawing.Colors.Black
+        
+        already = forms.Label(Text = "If you already tried this, click Next.\nIf not, click Close and try it now.")
+        already.Font = drawing.Font(title.Font.FamilyName, 11)
+        
+        btn_back = forms.Button(Text = "Back")
+        btn_back.Click += self.HandleBack
+        
+        btn_next = forms.Button(Text = "Next")
+        btn_next.Click += self.HandleNext
+        
+        btn_close = forms.Button(Text = "Close")
+        btn_close.Click += self.HandleClose
+        
+        self.layout.Clear()
+        self.layout = forms.DynamicLayout()
+        self.layout.DefaultSpacing = drawing.Size(5,5)
+        
+        self.layout.AddRow(title)
+        self.layout.AddRow(msg)
+        self.layout.AddRow(None)
+        self.layout.AddRow(steps_title)
+        
+        self.layout.BeginVertical(spacing = drawing.Size(0,0))
+        self.layout.AddRow(step1)
+        self.layout.AddRow(step2)
+        self.layout.AddRow(step3)
+        self.layout.AddRow(step4)
+        self.layout.AddRow(step5)
+        self.layout.AddRow(step6)
+        self.layout.AddRow(step7)
+        self.layout.EndVertical()
+        
+        self.layout.AddRow(None)
+        self.layout.AddRow(already)
+        self.layout.AddSpace()
+        self.layout.AddSeparateRow(None, btn_back, btn_next, btn_close)
+        
+        self.Content = self.layout
+        
+    def Page3(self):
+        self.page = "Page3"
+        title = forms.Label(Text = 'Solution 3: Manually Delete the Folder')
+        title.Font = drawing.Font(title.Font.FamilyName, 13, drawing.FontStyle.Bold)
+        
+        msg = forms.Label(Text = "If the kit's folder still won't delete after rebooting, the next thing to try is to reboot the computer again and try to manually delete the kit's folder via the computer's own file browser.")
+        msg.Font = drawing.Font(title.Font.FamilyName, 11)
+        
+        steps_title = forms.Label(Text = "The steps to do this are as follows:")
+        steps_title.Font = drawing.Font(title.Font.FamilyName, 11, drawing.FontStyle.None, drawing.FontDecoration.Underline)
+        
+        step1 = forms.Label(Text = "    1. Record the kit's path. (You can either write it down on\n        a piece of paper, or you can save it in a text document.)")
+        step1.Font = drawing.Font(title.Font.FamilyName, 11)
+        step1.TextColor = drawing.Colors.Black
+        
+        pnl1 = forms.Panel()
+        pnl1.Height = 5
+        
+        pnl2 = forms.Panel()
+        pnl2.Width = 30
+        
+        pnl3 = forms.Panel()
+        pnl3.Height = 5
+        
+        step2 = forms.Label(Text = "    2. Close the installer script,")
+        step2.Font = drawing.Font(title.Font.FamilyName, 11)
+        step2.TextColor = drawing.Colors.Black
+        
+        step3 = forms.Label(Text = "    3. Close Rhino and all other open programs\n        (saving your work as needed),")
+        step3.Font = drawing.Font(title.Font.FamilyName, 11)
+        step3.TextColor = drawing.Colors.Black
+        
+        step4 = forms.Label(Text = "    4. Reboot the computer,")
+        step4.Font = drawing.Font(title.Font.FamilyName, 11)
+        step4.TextColor = drawing.Colors.Black
+        
+        step5 = forms.Label(Text = "    5. Do NOT open Rhino,")
+        step5.Font = drawing.Font(title.Font.FamilyName, 11)
+        step5.TextColor = drawing.Colors.Black
+        
+        step6 = forms.Label(Text = "    6. Open the computer's file browser,")
+        step6.Font = drawing.Font(title.Font.FamilyName, 11)
+        step6.TextColor = drawing.Colors.Black
+        
+        step7 = forms.Label(Text = "    7. Use the path you recorded in step 1 to help you\n        find and delete the kit's folder,")
+        step7.Font = drawing.Font(title.Font.FamilyName, 11)
+        step7.TextColor = drawing.Colors.Black
+
+        already = forms.Label(Text = "If you already tried this, click Next.\nIf not, click Close and try it now.")
+        already.Font = drawing.Font(title.Font.FamilyName, 11)
+        
+        btn_back = forms.Button(Text = "Back")
+        btn_back.Click += self.HandleBack
+        
+        btn_next = forms.Button(Text = "Next")
+        btn_next.Click += self.HandleNext
+        
+        btn_close = forms.Button(Text = "Close")
+        btn_close.Click += self.HandleClose
+        
+        self.layout.Clear()
+        self.layout = forms.DynamicLayout()
+        self.layout.DefaultSpacing = drawing.Size(5,5)
+        
+        self.layout.AddRow(title)
+        self.layout.AddRow(msg)
+        self.layout.AddRow(None)
+        self.layout.AddRow(steps_title)
+        
+        self.layout.BeginVertical(spacing = drawing.Size(0,0))
+        self.layout.AddRow(step1)
+        self.layout.AddRow(pnl1)
+        self.layout.AddSeparateRow(pnl2,self.ViewPathButton, self.CopyPathButton, None)
+        self.layout.AddRow(pnl3)
+        self.layout.AddRow(step2)
+        self.layout.AddRow(step3)
+        self.layout.AddRow(step4)
+        self.layout.AddRow(step5)
+        self.layout.AddRow(step6)
+        self.layout.AddRow(step7)
+        self.layout.EndVertical()
+        
+        self.layout.AddRow(None)
+        self.layout.AddRow(already)
+        self.layout.AddSpace()
+        self.layout.AddSeparateRow(None, btn_back, btn_next, btn_close)
+        
+        self.Content = self.layout
+        
+    def Page4(self):
+        self.page = "Page4"
+        title = forms.Label(Text = 'Solution 4: Skip It')
+        title.Font = drawing.Font(title.Font.FamilyName, 13, drawing.FontStyle.Bold)
+        
+        msg = forms.Label(Text = "If you have tried the previous three steps and the kit's folder still will not delete, you will have to skip it for now. You can try manually deleting it again later via your computer's own file browser app.")
+        msg.Font = drawing.Font(title.Font.FamilyName, 11)
+        
+        label1 = forms.Label(Text = "If you wish to skip the Delete Kit's Folder section, check the box below before exiting the trouble shooter.")
+        label1.Font = drawing.Font(title.Font.FamilyName, 11)
+        label1.TextColor = drawing.Colors.Black
+        
+        label2 = forms.Label(Text = "If you would like to view the path of the kit's folder, click the button below.")
+        label2.Font = drawing.Font(title.Font.FamilyName, 11)
+        label2.TextColor = drawing.Colors.Black
+        
+        label3 = forms.Label(Text = "If you would like to copy the path of the kit's folder to the clipboard, click the button below.")
+        label3.Font = drawing.Font(title.Font.FamilyName, 11)
+        label3.TextColor = drawing.Colors.Black
+        
+        label4 = forms.Label(Text = "To help you find the kit's folder later, you may wish write the kit's path down on paper or save it to a text file.")
+        label4.Font = drawing.Font(title.Font.FamilyName, 11)
+        label4.TextColor = drawing.Colors.Black        
+
+        btn_back = forms.Button(Text = "Back")
+        btn_back.Click += self.HandleBack
+        
+        btn_next = forms.Button(Text = "Next")
+        btn_next.Enabled = False
+        
+        btn_close = forms.Button(Text = "Close")
+        btn_close.Click += self.HandleClose
+        
+        self.layout.Clear()
+        self.layout = forms.DynamicLayout()
+        self.layout.DefaultSpacing = drawing.Size(5,5)
+        
+        self.layout.AddRow(title)
+        self.layout.AddRow(msg)
+        self.layout.AddRow(None)
+        self.layout.AddRow(None)
+        self.layout.AddRow(None)
+        self.layout.AddRow(label1)
+        self.layout.AddRow(None)
+        self.layout.AddRow(None)
+        self.layout.AddAutoSized(self.SkipCheckBox)
+        self.layout.AddRow(None)
+        self.layout.AddRow(None)
+        self.layout.AddRow(label4)
+        self.layout.AddSeparateRow(self.ViewPathButton, self.CopyPathButton, None)
+        self.layout.AddSpace()
+        self.layout.AddSeparateRow(None, btn_back, btn_next, btn_close)
+        
+        self.Content = self.layout
+        
+    def HandleBack(self, sender, e):
+        if self.page == "Page2":
+            self.Page1()
+        elif self.page == "Page3":
+            self.Page2()
+        elif self.page == "Page4":
+            self.Page3()
+        
+    def HandleClose(self, sender, e):
+        self.Close()
+        
+    def HandleNext(self, sender, e):
+        if self.page == "Page1":
+            self.Page2()
+        elif self.page == "Page2":
+            self.Page3()
+        elif self.page == "Page3":
+            self.Page4()
+
+# main installer form
+class Installer(forms.Dialog):
+    def __init__(self):
+        super(Installer, self).__init__()
+
+        self.Title = "Jewelry Kit Installer / Uninstaller"
+        self.Width = 720
+        self.Height = 450
+        self.Padding = drawing.Padding(10,10)
+        
+        self.step_panel = None
+        self.page = None
+        
+        self.blank_step_panel = StepsPanel()
+        
+        self.install_steps = ["1. Select Folders", "2. Install Kit", "3. Finish"]
+        self.install_step_panel = StepsPanel()
+        self.install_step_panel.AddSteps(self.install_steps, title = "Steps to Install Kit")
+        self.install_step_panel.DeactivateSteps()
+        
+        self.upgrade_steps = ["1. Remove Old Kit", "    A. Remove Toolbar", "    B. Delete Folder", "    C. Remove Commands", "2. Install New Kit", "    A. Select Folders", "    B. Install Kit", "3. Finish"]
+        self.upgrade_step_panel = StepsPanel()
+        self.upgrade_step_panel.AddSteps(self.upgrade_steps, title = "Steps to Upgrade Kit")
+        self.upgrade_step_panel.DeactivateSteps()
+        
+        self.removal_steps = ["1. Remove Toolbar", "2. Delete Folder", "3. Remove Commands", "4. Finish"]
+        self.removal_step_panel = StepsPanel()
+        self.removal_step_panel.AddSteps(self.removal_steps, title = "Steps to Remove Kit")
+        self.removal_step_panel.DeactivateSteps()
+        
+        # some variables
+        self.page_type = PageType.Start
+        self.action = Action.NewInstall
+        self.done = False
+        self.kit_detected = rs.IsAlias('wdGem') or rs.IsAlias('wd1Gem')
+        self.kit_folder = self.GetKitFolder()
+        self.kit_name = "JewelryKit"
+        self.kit_installed = False
+        self.zip_folder = ""
+        self.install_folder = ""
+        self.browse_button_2_clicked = False
+        self.choice = 0
+        self.toolbar_open = IsToolbarOpen()
+        self.closing_toolbar_attempted = False
+        # self.toolbar_already_closed = False
+        self.is_closing_toolbar = False
+        if self.kit_folder:
+            self.folder_deleted = not(os.path.exists(self.kit_folder))
+        else:
+            self.folder_deleted = True
+        self.deleting_folder_attempted = False
+        self.is_deleting_folder = False
+        self.is_removing_commands = False
+        self.folder_could_not_be_deleted = False
+        self.commands_removed = not(rs.IsAlias('wdGem')) and not(rs.IsAlias('wd1Gem'))
+        self.progress_message = ''
+        self.skip = False
+        
+        # some common controls
+        self.rb1 = forms.RadioButton()
+        self.rb1.Checked = True
+        self.rb1.Font = drawing.Font(self.rb1.Font.FamilyName, 12)
+        
+        self.rb2 = forms.RadioButton()
+        self.rb2.Font = drawing.Font(self.rb2.Font.FamilyName, 12)
+        
+        self.folder_selector1 = FolderSelector()
+        self.folder_selector1.button.Click += self.HandleBrowseButton1Click
+        
+        self.folder_selector2 = FolderSelector()
+        self.folder_selector2.button.Click += self.HandleBrowseButton2Click
+        
+        self.btn_next = forms.Button(Text = "Next")
+        self.btn_next.Click += self.HandleNext
+        
+        self.btn_cancel = forms.Button(Text = "Cancel")
+        self.btn_cancel.Click += self.HandleCancel
+
+        self.btn_back = forms.Button(Text = "Back")
+        self.btn_back.Click += self.HandleBack
+
+        self.btn_restart = forms.Button(Text="Restart")
+        self.btn_restart.Click += self.HandleRestart
+        
+        self.btn_install = forms.Button(Text = "Install Kit")
+        self.btn_install.Click += self.HandleInstallButtonClick
+        
+        self.lbl_progress = forms.Label(Text = "Installation Progress...")
+        self.lbl_progress.Font = drawing.Font(self.lbl_progress.Font.FamilyName, 10.5)
+        self.progress_bar = forms.ProgressBar()
+        self.progress_bar.Indeterminate = True
+
+        # dummy default buttons for macs?
+        self.dummy_default = forms.Button()
+        self.dummy_abort = forms.Button()
+        self.DefaultButton = self.dummy_default
+        self.AbortButton = self.dummy_abort
+        
+        self.CreateWarrantyDisclaimerPage()
+
+    # pages (in page order)
+    def CreateWarrantyDisclaimerPage(self):
+        self.page_type = PageType.WarrantyDisclaimer
+        
+        # set step panale to blank step panel
+        self.step_panel = self.blank_step_panel        
+        self.ResetStepPanels()
+            
+        title = forms.Label(Text = "Warranty Disclaimer")
+        title.Font = drawing.Font(title.Font.FamilyName, 14, drawing.FontStyle.Bold)
+        
+        warranty_disclaimer = 'Copyright (c) 2023 WebdunceTV\n\nIf you use this jewelry kit (the kit) or its installer (the installer), you agree to do so at your own risk. The kit and installer are provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement. In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the kit or the installer or the use or other dealings in the kit or the installer.'
+        textarea = forms.TextArea()
+        textarea.Width = 500
+        textarea.Text = warranty_disclaimer
+        textarea.ReadOnly = True
+        textarea.Height = 250
+        textarea.Font = textarea.Font = drawing.Font(textarea.Font.FamilyName, 11)
+     
+        lbl3 = forms.Label(Text = "Click Next if you agree.\nClick Cancel if you do not agree.")
+        lbl3.Font = drawing.Font(lbl3.Font.FamilyName, 11, drawing.FontStyle.None)
+
+        controls = [textarea, lbl3]
+        btns = [self.btn_back, self.btn_next, self.btn_cancel]
+        self.EnableAllNavButtons()
+        self.btn_back.Enabled = False
+
+        page = Page()
+        page.Create("Warranty Disclaimer", controls, btns)
+        self.page = page
+        self.Layout()
+        
+    def CreateChoosePage(self):
+        self.page_type = PageType.Choose
+        
+        self.ResetStepPanels()
+        
+        if self.choice == 0:
+            self.step_panel = self.upgrade_step_panel
+        else:
+            self.step_panel = self.removal_step_panel
+
+        lbl = forms.Label(Text = "A jewelry kit is already installed. Choose an option below.")
+        lbl.Font = drawing.Font(lbl.Font.FamilyName, 12)
+        
+        self.rb1.Text = "Upgrade kit (the old kit will be removed first)"
+        self.rb1.CheckedChanged += self.HandleChoose
+        
+        self.rb2.Text = "Remove kit"
+        self.rb2.CheckedChanged += self.HandleChoose
+        
+        controls = [lbl, self.rb1, self.rb2]
+        btns = [self.btn_back, self.btn_next, self.btn_cancel]
+        self.EnableAllNavButtons()
+        self.btn_back.Enabled = True
+        
+        page = Page()
+        page.Create("Upgrade or Remove?", controls, btns)
+        self.page = page
+        self.Layout()
+
+    def CreateRemoveKitPage(self):
+        self.page_type = PageType.RemoveKit
+        title = "Remove Kit"
+        if self.choice == 0:
+            title = "Remove Old Kit"
+        
+        self.ResetStepPanels()
+
+        # update the upgrade and removal step panels
+        self.upgrade_step_panel.ActivateStep(1)
+        self.upgrade_step_panel.ActivateStep(2)
+       
+        self.removal_step_panel.ActivateStep(1)
+
+        if not self.toolbar_open:            
+            self.upgrade_step_panel.CompleteStep(2)
+            self.upgrade_step_panel.ActivateStep(3)
+
+            self.removal_step_panel.CompleteStep(1)
+            self.removal_step_panel.ActivateStep(2)
+            
+        if self.folder_deleted or self.skip:
+            self.upgrade_step_panel.CompleteStep(3)
+            self.upgrade_step_panel.ActivateStep(4)
+
+            self.removal_step_panel.CompleteStep(2)
+            self.removal_step_panel.ActivateStep(3)
+            
+        if self.commands_removed:
+            self.upgrade_step_panel.CompleteStep(1)
+            self.upgrade_step_panel.CompleteStep(4)
+            
+            self.removal_step_panel.CompleteStep(3)
+
+        # STEP 1 ------------
+        step1_lbl = forms.Label(Text = "Step 1: Remove the Kit's Toolbar")
+        step1_lbl.Font = drawing.Font(step1_lbl.Font.FamilyName, 11)
+        if self.toolbar_open:
+            if not self.closing_toolbar_attempted:
+                step1_ctrl = forms.Button(Text = "  Remove Toolbar  ")
+                step1_ctrl.Click += self.HandleCloseToolbar
+            else:
+                step1_ctrl = forms.Label(Text = "The toolbar could not be removed. See the installation guide for more information.")
+                step1_ctrl.TextColor = drawing.Colors.DarkRed
+                step1_ctrl.Font = drawing.Font(step1_ctrl.Font.FamilyName, 11, drawing.FontStyle.Italic)
+        else:
+            step1_ctrl = forms.Label(Text = "The toolbar has been removed.")
+            step1_ctrl.TextColor = drawing.Colors.DarkGreen
+            step1_ctrl.Font = drawing.Font(step1_ctrl.Font.FamilyName, 11, drawing.FontStyle.Italic)
+
+        # STEP 2 ------------
+        step2_lbl = forms.Label(Text = "Step 2: Delete the Kit's Folder")
+        step2_lbl.Font = drawing.Font(step2_lbl.Font.FamilyName, 11)
+
+        btn_troubleshooter = None
+
+        # if the kit's folder still exists...
+        if not self.folder_deleted:
+            # if the user has opted to skip deleting the kit's folder...
+            if self.skip:
+                # inform user that deleting the folder has been skipped
+                step2_ctrl = forms.Label(Text = "Deleting the kit's folder has been skipped.")
+                step2_ctrl.TextColor = drawing.Colors.DarkRed
+                step2_ctrl.Font = drawing.Font(step2_ctrl.Font.FamilyName, 11, drawing.FontStyle.Italic)
+
+            # if it has not been skipped and if deleting the folder has not been attempted...
+            elif not self.deleting_folder_attempted:
+                # create the delete button
+                step2_ctrl = forms.Button(Text = "  Delete Folder  ")
+                # if the toolbar is still open, disable the delete label and button
+                # as we want the user to delete the toolbar first
+                if self.toolbar_open:
+                    step2_lbl.Enabled = False
+                    step2_ctrl.Enabled = False
+                # if the toolbar is not open, enable the label and button and assign an event to the button
+                else:
+                    step2_lbl.Enabled = True
+                    step2_ctrl.Enabled = True
+                    step2_ctrl.Click += self.HandleDeleteFolder
+
+            # if it has not been skipped and deletion has been attempted...
+            else:
+                # if the deleting is happening right this moment, show a progress bar
+                if self.is_deleting_folder:
+                    step2_ctrl = forms.ProgressBar()
+                    step2_ctrl.Indeterminate = True
+
+                # otherwise...
+                else:
+                    # ...show an error message (because deletion was attempted but the folder still exists)
+                    step2_ctrl = forms.Label(Text = "The folder could not be deleted. Open the trouble shooter for help with this.")
+                    step2_ctrl.TextColor = drawing.Colors.DarkRed
+                    step2_ctrl.Font = drawing.Font(step2_ctrl.Font.FamilyName, 11, drawing.FontStyle.Italic)
+                    
+                    # create a trouble shooter button
+                    #
+                    # NOTE: once the aliases (commands) are deleted in the next step,
+                    # we will no longer be able to figure out the old kit's path.
+                    btn_troubleshooter = forms.Button(Text = "  Open Trouble Shooter  ")
+                    btn_troubleshooter.Click += self.HandleOpenTroubleShooter
+
+        # but if the folder no longer exists,
+        # just inform the user that the folder has been deleted
+        else:
+            step2_ctrl = forms.Label(Text = "The folder has been deleted.")
+            step2_ctrl.TextColor = drawing.Colors.DarkGreen
+            step2_ctrl.Font = drawing.Font(step2_ctrl.Font.FamilyName, 11, drawing.FontStyle.Italic)
+
+        # STEP 3 ------------
+        step3_lbl = forms.Label(Text = "Step 3: Remove the Kit's Commands")
+        step3_lbl.Font = drawing.Font(step3_lbl.Font.FamilyName, 11)
+
+        # if the commands still exist...
+        if rs.IsAlias('wdGem') or rs.IsAlias('wd1Gem'):
+            # ... make a Remove Commands button
+            step3_ctrl = forms.Button(Text = "  Remove Commands  ")
+
+            # if the toolbar is open...
+            if self.toolbar_open:
+                # disable the button
+                step3_lbl.Enabled = False
+                step3_ctrl.Enabled = False
+
+            # but if the toolbar is closed...
+            else:
+                # if the folder has been deleted
+                # or if deleting the folder has been skipped....
+                if self.folder_deleted or self.skip:
+                    # ...enable the button
+                    step3_lbl.Enabled = True
+                    step3_ctrl.Enabled = True
+                    step3_ctrl.Click += self.HandleRemoveCommands
+
+                # otherwise...
+                else:
+                    # disable the button and assign it an event
+                    step3_lbl.Enabled = False
+                    step3_ctrl.Enabled = False
+
+        # but if the commands no longer exist...
+        else:
+            # inform the user of that
+            step3_ctrl = forms.Label(Text="The commands have been removed.")
+            step3_ctrl.TextColor = drawing.Colors.DarkGreen
+            step3_ctrl.Font = drawing.Font(step3_ctrl.Font.FamilyName, 11, drawing.FontStyle.Italic)
+
+        controls = [step1_lbl, step1_ctrl, Spacer(), step2_lbl, step2_ctrl, btn_troubleshooter, Spacer(), step3_lbl, step3_ctrl]
+        btns = [self.btn_back, self.btn_next, self.btn_cancel]
+        self.EnableAllNavButtons()
+        self.btn_next.Enabled = False
+
+        if not self.toolbar_open and (self.folder_deleted or self.skip) and self.commands_removed:
+            lbl_continue = forms.Label(Text = "The kit has been removed, click the button below to continue.")
+            lbl_continue.Font = drawing.Font(lbl_continue.Font.FamilyName, 11)
+            btn_continue = forms.Button(Text="  Continue  ")
+            btn_continue.Click += self.HandleNext
+            controls = [step1_lbl, step1_ctrl, Spacer(), step2_lbl, step2_ctrl, btn_troubleshooter, Spacer(), step3_lbl, step3_ctrl, Spacer(), lbl_continue, btn_continue]
+            self.btn_next.Enabled = True
+
+        page = Page()
+        page.Create(title, controls, btns)
+        self.page = page
+        self.Layout()
+ 
+    def CreateSelectFoldersPage(self):
+        self.page_type = PageType.SelectFolders
+        
+        self.ResetStepPanels()
+        self.upgrade_step_panel.CompleteStep(1)
+        self.upgrade_step_panel.CompleteStep(2)
+        self.upgrade_step_panel.CompleteStep(3)
+        self.upgrade_step_panel.CompleteStep(4)
+        self.upgrade_step_panel.ActivateStep(5)
+        self.upgrade_step_panel.ActivateStep(6)
+        
+        self.install_step_panel.ActivateStep(1)
+        
+        if self.kit_detected:
+            self.step_panel = self.upgrade_step_panel
+        else:
+            self.step_panel = self.install_step_panel
+            
+        lbl = forms.Label(Text = "Select the jewelry kit's zip file:")
+        lbl.Font = drawing.Font(lbl.Font.FamilyName, 12)
+        self.folder_selector1.textbox.Text = self.zip_folder
+        
+        lbl2 = forms.Label(Text = "Select the install location:")
+        lbl2.Font = drawing.Font(lbl2.Font.FamilyName, 12)
+        self.folder_selector2.textbox.Text = self.install_folder
+
+        if self.zip_folder == "":
+            self.folder_selector2.button.Enabled = False
+        else:
+            self.folder_selector2.button.Enabled = True
+            
+            # if kit was detected, autofill install folder with
+            # parent directory of original kit's folder
+            # NOTE: user can still change this if desired
+            if self.kit_detected and not self.browse_button_2_clicked:
+                parent = os.path.dirname(self.kit_folder)
+                new_folder = os.path.join(parent, self.GetKitFolderName())
+                self.folder_selector2.textbox.Text = new_folder
+                self.install_folder = new_folder
+
+        controls = [lbl, self.folder_selector1, Spacer(), lbl2, self.folder_selector2]
+        
+        if self.zip_folder != '' and self.install_folder != '':
+            controls.append(Spacer())
+            lbl = forms.Label(Text="Click the button below to install the kit.")
+            lbl.Font = drawing.Font(lbl.Font.FamilyName, 11)
+            controls.append(lbl)
+            controls.append(self.btn_install)            
+        
+        btns = [self.btn_back, self.btn_next, self.btn_cancel]
+        self.EnableAllNavButtons()
+        self.btn_next.Enabled = False
+        
+        page = Page()
+        page.Create("Select Folders", controls, btns)
+        self.page = page
+        self.Layout()
+
+    def CreateInstallPage(self):
+        self.page_type = PageType.Install
+        
+        self.ResetStepPanels()
+        self.upgrade_step_panel.CompleteStep(1)
+        self.upgrade_step_panel.CompleteStep(2)
+        self.upgrade_step_panel.CompleteStep(3)
+        self.upgrade_step_panel.CompleteStep(4)
+        self.upgrade_step_panel.CompleteStep(5)
+        self.upgrade_step_panel.CompleteStep(6)
+        self.upgrade_step_panel.ActivateStep(7)
+
+        self.install_step_panel.CompleteStep(1)
+        self.install_step_panel.ActivateStep(2)
+
+        if self.kit_detected:
+            self.step_panel = self.upgrade_step_panel
+        else:
+            self.step_panel = self.install_step_panel
+
+        controls = [self.lbl_progress, self.progress_bar]
+        btns = [self.btn_back, self.btn_next, self.btn_cancel]
+        self.DisableAllNavButtons()
+       
+        page = Page()
+        page.Create("Install Kit", controls, btns)
+        self.page = page
+        self.Layout()
+        
+    def CreateFinishPage(self):
+        self.page_type = PageType.Finish
+        self.done = True
+        
+        self.ResetStepPanels()
+        self.upgrade_step_panel.CompleteStep(1)
+        self.upgrade_step_panel.CompleteStep(2)
+        self.upgrade_step_panel.CompleteStep(3)
+        self.upgrade_step_panel.CompleteStep(4)
+        self.upgrade_step_panel.CompleteStep(5)
+        self.upgrade_step_panel.CompleteStep(6)
+        self.upgrade_step_panel.CompleteStep(7)
+        self.upgrade_step_panel.ActivateStep(8)
+        
+        self.removal_step_panel.CompleteStep(1)
+        self.removal_step_panel.CompleteStep(2)
+        self.removal_step_panel.CompleteStep(3)
+        self.removal_step_panel.ActivateStep(4)
+
+        self.install_step_panel.CompleteStep(1)
+        self.install_step_panel.CompleteStep(2)
+        self.install_step_panel.ActivateStep(3)
+
+        if self.kit_detected:
+            if self.choice == 0:
+                self.step_panel = self.upgrade_step_panel
+            else:
+                self.step_panel = self.removal_step_panel
+        else:
+            self.step_panel = self.install_step_panel
+
+        lbl = forms.Label(Text = "You're done! Click the button below to close the installer script.")
+        lbl.Font = drawing.Font(lbl.Font.FamilyName, 12)
+        
+        btn = forms.Button(Text = "  Close  ")
+        btn.Click += self.HandleCancel
+        
+        self.btn_cancel.Text = "Close"
+        self.btn_cancel.Enabled = True
+        
+        if self.action != Action.Uninstall:
+            lbl2 = forms.Label()
+            lbl2.Text = "After you click \"Close\", the toolbar will appear. You must restart Rhino to finalize the toolbar. If you want to dock the toolbar, do that before restarting Rhino."
+            lbl2.Font = drawing.Font(lbl.Font.FamilyName, 12)
+            lbl2.TextColor = drawing.Color.FromArgb(150, 0, 0, 255)            
+            controls = [lbl, lbl2, Spacer(), btn]
+        else:
+            controls = [lbl, btn]
+            
+        btns = [self.btn_back, self.btn_next, self.btn_cancel]
+        self.EnableAllNavButtons()
+        self.btn_back.Enabled = False
+        self.btn_next.Enabled = False
+        
+        self.page = Page()
+        self.page.Create("Done!", controls, btns)
+        self.Layout()
+
+    # some event handlers
+    def HandleBack(self, sender, e):
+        if self.page_type == PageType.Choose:
+            self.CreateWarrantyDisclaimerPage()
+        elif self.page_type == PageType.RemoveKit:
+            # if the commands have not been removed,
+            # but the delete folder section has been skipped,
+            # reset self.deleting_folder_attempted and self.skip
+            if rs.IsAlias('wdGem') or rs.IsAlias('wdGem'):
+                self.deleting_folder_attempted = False
+                self.skip = False
+            self.CreateChoosePage()
+        elif self.page_type == PageType.SelectFolders:
+            self.CreateWarrantyDisclaimerPage()
+            
+    def HandleBrowseButton1Click(self, sender, e):
+        rhino_version = str(rs.ExeVersion())
+        msg = "Select the Jewelry Kit Zip Folder"
+        thefilter = "Jewelry Kit|*JewelryKit*.zip|Zip Files|*.zip|All Files|*.*||"
+        original_zip_folder = self.zip_folder
+        self.zip_folder = rs.OpenFileName(msg, thefilter)
+        
+        
+        if self.zip_folder:            
+            self.folder_selector1.textbox.Text = self.zip_folder
+            if self.install_folder and self.install_folder != "":
+                directory = os.path.dirname(self.install_folder)
+                self.install_folder = os.path.join(directory, self.GetKitFolderName())
+            self.CreateSelectFoldersPage()
+        else:
+            self.zip_folder = original_zip_folder
+            self.CreateSelectFoldersPage()
+
+    def HandleBrowseButton2Click(self, sender, e):
+        self.browse_button_2_clicked = True
+        self.install_folder = rs.BrowseForFolder()
+        if self.install_folder:
+            self.install_folder = os.path.join(self.install_folder, self.GetKitFolderName())
+            self.folder_selector2.textbox.Text = self.install_folder
+        self.CreateSelectFoldersPage()
+        
+    def HandleCancel(self, sender, e):
+        if self.done:
+            if self.action == Action.NewInstall or self.action == Action.Upgrade: OpenToolbar(self)        
+        self.Close()
+        
+    def HandleChoose(self, sender, e):
+        if sender.Checked:
+            if sender is self.rb1:
+                self.choice = 0
+                self.action = Action.Upgrade
+                self.rb2.Checked = False
+                self.step_panel = self.upgrade_step_panel
+            else:
+                self.choice = 1
+                self.action = Action.Uninstall
+                self.rb1.Checked = False
+                self.step_panel = self.removal_step_panel
+                
+            self.Layout()
+        
+    def HandleCloseToolbar(self, sender, e):
+        # record attempt to close toolbar
+        self.closing_toolbar_attempted = True
+        sender.Enabled = False
+        CloseToolbar(self)
+        # t = threading.Thread(target=CloseToolbar, args=[self])
+        # t.start()
+
+    def HandleCopyPath(self, sender, e):
+        rs.ClipboardText(self.kit_folder)
+        rs.MessageBox("The old kit's path has been copied to the clipboard.")
+        
+    def HandleDeleteFolder(self, sender, e):
+        self.deleting_folder_attempted = True
+        # DeleteKitFolder(self)
+        t = threading.Thread(target=DeleteKitFolder, args=[self])
+        t.start()  
+        
+    def HandleInstallButtonClick(self, sender, e):
+        self.CreateInstallPage()
+        t = threading.Thread(target=InstallKit, args=[self])
+        t.start()
+        
+    def HandleNext(self, sender, e):
+        if self.page_type == PageType.WarrantyDisclaimer:
+            if self.kit_detected:
+                self.CreateChoosePage()
+            else:
+                self.CreateSelectFoldersPage()
+        elif self.page_type == PageType.Choose:
+            self.CreateRemoveKitPage()
+        elif self.page_type == PageType.RemoveKit:
+            if self.choice == 0:
+                self.CreateSelectFoldersPage()
+            else:
+                self.CreateFinishPage()
+        elif self.page_type == PageType.SelectFolders:
+            if self.kit_detected:
+                self.CreateRemoveKit()
+            else:
+                self.CreateInstallPage()    
+    
+    def HandleOpenToolbar (self, sender, e):
+        toolbar_folder = os.path.join(self.install_folder, "scripts", "data", "toolbar") 
+        toolbar_name = 'JewelryKit'
+        if 'Free' in self.zip_folder: toolbar_name += 'Free'
+        kit_version = self.GetKitVersion()
+        toolbar_name += kit_version
+        if rs.ExeVersion() >= 8: toolbar_name += '.8'
+        toolbar_filename = toolbar_name + '.rui'
+        toolbar_path = os.path.join(toolbar_folder, toolbar_filename)            
+        rs.OpenToolbarCollection(toolbar_path)
+        
+        rs.Command('_-ShowToolbar "' + toolbar_name + '.JewelryKit"')
+
+        self.CreateFinishPage()
+                
+    def HandleOpenTroubleShooter(self, sender, e):
+        ts_dlg = TroubleShooter()
+        ts_dlg.ViewPathButton.Click += self.HandleViewPath
+        ts_dlg.CopyPathButton.Click += self.HandleCopyPath
+        ts_dlg.SkipCheckBox.CheckedChanged += self.HandleSkipChanged
+        ts_dlg.ShowModal(self)
+                
+    def HandleRemoveCommands(self, sender, e):
+        RemoveCommands(self)
+
+    def HandleRestart(self, sender, e):
+        pass
+
+    def HandleSkipChanged(self, sender, e):
+        if sender.Checked:
+            self.skip = True
+        else:
+            self.skip = False
+
+        if self.install_folder == self.kit_folder:
+            self.install_folder += "b"
+            print(self.install_folder)
+        self.CreateRemoveKitPage()
+    
+    def HandleViewPath(self, sender, e):
+        rs.MessageBox("The kit folder's path is:\n" + self.kit_folder)
+    
+    # other functions
+    def DisableAllNavButtons(self):
+        self.btn_back.Enabled = False
+        self.btn_cancel.Enabled = False
+        self.btn_next.Enabled = False
+        
+    def EnableAllNavButtons(self):
+        self.btn_back.Enabled = True
+        self.btn_cancel.Enabled = True
+        self.btn_next.Enabled = True
+        
+    def GetKitFolder(self):
+        macro = rs.AliasMacro("wdGem")
+        if not macro: macro = rs.AliasMacro('wd1Gem')
+        kit_folder = None
+        if macro:
+            path = macro.replace('!_-RunPythonScript ', '')
+            path = path.replace('"', '')
+            Rhino.RhinoApp.WriteLine(path)
+            script_folder = os.path.dirname(path)
+            kit_folder = os.path.abspath(os.path.join(script_folder, os.pardir))
+        return(kit_folder)
+        
+    def GetKitFolderName(self):
+        kit_version = self.GetKitVersion()
+        free = ""
+        if "Free" in self.zip_folder:
+            free = "_Free"
+        rhino_version = "_Rhino" + str(rs.ExeVersion())
+        return self.kit_name + kit_version + free + rhino_version
+        
+    def GetKitRhinoVersion(self):
+        kit_rhino_version = self.zip_folder.split("Rhino")[1][0]
+        kit_rhino_version = int(kit_rhino_version)
+        return kit_rhino_version    
+        
+    def GetKitVersion(self):
+        zip_filename = os.path.basename(self.zip_folder)
+        zip_removed = zip_filename.replace(".zip", "")
+        kit_version = zip_removed.split(self.kit_name)[1]
+        kit_version = kit_version.split("_")[0]
+        return kit_version 
+
+    def KitAndRhinoVersionsMatch(self):
+        kit_rhino_version = int(self.GetKitRhinoVersion())
+        rhino_version = rs.ExeVersion()
+        return (kit_rhino_version == rhino_version)
+        
+    def Layout(self):
+        layout = forms.DynamicLayout()
+        layout.DefaultSpacing = drawing.Size(5,5)
+        layout.AddRow(self.step_panel, self.page)
+
+        self.Content = layout
+        
+    def ResetStepPanels(self):
+        # reset all step panels
+        self.install_step_panel.DeactivateSteps()
+        self.removal_step_panel.DeactivateSteps()
+        self.upgrade_step_panel.DeactivateSteps()
+        
+    def UpdateProgressLabel(self):
+        self.lbl_progress.Text = self.progress_message
+
+# some helper functions used by the main form       
+def CloseToolbar(dlg):
+    names = rs.ToolbarCollectionNames()
+    if names:
+        for name in names:
+            if "JewelryKit" in name:
+                dlg.toolbar_open = not(rs.CloseToolbarCollection(name, False))
+
+    # remove old jewelrykit toolbar xml files from Rhino's scheme folder
+    data_folder = Rhino.ApplicationSettings.FileSettings.GetDataFolder(True)
+    settings_folder = os.path.join(data_folder, 'settings')
+    scheme_folder = os.path.join(settings_folder, 'Scheme__Default')
+    if os.path.exists(scheme_folder):
+        file_list = os.listdir(scheme_folder)
+        for f in file_list:
+            if 'JewelryKit' in f:
+                path = os.path.join(scheme_folder, f)
+                os.remove(path)
+
+    dlg.CreateRemoveKitPage()
+    
+def DeleteKitFolder(dlg):
+    dlg.is_deleting_folder = True
+    forms.Application.Instance.Invoke(dlg.CreateRemoveKitPage)
+
+    try:
+        shutil.rmtree(dlg.kit_folder)
+        dlg.folder_deleted = True
+    except:
+        dlg.folder_deleted = False
+        dlg.folder_could_not_be_deleted = True
+
+    dlg.is_deleting_folder = False    
+    forms.Application.Instance.Invoke(dlg.CreateRemoveKitPage)
+    
+def InstallKit(dlg):
+    # unzip kit
+    rhino_version = rs.ExeVersion()
+    dlg.progress_message = "Preparing to unzip new kit..."
+    forms.Application.Instance.Invoke(dlg.UpdateProgressLabel)
+    time.sleep(1)
+    with zipfile.ZipFile(dlg.zip_folder) as zipObj:
+        names = zipObj.namelist()        
+        for name in names:
+            if "materials" in name:
+                if (rhino_version == 6 and "6" in name) or (rhino_version == 7 and "7" in name) or (rhino_version > 7 and "8" in name):
+                    dlg.progress_message = "Unzipping: " + os.path.basename(name)
+                    forms.Application.Instance.Invoke(dlg.UpdateProgressLabel)
+                    t = threading.Thread(target=zipObj.extract, args=[name, dlg.install_folder])
+                    t.start()
+                    t.join()
+                    # zipObj.extract(name, dlg.install_folder)
+            else:
+                dlg.progress_message = "Unzipping: " + os.path.basename(name)
+                forms.Application.Instance.Invoke(dlg.UpdateProgressLabel)
+                t = threading.Thread(target=zipObj.extract, args=[name, dlg.install_folder])
+                t.start()
+                t.join()
+                # zipObj.extract(name, dlg.install_folder)
+
+    # add commands
+    dlg.progress_message = "Updating commands..."
+    forms.Application.Instance.Invoke(dlg.UpdateProgressLabel)
+    time.sleep(1)
+    script_folder = os.path.join(dlg.install_folder, "scripts")
+    potential_names = os.listdir(script_folder)
+    for name in potential_names:
+        if "wd" in name:
+            cmd = name.split(".")[0]
+            macro = ""
+            if ".gh" in name:
+                macro = '!_-Grasshopper _Document _Open "' + os.path.join(script_folder, cmd + '.gh') + '" _Enter'
+            else:
+                macro = '!_-RunPythonScript "' + os.path.join(script_folder, cmd + '.py') + '"'
+            
+            rs.AddAlias(cmd, macro)
+            
+    # Delete and rename the toolbar files as needed...
+    # dlg.progress_message = "Updating the toolbar file..." + os.path.basename(name)
+    # forms.Application.Instance.Invoke(dlg.UpdateProgressLabel)
+    # toolbar_folder = os.path.join(dlg.install_folder, "scripts", "data", "toolbar")
+    # kit_name = "JewelryKit"
+    # if "Free" in dlg.install_folder:
+    #     kit_name = "JewelryKitFree"
+    # toolbar_path = os.path.join(toolbar_folder, kit_name + ".rui") 
+    # toolbar_path8 = os.path.join(toolbar_folder, kit_name + "8.rui")
+    # toolbar_path_with_version = os.path.join(toolbar_folder, kit_name + dlg.GetKitVersion() + ".rui")
+    
+    # if rhino_version < 8:
+    #     os.remove(toolbar_path8)
+    #     try:
+    #         # os.rename(toolbar_path, toolbar_path_with_version)
+    #         shutil.move(toolbar_path, toolbar_path_with_version)
+    #     except Exception as e:
+    #         Rhino.RhinoApp.WriteLine(str(e))
+    # else:
+    #     os.remove(toolbar_path)
+    #     try:
+    #         # os.rename(toolbar_path8, toolbar_path_with_version)
+    #         shutil.move(toolbar_path8, toolbar_path_with_version)
+    #     except Exception as e:
+    #         Rhino.RhinoApp.WriteLine(str(e))    
+
+    dlg.kit_installed = True            
+    forms.Application.Instance.Invoke(dlg.CreateFinishPage)
+
+def IsToolbarOpen():
+    is_open = False
+    tb_names = rs.ToolbarCollectionNames()
+    if tb_names:
+        for name in tb_names:
+            if "JewelryKit" in name:
+                is_open = True
+    return is_open
+
+def OpenToolbar(dlg):
+    kit_name = "JewelryKit"
+    if "Free" in dlg.zip_folder:
+        kit_name += "Free"
+    kit_name += dlg.GetKitVersion()
+    if rs.ExeVersion() >= 8:
+        kit_name += '.8'
+    toolbar_folder = os.path.join(dlg.install_folder, "scripts", "data", "toolbar")
+    toolbar_path = os.path.join(toolbar_folder, kit_name + ".rui")  
+    print(toolbar_path)       
+    rs.OpenToolbarCollection(toolbar_path)    
+    rs.Command("_-ShowToolbar \"" + kit_name + ".JewelryKit\"")
+
+def RemoveCommands(dlg):
+    dlg.is_removing_commands = True
+    dlg.CreateRemoveKitPage()
+    aliases = rs.AliasNames()
+    for alias in aliases:
+        macro = rs.AliasMacro(alias)
+        if ("wd" in alias) and "JewelryKit" in macro:
+            rs.DeleteAlias(alias)
+    dlg.is_removing_commands = False
+    dlg.commands_removed = True
+    dlg.CreateRemoveKitPage()
+    
+
+
+# the main code
+if __name__ == "__main__":        
+    dialog = Installer()
+    if rs.ExeVersion() > 6:
+        parent = Rhino.UI.RhinoEtoApp.MainWindowForDocument(sc.doc)
+    else:
+        parent = Rhino.UI.RhinoEtoApp.MainWindow
+    Rhino.UI.EtoExtensions.ShowSemiModal(dialog, sc.doc, parent)
+
+
+
+
+
+
+
+

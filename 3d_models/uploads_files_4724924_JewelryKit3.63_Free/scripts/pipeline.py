@@ -1,0 +1,116 @@
+#! python 2
+import Rhino
+import Rhino.Geometry as rg
+import System
+
+
+class Colors:
+    POINT_COLOR = System.Drawing.Color.FromArgb(230, 230, 230)
+    CURVE_COLOR = System.Drawing.Color.FromArgb(200, 30, 30)
+    SURFACE_COLOR = System.Drawing.Color.FromArgb(230, 50, 50)
+    CUTTER_COLOR =  System.Drawing.Color.FromArgb(230, 150, 0)
+    GEM_COLOR_LT = System.Drawing.Color.FromArgb(150, 200, 255)
+    GEM_COLOR_DK = System.Drawing.Color.FromArgb(50, 150, 255)
+    PRONG_COLOR = System.Drawing.Color.FromArgb(125, 38, 205)
+
+class ColorsAndMaterials:
+    specular = System.Drawing.Color.FromArgb(255, 255, 255)
+    ambient = System.Drawing.Color.Empty
+    emission = System.Drawing.Color.Empty
+    shine = 0.5
+    alpha = 178
+    alpha2 = 0.45
+
+    # object colors
+    PointColor = System.Drawing.Color.FromArgb(alpha, 230, 230, 230)
+    PointColor2 = System.Drawing.Color.FromArgb(100, 230, 230, 230)
+    CurveColor = System.Drawing.Color.FromArgb(alpha, 200, 30, 30)
+    CurveColor2 = System.Drawing.Color.FromArgb(200, 30, 30)
+    CurveColor3 = System.Drawing.Color.FromArgb(150, 200, 30, 30)
+    CurveColorDark = System.Drawing.Color.FromArgb(150, 10, 10)
+    CurveColorLight = System.Drawing.Color.FromArgb(250, 50, 50)
+    SurfaceColor = System.Drawing.Color.FromArgb(alpha, 230, 50, 50)
+    BrepColor = System.Drawing.Color.FromArgb(230, 50, 50)
+    CutterColor = System.Drawing.Color.FromArgb(230, 150, 0)
+    GemColorLight = System.Drawing.Color.FromArgb(150, 200, 255)
+    GemColorDark = System.Drawing.Color.FromArgb(76, 147, 224)
+    ProngColor = System.Drawing.Color.FromArgb(125, 38, 205)
+    ProngColor2 = System.Drawing.Color.FromArgb(175, 88, 255)
+    TransparentProngColor = System.Drawing.Color.FromArgb(100, 125, 38, 205)
+    EdgeColor = System.Drawing.Color.FromArgb(190, 0, 0, 0)
+    EdgeColor2 = System.Drawing.Color.FromArgb(150, 0, 0, 0)
+    GemPlaneColor = System.Drawing.Color.FromArgb(0, 0, 255)
+
+    # object materials
+    GeneralMaterial = Rhino.Display.DisplayMaterial(BrepColor, specular, ambient, emission, shine, alpha2)
+    OpaqueMaterial = Rhino.Display.DisplayMaterial(BrepColor, specular, ambient, emission, shine, 0)
+    VeryTransparentMaterial = Rhino.Display.DisplayMaterial(BrepColor, specular, ambient, emission, shine, 0.9)
+    VeryTransparentGemMaterial = Rhino.Display.DisplayMaterial(GemColorLight, specular, ambient, emission, shine, 0.9)
+    GemMaterialLight = Rhino.Display.DisplayMaterial(GemColorLight, specular, ambient, emission, shine, alpha2)
+    GemMaterialDark = Rhino.Display.DisplayMaterial(GemColorDark, specular, ambient, emission, shine, alpha2)
+    CutterMaterial = Rhino.Display.DisplayMaterial(CutterColor, specular, ambient, emission, shine, alpha2)
+    ProngMaterial = Rhino.Display.DisplayMaterial(ProngColor2, specular, ambient, emission, shine, alpha2)
+    VeryTransparentProngMaterial = Rhino.Display.DisplayMaterial(ProngColor2, specular, ambient, emission, shine, 0.8)
+    GemPlaneMaterial = Rhino.Display.DisplayMaterial(GemPlaneColor, specular, ambient, emission, shine, alpha2)
+    RopeMaterial = Rhino.Display.DisplayMaterial(BrepColor, specular, ambient, emission, shine, 0.2)
+
+
+class DrawConduit(Rhino.Display.DisplayConduit):
+    def __init__(self, parent):
+        super(DrawConduit, self).__init__()
+        self.Parent = parent
+        self.EdgeColor = System.Drawing.Color.FromArgb(190, 0, 0, 0)
+        self.EdgeColor2 = System.Drawing.Color.FromArgb(190, 0, 0, 0)
+        self.EdgeColor3 = System.Drawing.Color.FromArgb(190, 0, 0, 0)
+
+    # override CalculateBoundingBox
+    def CalculateBoundingBox(self, e):
+        for obj in self.Parent.RenderObjects:
+            if hasattr(obj, 'GetBoundingBox'):
+                e.IncludeBoundingBox(obj.GetBoundingBox(False))
+        # minimum render area
+        e.IncludeBoundingBox(rg.BoundingBox(rg.Point3d(-200, -200, -200), rg.Point3d(200, 200, 200)))
+
+    def DrawObjects(self, objects, e):
+        for data in objects:
+            obj = data[0]
+            mtl = data[1] # can be a color or material
+
+            if type(obj) == rg.Point3d:
+                e.Display.DrawPoint(obj, Rhino.Display.PointStyle.Circle, 5, mtl)
+            elif type(obj) == rg.Curve or type(obj) == rg.NurbsCurve or type(obj) == rg.ArcCurve or type(obj) == rg.LineCurve or type(obj) == rg.PolyCurve or type(obj) == rg.PolylineCurve:
+                e.Display.DrawCurve(obj, mtl, 3)
+            elif type(obj) == rg.Surface:
+                e.Display.DrawSurface(obj, mtl, 3)
+            elif type(obj) == rg.Brep:
+                e.Display.DrawBrepShaded(obj, mtl)
+            elif type(obj) == rg.Mesh:
+                e.Display.DrawMeshShaded(obj, mtl)
+            elif type(obj) == rg.TextDot:
+                e.Display.DrawDot(obj.Point, obj.Text)
+            elif type(obj) == rg.Sphere:
+                e.Display.DrawSphere(obj, mtl, 1)
+
+    def PreDrawObjects(self, e):
+        if hasattr(self.Parent, 'EdgeCurves'):
+            for crv in self.Parent.EdgeCurves:
+                e.Display.DrawCurve(crv, self.EdgeColor, 2)
+        
+        if hasattr(self.Parent, 'EdgeCurves2'):
+            for crv in self.Parent.EdgeCurves2:
+                e.Display.DrawCurve(crv, self.EdgeColor2, 2)
+
+        if hasattr(self.Parent, 'EdgeCurves3'):
+            for crv in self.Parent.EdgeCurves3:
+                e.Display.DrawCurve(crv, self.EdgeColor3, 2)
+
+    # override PostDrawObjects
+    def PostDrawObjects(self, e):
+        if hasattr(self.Parent, 'RenderObjects'):
+            self.DrawObjects(self.Parent.RenderObjects, e)
+
+    # override DrawOverlay
+    def DrawOverlay(self, e):
+        if hasattr(self.Parent, 'OverlayObjects'):
+            self.DrawObjects(self.Parent.OverlayObjects, e)
+

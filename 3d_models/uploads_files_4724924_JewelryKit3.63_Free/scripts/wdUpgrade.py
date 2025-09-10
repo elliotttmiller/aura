@@ -1,0 +1,78 @@
+#! python 2
+
+import rhinoscriptsyntax as rs
+import Rhino
+import Eto
+import Eto.Drawing as drawing
+import Eto.Forms as forms
+import scriptcontext as sc
+
+
+
+class wdDialog(forms.Dialog):
+    def __init__(self):
+        super(wdDialog, self).__init__()
+        
+        if rs.ExeVersion() >= 8:
+            Rhino.UI.EtoExtensions.UseRhinoStyle(self)
+        
+        self.Title = "Upgrade to Full Version"
+        self.Padding = drawing.Padding(15)
+
+#        self.label = forms.Label(Text = "The full version has...\n- 48 more gems,\n- 59 more materials, &&\n- 5 more tools!")
+        self.label = forms.Label()
+        self.label.Text = "The full version has more gems, more materials, and more tools!\nYou can get the full version at..."
+        # self.label.TextColor = drawing.Colors.DarkRed
+        self.label.Font = drawing.Font(self.label.Font.FamilyName, 12, drawing.FontStyle.Bold)
+        
+        self.textbox = forms.TextBox()
+        self.textbox.Text = "www.cgtrader.com/3d-models/various/various-models/rhino-library-for-jewelry-cad"
+        self.textbox.ReadOnly = True
+        
+        self.copied = forms.Label()
+        self.copied.Font = drawing.Font(self.label.Font.FamilyName, 8, drawing.FontStyle.None)
+        
+        self.cancel = forms.Button()
+        self.cancel.Text = "Close"
+        self.cancel.Click += self.HandleCancel
+        
+        self.copyurl = forms.Button()
+        self.copyurl.Text = "Copy URL"
+        self.copyurl.Click += self.HandleCopyURL
+        
+        self.AbortButton = self.cancel
+        self.DefaultButton = self.copyurl
+        
+        self.Layout()
+        
+    def HandleCancel(self, sender, e):
+        self.Close()
+        
+    def HandleCopyURL(self, sender, e):
+        rs.ClipboardText("www.cgtrader.com/3d-models/various/various-models/rhino-library-for-jewelry-cad")
+        self.copied.Text = "Copied "
+        
+    def Layout(self):
+        layout = forms.DynamicLayout()
+        layout.DefaultSpacing = drawing.Size(5,5)
+        layout.AddRow(self.label)
+        layout.AddRow(None)
+        layout.AddRow(self.textbox)
+        layout.AddSeparateRow(None, self.copied)
+        layout.AddRow(None)
+        layout.AddRow(None)
+        layout.AddRow(None)
+        layout.AddSeparateRow(None, self.copyurl, self.cancel)
+
+        self.Content = layout
+ 
+
+
+# the main code
+if __name__ == "__main__":        
+    dialog = wdDialog()
+    if rs.ExeVersion() > 6:
+        parent = Rhino.UI.RhinoEtoApp.MainWindowForDocument(sc.doc)
+    else:
+        parent = Rhino.UI.RhinoEtoApp.MainWindow
+    Rhino.UI.EtoExtensions.ShowSemiModal(dialog, sc.doc, parent)

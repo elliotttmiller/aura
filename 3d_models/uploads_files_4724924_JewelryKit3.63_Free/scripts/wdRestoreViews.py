@@ -1,0 +1,38 @@
+#! python 2
+
+import rhinoscriptsyntax as rs
+import Rhino.Geometry as rg
+import os
+
+macro = rs.AliasMacro('wdGem')
+wd1gem_script = macro.replace('!_-RunPythonScript ', '')
+wd1gem_script = wd1gem_script.replace('"', '')
+script_folder = os.path.dirname(wd1gem_script)
+data_folder = os.path.join(script_folder, "data")
+
+is_free = True if "Free" in script_folder else False
+
+rs.Command('_4View _Enter _4View _Enter')
+rs.Command('_GumballAlignment _World')
+
+# below are some other zoom out possibilities,
+# but so far I like 4View the best
+
+# rs.ZoomExtents(None, True)
+
+# x = 10
+# y = 10
+# z = 15
+
+# bbox = [
+#     rg.Point3d(-x, -y, -z),
+#     rg.Point3d(x, -y, -z),
+#     rg.Point3d(x, y, -z),
+#     rg.Point3d(-x, y, -z),
+#     rg.Point3d(-x, -y, z),
+#     rg.Point3d(x, -y, z),
+#     rg.Point3d(x, y, z),
+#     rg.Point3d(-x, y, z)
+# ]
+
+# rs.ZoomBoundingBox(bbox, None, True)

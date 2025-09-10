@@ -1,0 +1,1345 @@
+#! python 2
+
+import System
+import rhinoscriptsyntax as rs
+import scriptcontext as sc
+import Rhino
+import Rhino.Geometry as rg
+import os
+import Eto
+import Eto.Drawing as drawing
+import Eto.Forms as forms
+import math
+from sliders import SliderGroup
+import SpatialData
+import Rhino.RhinoApp as app
+import System.Collections.Generic.IEnumerable as IEnumerable
+from components import ComponentGenerator as cg
+from pipeline import DrawConduit
+from pipeline import ColorsAndMaterials as cam
+
+def print2(*args):
+    txt = ""
+    for i in range(len(args)):
+        txt += str(args[i])
+        if i < len(args)-1: txt += ', '
+    app.WriteLine(txt)
+
+macro = rs.AliasMacro('wdGem')
+wd1gem_script = macro.replace('!_-RunPythonScript ', '')
+wd1gem_script = wd1gem_script.replace('"', '')
+script_folder = os.path.dirname(wd1gem_script)
+data_folder = os.path.join(script_folder, "data")
+
+is_free = True if "Free" in script_folder else False
+
+def IsGem(rhino_ob, geo, component_index):
+    is_gem = False
+    name = rhino_ob.Name
+    if name == 'wdGem': is_gem = True
+    return is_gem 
+               
+class wdDialog(forms.Dialog):
+    def __init__(self):
+        super(wdDialog, self).__init__()
+        # form stuff        
+        self.LabelWidth = 100
+        self.Title = 'Head Builder'
+        self.Padding = drawing.Padding(15)
+        self.AutoSize = True
+        self.Layout = None
+        self.GeneralTabLayout = None
+        self.ProngTabLayout = None
+        self.Closing += self.OnDialogClosing
+        if rs.ExeVersion() >= 8:
+            Rhino.UI.EtoExtensions.UseRhinoStyle(self)
+            
+        if rs.ExeVersion == 6:
+            self.AutoSize = False
+            self.Height = 680
+        # else:
+        #     self.AutoSize = False
+        #     self.Height = 652
+
+        # overlay visualization stuff
+        self.Conduit = DrawConduit(self)
+        self.Conduit.Enabled = True
+        self.RenderObjects = []
+        self.EdgeCurves = []
+        self.Conduit.EdgeColor = cam.ProngColor
+        self.TempObs = []
+
+
+        self.Configurations = {
+            'Baguette' : ['2 (Ends)', '4 (Corners)'],
+            'Round' : ['2 (Fixed)', '3 (Fixed)', '3 (1 Fixed, 2 Adjustable)', '4 (Fixed)', '4 (Fixed, X)', '4 (Adjustable)', '5 (Fixed)', '6 (Fixed)', '6 (2 Fixed, 4 Adjustable)', '7 (Fixed)', '8 (Fixed)'],
+            'Oval' : ['2 (Ends)', '4 (Adjustable)', '6 (2 Fixed, 4 Adjustable)'],
+            'Marquise' : ['2 (Ends)', '4 (Adjustable)', '6 (2 Fixed, 4 Adjustable)'],
+            'Pear' : ['2 (Ends)', '3 (1 Fixed, 2 Adjustable)', '4 (2 Fixed, 2 Adjustable)', '5 (1 Fixed, 4 Adjustable)', '6 (2 Fixed, 4 Adjustable)'],
+            'Heart' : ['3 (1 Fixed, 2 Adjustable)', '5 (1 Fixed, 4 Adjustable)'],
+            'Heart Base' : ['3 (1 Fixed, 2 Adjustable)', '5 (1 Fixed, 4 Adjustable)'],
+            'Cushion' : ['4 (Adjustable)'],
+            'Hexagon' : ['6 (Corners)', '6 (Edges)', '6 (2 Fixed, 4 Adjustable)'],
+            'Octagon' : ['8 (Corners)', '8 (Edges)'],
+            'Asscher' : ['4 (Flat Corners)'],
+            'Emerald (Square)' : ['4 (Flat Corners)'],
+            'Emerald' : ['4 (Flat Corners)'],
+            'Radiant (Square)' : ['4 (Flat Corners)'],
+            'Radiant' : ['4 (Flat Corners)'],
+            'Princess' : ['4 (Corners)'],
+            'Square' : ['4 (Corners)'],
+            'Trilliant' : ['3 (Corners)'],
+            'Trillion' : ['3 (Corners)'],
+            'Triangle' : ['3 (Corners)']
+        }
+
+        self.Corners = {
+            'Asscher' : (-4.167,4.167,0.000),
+            'Emerald (Square)' : (-4.375,4.375,0.000),
+            'Emerald' : (-4.375,6.875,0.000),
+            'Radiant (Square)' : (-4.216,4.216,0.000),
+            'Radiant' : (-4.216,6.716,0.000),
+            'Trilliant' : (-5.000,2.887,0.000),
+            'Trillion' : (-5.000,2.887,0.000),
+            'Trillion2' : (-4.925,2.844,0.000)
+        }
+
+        # base gem variables
+        self.BaseGem = None
+        self.BaseOutline = None
+        self.BaseBoundingBox = None
+        self.BaseWidth = 0
+        self.BaseLength = 0
+        self.BaseDepth = 0
+        self.BaseCrownHeight = 0
+        self.BasePavilionDepth = 0
+
+        # gem variables
+        self.GemBoundingBox = None
+        self.Gem = None
+        self.GemID = None
+        self.GemOutline = None
+        self.GemPlane = None
+        self.GemShape = None
+        self.GemType = None
+        self.GemIsRound = False
+        self.GemWidth = 0
+        self.GemLength = 0
+        self.GemDepth = 0
+        self.GemCrownHeight = 0
+        self.GemPavilionDepth = 0
+        self.GemHasVerticalSymmetry = True
+
+        # sizing circle
+        self.SizingCircleID = None
+        self.SizingCircle = None
+
+        # input variables
+        self.NoGemMsg = 'NO GEM SET!'
+        self.NoSizingCircleMsg = 'NO SIZING CIRCLE SET!'
+        self.NoConfigurationMsg = '----'
+        self.NotAvailableMsg = 'NOT AVAILABLE'
+        self.MinProngSize = 0.4
+        self.MaxProngSize = 3.0
+        self.ProngsLines = 'Prongs Only'
+        self.FixedProngSize = 0.8
+        self.AdjustableProngSize = 0.8
+        self.ProngConfiguration = '2 (Ends)'
+        self.ProngCount = 2
+        self.ProngHeight = 0.0
+        self.Depth = 1.0
+        self.Overlap = 0.20
+        self.MaxOverlap = 0.5
+        self.BottomScaleX = 0
+        self.BottomScaleY = 0
+        self.RotationAngle = 0
+        self.ProngPosition = 0.5
+        self.ProngPosition2 = 0.75
+        self.HOffset = 0.1
+        self.VOffset = 0.2
+        self.WallThickness = 1.0
+        self.Rail1Depth = 1.0
+        self.Rail2Depth = 1.0
+        self.PullToFinger = False
+
+        # calculated variables
+        self.ScaleFactorX = 1
+        self.ScaleFactorY = 1
+        self.ScaleFatorZ = 1
+
+        # output variables
+        self.Prongs = []
+        self.ProngLines = []
+        self.Point = None
+        self.ProngOutline = None
+        self.UnderBezel = None
+        self.Rail1 = None
+        self.Rail2 = None
+        self.HollowCutter = None
+        self.ProngPoints = []
+        self.BottomProngPoints = []
+        self.Cylinder = None
+        self.Cylinder2 = None
+        self.UnderBezelMesh = None
+        self.Rail1Mesh = None
+        self.Rail2Mesh = None
+        self.ProngMeshes = []
+
+        # general tab page
+        self.GeneralTab = forms.TabPage()
+        self.GeneralTab.Padding = drawing.Padding(10,20,10,10)
+        self.GeneralTab.Text = 'General'
+        
+        # prong tab page
+        self.ProngTab = forms.TabPage()
+        self.ProngTab.Padding = drawing.Padding(10,15,10,10)
+        self.ProngTab.Text = 'Prongs'
+
+        # tab control
+        self.Tabs = forms.TabControl()
+        self.Tabs.Pages.Add(self.GeneralTab)
+        self.Tabs.Pages.Add(self.ProngTab)   
+        self.Tabs.Height = 492
+       
+        # input controls (main - above tabs)
+        self.GemShapeLabelGroup, self.GemShapeLabel = cg.CreateLabelGroup('Gem Shape: ', self.NoGemMsg, 70) 
+        self.SizingCircleLabelGroup, self.SizingCircleLabel = cg.CreateLabelGroup('Sizing Circle: ', self.NoSizingCircleMsg, 70)        
+
+        # input controls (general tab)
+        self.UnderBezelModeDropDownGroup, self.UnderBezelModeDropDown = cg.CreateDropDownGroup('Underbezel / Rails: ', self.LabelWidth, ['Underbezel', 'Gallery Rails', 'None'], self.OnFormChanged)
+        self.PullToFingerCheckBoxGroup, self.PullToFingerCheckBox = cg.CreateCheckBoxGroup('Trim to Finger : ', self.LabelWidth, self.PullToFinger, self.OnFormChanged)
+
+        self.DepthSliderGroup = cg.CreateSliderGroup('Depth: ', self.LabelWidth, 0.1, 10.0, 2, self.Depth, self.Solve)
+        self.HOffsetSliderGroup = cg.CreateSliderGroup('H Offset: ', self.LabelWidth, -0.2, 0.5, 2, self.HOffset, self.Solve)        
+        self.VOffsetSliderGroup = cg.CreateSliderGroup('V Offset: ', self.LabelWidth, 0.0, 1.0, 2, self.VOffset, self.Solve)
+        self.ThicknessSliderGroup = cg.CreateSliderGroup('Wall Thickness: ', self.LabelWidth, 0.5, 3.0, 2, self.WallThickness, self.Solve)
+
+        self.Rail1DepthSliderGroup = cg.CreateSliderGroup('Rail 1 Depth: ', self.LabelWidth, 0.6, 5.0, 2, self.Rail1Depth, self.Solve)
+        self.Rail2DepthSliderGroup = cg.CreateSliderGroup('Rail 2 Depth: ', self.LabelWidth, 0.6, 5.0, 2, self.Rail2Depth, self.Solve)  
+
+        self.BottomScaleXSliderGroup = cg.CreateSliderGroup('Taper (X): ', self.LabelWidth, -0.5, 0.9, 2, self.BottomScaleX, self.Solve)
+        self.BottomScaleYSliderGroup = cg.CreateSliderGroup('Taper (Y): ', self.LabelWidth, -0.5, 0.9, 2, self.BottomScaleY, self.Solve)
+        self.LockBottomScalesCheckBoxGroup, self.LockBottomScalesCheckBox = cg.CreateCheckBoxGroup('Lock : ', self.LabelWidth, True, self.OnFormChanged)  
+
+        # input controls (prongs)
+        self.ConfigurationDropDownGroup, self.ConfigurationDropDown = cg.CreateDropDownGroup('Configuration: ', self.LabelWidth, None, self.OnFormChanged) 
+        self.ConfigurationLabelGroup, self.ConfigurationLabel = cg.CreateLabelGroup('Configuration: ', self.NoConfigurationMsg, self.LabelWidth) 
+        self.ProngsLinesDropDownGroup, self.ProngsLinesDropDown = cg.CreateDropDownGroup('Prongs / Lines: ', self.LabelWidth, ['Prongs Only', 'Prongs and Lines', 'Lines Only'], self.OnFormChanged)
+
+        self.FixedProngSizeSliderGroup = cg.CreateSliderGroup('Fixed Prong Size: ', self.LabelWidth, self.MinProngSize, self.MaxProngSize, 2, self.FixedProngSize, self.Solve)
+        self.AdjustableProngSizeSliderGroup = cg.CreateSliderGroup('Adj. Prong Size: ', self.LabelWidth, self.MinProngSize, self.MaxProngSize, 2, self.AdjustableProngSize, self.Solve)
+        self.ProngHeightSliderGroup = cg.CreateSliderGroup('Prong Height: ', self.LabelWidth, -2.0, 2.0, 2, self.ProngHeight, self.Solve)
+        self.OverlapSliderGroup = cg.CreateSliderGroup('Overlap: ', self.LabelWidth, 0.0, 0.40, 2, self.Overlap, self.Solve)
+        self.ProngPositionSliderGroup = cg.CreateSliderGroup('Adj. Prong Pos 1: ', self.LabelWidth, 0.0, 1.0, 2, self.ProngPosition, self.Solve)
+        self.ProngPositionSliderGroup2 = cg.CreateSliderGroup('Adj. Prong Pos 2: ', self.LabelWidth, 0.0, 1.0, 2, self.ProngPosition2, self.Solve)
+        self.ProngPositionLabelGroup, self.ProngPositionLabel = cg.CreateLabelGroup('Position: ', self.NotAvailableMsg, self.LabelWidth)
+        self.RotationSliderGroup = cg.CreateSliderGroup('Rotation Angle: ', self.LabelWidth, 0, 180, 0, self.RotationAngle, self.Solve)
+        self.RotationLabelGroup, self.RotationLabel = cg.CreateLabelGroup('Rotation Angle: ', self.NotAvailableMsg, self.LabelWidth)
+
+        # bottom buttons
+        self.SetButton = cg.CreateButton('Set Gem', self.OnSetButtonClick)
+        self.SetButton2 = cg.CreateButton('Set Sizing Circle', self.OnSetButton2Click)
+        self.SetButton2.Width = 128
+        self.FinalizeButton = cg.CreateButton('Finalize', self.OnFinalizeButtonClick)
+        self.CancelButton = cg.CreateButton('Cancel', self.OnCancelButtonClick)
+
+        # the default button must be set for Macs (might as well set the abort button, too.)
+        self.DefaultButton = self.SetButton
+        self.AbortButton = self.CancelButton
+        
+        # lay it out and run the solver
+        self.LayoutForm()
+        self.Solve(self)
+
+    def AddObjectsToDocument(self, objects, layer_name, layer_color):
+        if not rs.IsLayer(layer_name):
+            rs.AddLayer(layer_name, layer_color)
+
+        layer = sc.doc.Layers.FindName(layer_name)
+        atts = Rhino.DocObjects.ObjectAttributes()
+        atts.LayerIndex = layer.Index
+
+        obj_ids = []
+        for obj in objects:
+            obj_ids.append(sc.doc.Objects.Add(obj, atts))
+
+        return obj_ids
+
+    def DisposeObject(self, ob):
+        if hasattr(ob,'Dispose'): ob.Dispose()
+
+    def DisposeObjects(self, obs):
+        for ob in obs:
+            self.DisposeObject(ob)
+
+    def DisposeRenderObjects(self):
+        if hasattr(self, 'RenderObjects'):
+            for ob in self.RenderObjects:
+                self.DisposeObject(ob)
+
+        if hasattr(self, 'OverlayObjects'):
+            for ob in self.OverlayObjects:
+                self.DisposeObject(ob)
+
+        if hasattr(self, 'EdgeCurves'):
+            for ob in self.EdgeCurves:
+                self.DisposeObject(ob)
+
+    def DisposeTempObs(self):
+        for ob in self.TempObs:
+            if isinstance(ob, list):
+                for x in ob:
+                    self.DisposeObject(x)
+            else:
+                self.DisposeObject(ob)
+
+    def GetDimensionsFromBoundingBox(self, bbox):
+        width = bbox.Max.X - bbox.Min.X
+        length = bbox.Max.Y - bbox.Min.Y
+        depth = bbox.Max.Z - bbox.Min.Z
+        return width, length, depth
+
+    def GetFixedAndAdjustableProngCount(self):
+        config_string = self.ProngConfiguration
+        config_string = config_string.replace(' ', '')
+        config_string = config_string[1::]
+        config_string = config_string[1:-1]
+        config_string = config_string.replace('Fixed', '')
+        config_string = config_string.replace('Adjustable', '')
+        fa_values = config_string.split(',')
+        fixed_count = int(fa_values[0])
+        adj_count = int(fa_values[1])
+        return fixed_count, adj_count
+
+    # note: count can only be 2 or 4
+    def GetProngPointsAdjustable(self, count):
+        # get prong radius and overlap
+        prong_radius = self.AdjustableProngSize/2
+        overlap = self.AdjustableProngSize * self.Overlap
+
+        # offset the outline
+        dir_pnt = rg.Point3d(0, 100, 0)
+        offset = None
+        try:
+            offset = self.GemOutline.Offset(dir_pnt, rg.Plane.WorldXY.ZAxis, prong_radius - overlap, 0.001, rg.CurveOffsetCornerStyle.Sharp)
+            offset = offset[0]
+        except Exception as e:
+            print2('exception', e)
+
+        offset = offset.ToNurbsCurve()
+
+        # get left half of offset
+        if self.GemShape != 'Hexagon':
+            cutter = rg.Box(rg.Plane.WorldXY, rg.Interval(0, 100), rg.Interval(-100, 100), rg.Interval(-100, 100)).ToBrep()
+            offset = offset.Split(cutter, 0.001, 0.001)[1]
+            offset = offset.ToNurbsCurve()
+            offset = offset.Rebuild(20, 3, True)
+
+        # give curve a domain of 0 to 1
+        offset.Domain = rg.Interval(0,1)
+
+        # initialize the radii and points arrays
+        points = []
+        radii = []
+        if count == 2:
+            # get initial point and mirror it across the X axis
+            pnt = offset.PointAt(self.ProngPosition)
+            points.append(pnt)
+            points.append(rg.Point3d(-pnt.X, pnt.Y, pnt.Z))
+        else:
+            if self.GemHasVerticalSymmetry:
+                # get upper half of offset (upper left quarter of original offset)
+                if self.GemShape != 'Hexagon':
+                    cutter = rg.Box(rg.Plane.WorldXY, rg.Interval(-100, 100), rg.Interval(-100, 0), rg.Interval(-100, 100)).ToBrep()
+                    offset = offset.Split(cutter, 0.001, 0.001)[1]
+                    offset = offset.ToNurbsCurve()
+                    offset = offset.Rebuild(20, 3, True)
+
+                    # give curve a domain of 0 to 1
+                    offset.Domain = rg.Interval(0,1)
+
+                # get initial point and mirror it across the X and Y axes
+                pnt = offset.PointAt(self.ProngPosition)
+                points.append(pnt)
+                points.append(rg.Point3d(-pnt.X, pnt.Y, pnt.Z))
+                points.append(rg.Point3d(pnt.X, -pnt.Y, pnt.Z))
+                points.append(rg.Point3d(-pnt.X, -pnt.Y, pnt.Z))
+            else:
+                # get both initial points on offset...
+                pnt1 = offset.PointAt(self.ProngPosition)
+                pnt2 = offset.PointAt(self.ProngPosition2)
+
+                # ...and mirror them across the X axis
+                pnt3 = rg.Point3d(-pnt1.X, pnt1.Y, pnt1.Z)
+                pnt4 = rg.Point3d(-pnt2.X, pnt2.Y, pnt2.Z)
+
+                points.append(pnt1)
+                points.append(pnt2)
+                points.append(pnt3)
+                points.append(pnt4)
+
+        # get radii
+        for i in range(len(points)):
+            radii.append(prong_radius)
+
+        return radii, points
+
+    def GetProngPointsCorners(self):
+        # get prong radius and overlap
+        prong_radius = self.FixedProngSize/2
+        overlap = self.FixedProngSize * self.Overlap
+
+        # offset the outline's segments
+        dir_pnt = rg.Point3d(0, 100, 0)
+        offsets = self.GemOutline.Offset(dir_pnt, rg.Plane.WorldXY.ZAxis, prong_radius - overlap, 0.001, rg.CurveOffsetCornerStyle.None)
+
+        # get the prong points and radii
+        points = []
+        radii = []
+        if self.GemShape != 'Trilliant':
+            for i in range(len(offsets)):
+                j = i + 1 if i < len(offsets) - 1 else 0
+                arc = rg.Curve.CreateArcBlend(offsets[i].PointAtEnd, offsets[i].TangentAtEnd, offsets[j].PointAtStart, offsets[j].TangentAtStart, 1.0)
+                points.append(arc.PointAtMid)
+                radii.append(prong_radius)
+        else:
+            arc1 = rg.Curve.CreateArcBlend(offsets[8].PointAtEnd, offsets[8].TangentAtEnd, offsets[0].PointAtStart, offsets[0].TangentAtStart, 1)
+            arc2 = rg.Curve.CreateArcBlend(offsets[2].PointAtEnd, offsets[2].TangentAtEnd, offsets[3].PointAtStart, offsets[3].TangentAtStart, 1)
+            arc3 = rg.Curve.CreateArcBlend(offsets[5].PointAtEnd, offsets[5].TangentAtEnd, offsets[6].PointAtStart, offsets[6].TangentAtStart, 1)
+
+            points.append(arc1.PointAtMid)
+            points.append(arc2.PointAtMid)
+            points.append(arc3.PointAtMid)
+
+            for i in range(3):
+                radii.append(prong_radius)
+
+        return radii, points
+
+    def GetProngPointsEdges(self):
+        # get prong radius and overlap
+        prong_radius = self.FixedProngSize/2
+        overlap = self.FixedProngSize * self.Overlap
+
+        # offset the outline's segments
+        dir_pnt = rg.Point3d(0, 100, 0)
+        offsets = self.GemOutline.Offset(dir_pnt, rg.Plane.WorldXY.ZAxis, prong_radius - overlap, 0.001, rg.CurveOffsetCornerStyle.None)
+
+        # get the prong points and radii
+        points = [x.PointAtMid for x in offsets]
+        radii = [prong_radius for x in points]
+
+        return radii, points
+
+    def GetProngPointsEnds(self):
+        # get prong radius and overlap
+        prong_radius = self.FixedProngSize/2
+        overlap = self.FixedProngSize * self.Overlap
+
+        bbox = self.GemOutline.GetBoundingBox(True)
+        points = [rg.Point3d(0, bbox.Min.Y - prong_radius + overlap, 0), rg.Point3d(0, bbox.Max.Y + prong_radius - overlap, 0)]
+        radii = [prong_radius, prong_radius]
+
+        return radii, points
+
+    def GetProngPointsFixedAndAdjustable(self):
+        # get prong radius and overlap
+        fixed_prong_radius = self.FixedProngSize/2
+        fixed_overlap = self.FixedProngSize * self.Overlap
+
+        adj_prong_radius = self.AdjustableProngSize/2
+        adj_overlap = self.AdjustableProngSize * self.Overlap
+
+        # get fixed count and adjustable count
+        fixed_count, adj_count = self.GetFixedAndAdjustableProngCount()
+
+        # get fixed points
+        fixed_radii, fixed_points = self.GetProngPointsEnds()
+        if fixed_count == 1:
+            fixed_radii = [fixed_radii[0]]
+            fixed_points = [fixed_points[0]]
+
+        # get adjustable points
+        adj_radii, adj_points = self.GetProngPointsAdjustable(adj_count)
+
+        return fixed_radii + adj_radii, fixed_points + adj_points
+
+    def GetProngPointsFlatCorners(self):
+        # get prong radius and overlap
+        prong_radius = self.FixedProngSize/2
+        overlap = self.FixedProngSize * self.Overlap
+
+        # offset the outline's segments
+        dir_pnt = rg.Point3d(0, 100, 0)
+        offsets = self.GemOutline.Offset(dir_pnt, rg.Plane.WorldXY.ZAxis, prong_radius - overlap, 0.001, rg.CurveOffsetCornerStyle.None)
+
+        # get the prong points and radii
+        points = [x.PointAtMid for x in offsets[::2]]
+        radii = [prong_radius, prong_radius, prong_radius, prong_radius]
+
+        return radii, points
+
+    def GetProngPointsRoundFixed(self, count, cross = False):
+        # get prong radius and overlap
+        prong_radius = self.FixedProngSize/2
+        overlap = self.FixedProngSize * self.Overlap
+
+        # get prong points at girdle level
+        points = []
+        radii = []
+        step_angle = 360/count
+        for i in range(count):
+            radii.append(prong_radius)
+            point = rg.Point3d(0, self.GemBoundingBox.Max.Y + prong_radius - overlap, 0) 
+
+            if i > 0:
+                angle = i * step_angle
+                xform = rg.Transform.RotationZYX(math.radians(angle), 0, 0)
+                point.Transform(xform) 
+
+            points.append(point)
+
+        return radii, points
+        
+    def LayoutForm(self):
+
+        if self.Layout:
+            self.Layout.Clear()
+
+        self.Layout = forms.DynamicLayout()
+        self.Layout.DefaultSpacing = drawing.Size(5,5)
+
+        self.Layout.BeginVertical()
+
+        self.Layout.AddRow(self.GemShapeLabelGroup)
+        self.Layout.AddRow(self.SizingCircleLabelGroup)
+        self.Layout.AddRow(forms.Label())
+
+        self.LayoutGeneralTab()  
+        self.LayoutProngTab()      
+        self.Layout.AddRow(self.Tabs)    
+
+        self.Layout.EndVertical()
+        
+        self.Layout.BeginVertical()
+        self.Layout.AddRow(cg.CreateVerticalSpacer(5))
+        # self.Layout.AddRow(forms.Label(), None)
+        self.Layout.AddRow(self.SetButton, self.SetButton2, self.FinalizeButton, self.CancelButton)
+        self.Layout.EndVertical()
+
+        self.Layout.Create()        
+        self.Content = self.Layout
+
+    def LayoutGeneralTab(self):
+        if self.GeneralTabLayout: self.GeneralTabLayout.Clear()
+        self.GeneralTabLayout = forms.DynamicLayout()
+        self.GeneralTabLayout.DefaultSpacing = drawing.Size(5,5)
+
+        self.GeneralTabLayout.AddRow(self.UnderBezelModeDropDownGroup)
+        self.GeneralTabLayout.AddRow(self.PullToFingerCheckBoxGroup)
+
+        self.GeneralTabLayout.AddRow(cg.CreateVerticalSpacer(5))
+        self.GeneralTabLayout.AddRow(cg.CreateHR())
+        self.GeneralTabLayout.AddRow(cg.CreateVerticalSpacer(5))
+
+        self.GeneralTabLayout.AddRow(self.DepthSliderGroup)
+        if self.UnderBezelModeDropDown.SelectedValue != 'None':
+            self.GeneralTabLayout.AddRow(self.HOffsetSliderGroup)
+            self.GeneralTabLayout.AddRow(self.VOffsetSliderGroup)
+            self.GeneralTabLayout.AddRow(self.ThicknessSliderGroup)
+
+        if self.UnderBezelModeDropDown.SelectedValue == 'Gallery Rails':
+            self.GeneralTabLayout.AddRow(cg.CreateVerticalSpacer(5))
+            self.GeneralTabLayout.AddRow(cg.CreateHR())
+            self.GeneralTabLayout.AddRow(cg.CreateVerticalSpacer(5))
+
+            self.GeneralTabLayout.AddRow(self.Rail1DepthSliderGroup)
+            self.GeneralTabLayout.AddRow(self.Rail2DepthSliderGroup)
+
+        self.GeneralTabLayout.AddRow(cg.CreateVerticalSpacer(5))
+        self.GeneralTabLayout.AddRow(cg.CreateHR())
+        self.GeneralTabLayout.AddRow(cg.CreateVerticalSpacer(5)) 
+
+        self.GeneralTabLayout.AddRow(self.BottomScaleXSliderGroup)  
+        self.GeneralTabLayout.AddRow(self.BottomScaleYSliderGroup) 
+        self.GeneralTabLayout.AddRow(self.LockBottomScalesCheckBoxGroup)  
+
+        self.GeneralTabLayout.Create()        
+        self.GeneralTab.Content = self.GeneralTabLayout
+
+    def LayoutProngTab(self):
+        if self.ProngTabLayout: self.ProngTabLayout.Clear()
+        self.ProngTabLayout = forms.DynamicLayout()
+        self.ProngTabLayout.DefaultSpacing = drawing.Size(5,5)
+
+        if self.GemShape:
+            self.ProngTabLayout.AddRow(self.ConfigurationDropDownGroup)
+        else:
+            self.ProngTabLayout.AddRow(self.ConfigurationLabelGroup)
+        self.ProngTabLayout.AddRow(self.ProngsLinesDropDownGroup)
+
+        self.ProngTabLayout.AddRow(cg.CreateVerticalSpacer(5))
+        self.ProngTabLayout.AddRow(cg.CreateHR())
+        self.ProngTabLayout.AddRow(cg.CreateVerticalSpacer(5))
+
+        # fixed prongs only
+        if self.GemID:
+            if ('Fixed' in self.ConfigurationDropDown.SelectedValue and 'Adjustable' not in self.ConfigurationDropDown.SelectedValue) or ('Fixed' not in self.ConfigurationDropDown.SelectedValue and 'Adjustable' not in self.ConfigurationDropDown.SelectedValue):
+                self.FixedProngSizeSliderGroup.Label.Text = 'Prong Size: '
+                self.ProngTabLayout.AddRow(self.FixedProngSizeSliderGroup)
+            # fixed and adjustable prongs
+            elif 'Fixed' in self.ConfigurationDropDown.SelectedValue and 'Adjustable' in self.ConfigurationDropDown.SelectedValue:
+                self.FixedProngSizeSliderGroup.Label.Text = 'Fixed Prong Size: '
+                self.ProngTabLayout.AddRow(self.FixedProngSizeSliderGroup)
+
+                self.AdjustableProngSizeSliderGroup.Label.Text = 'Adj. Prong Size: '
+                self.ProngTabLayout.AddRow(self.AdjustableProngSizeSliderGroup)
+                self.ProngTabLayout.AddRow(self.ProngPositionSliderGroup) 
+                if not self.GemHasVerticalSymmetry:
+                    fixed_count, adj_count = self.GetFixedAndAdjustableProngCount()
+                    if adj_count == 4:
+                        self.ProngTabLayout.AddRow(self.ProngPositionSliderGroup2) 
+            # adjustable prongs only
+            elif 'Fixed' not in self.ConfigurationDropDown.SelectedValue and 'Adjustable' in self.ConfigurationDropDown.SelectedValue:
+                self.AdjustableProngSizeSliderGroup.Label.Text = 'Prong Size: '
+                self.ProngTabLayout.AddRow(self.AdjustableProngSizeSliderGroup)
+                self.ProngTabLayout.AddRow(self.ProngPositionSliderGroup) 
+                if not self.GemHasVerticalSymmetry:
+                    fixed_count, adj_count = self.GetFixedAndAdjustableProngCount()
+                    if adj_count == 4:
+                        self.ProngTabLayout.AddRow(self.ProngPositionSliderGroup2) 
+            
+        self.ProngTabLayout.AddRow(self.ProngHeightSliderGroup)
+        self.ProngTabLayout.AddRow(self.OverlapSliderGroup)
+        if self.GemShape == 'Round':
+            self.ProngTabLayout.AddRow(self.RotationSliderGroup)
+
+        self.ProngTabLayout.Create()        
+        self.ProngTab.Content = self.ProngTabLayout
+
+    def LoadBaseGem(self, gem_type, gem_shape):
+        base_cutter = None
+        folder = script_folder.replace("scripts", "gems")
+        if 'Fancy' in gem_type: gem_folder_name = '1Fancy'
+        elif 'Simple' in gem_type: gem_folder_name = '2Simple'
+        elif 'Cabochon' in gem_type: gem_folder_name = '4Cabochons'
+        gem_folder = os.path.join(folder, gem_folder_name)            
+        filename = gem_shape + ".3dm"
+        fullpath = os.path.join(gem_folder, filename)
+        gem_file = Rhino.FileIO.File3dm.Read(fullpath) 
+        base_gem = gem_file.Objects.FindByLayer('gems')[0].Geometry
+        return base_gem    
+
+    def LoadBaseOutline(self, gem_shape):
+        base_outline = None
+        gem_folder = script_folder.replace("scripts", "gems")
+        outline_folder = os.path.join(gem_folder, '5Outlines')
+        if 'Cabochon' in self.GemType:
+            outline_folder = os.path.join(outline_folder, 'Cabochons')
+        filename = gem_shape + '.3dm'
+        fullpath = os.path.join(outline_folder, filename)
+        outline_file = Rhino.FileIO.File3dm.Read(fullpath)
+        base_outline = outline_file.Objects.FindByLayer('gem profiles')[0].Geometry
+        return base_outline
+
+    def OnCancelButtonClick(self, sender, e):
+        self.Close()
+       
+    def OnDialogClosing(self, sender, e):
+        self.Conduit.Enabled = False
+
+    def OnFinalizeButtonClick(self, sender, e):
+        if self.GemID:
+            prong_ids = []
+            underbezel_id = None
+            rail1_id = None
+            rail2_id = None
+            line_ids = []
+            head_group = rs.AddGroup() if self.UnderBezel or self.Rail1 or self.Rail2 else None
+            prong_group = rs.AddGroup() if len(self.Prongs) > 0 else None
+            line_group = rs.AddGroup() if len(self.ProngLines) > 0 else None
+
+            if len(self.Prongs) > 0:
+                prong_ids = self.AddObjectsToDocument(self.Prongs, 'head', cam.ProngColor)
+
+            if self.UnderBezel:
+                underbezel_id = self.AddObjectsToDocument([self.UnderBezel], 'head', cam.ProngColor)
+
+            if self.Rail1:
+                rail1_id = self.AddObjectsToDocument([self.Rail1], 'head', cam.ProngColor)
+
+            if self.Rail2:
+                rail2_id = self.AddObjectsToDocument([self.Rail2], 'head', cam.ProngColor)
+
+            if 'Lines' in self.ProngsLinesDropDown.SelectedValue:
+                if len(self.ProngLines) > 0:
+                    line_ids = self.AddObjectsToDocument(self.ProngLines, 'prong lines', cam.CurveColor2)
+
+            if len(prong_ids) > 0:
+                rs.AddObjectsToGroup(prong_ids, prong_group)
+                if self.UnderBezel or self.Rail1:
+                    rs.AddObjectsToGroup(prong_ids, head_group)
+
+            if self.UnderBezel: rs.AddObjectToGroup(underbezel_id, head_group)
+            if self.Rail1: rs.AddObjectToGroup(rail1_id, head_group)
+            if self.Rail2: rs.AddObjectToGroup(rail2_id, head_group)
+            
+            if len(line_ids) > 0: rs.AddObjectsToGroup(line_ids, line_group)
+
+            sc.doc.Views.Redraw()
+
+        self.DisposeObject(self.BaseGem)
+        self.DisposeObject(self.BaseOutline)
+        self.DisposeObject(self.Gem)
+        self.DisposeObject(self.GemOutline)
+        self.DisposeObject(self.GemPlane)
+        self.DisposeObject(self.SizingCircle)
+
+        self.DisposeObject(self.UnderBezel)
+        self.DisposeObject(self.Rail1)
+        self.DisposeObject(self.Rail2)
+        self.DisposeObject(self.UnderBezelMesh)
+        self.DisposeObject(self.Rail1Mesh)
+        self.DisposeObject(self.Rail2Mesh)
+        self.DisposeObjects(self.ProngLines)
+        self.DisposeObjects(self.Prongs)
+        self.DisposeObjects(self.ProngMeshes)
+        self.DisposeRenderObjects()
+
+        self.Close()
+
+    def OnFormChanged(self, sender, e):
+        # self.UseHeartBase = self.UseHeartBaseCheckBox.Checked
+
+        # if sender == self.UseHeartBaseCheckBox:
+        #     if self.UseHeartBase:
+        #         self.GemShape = 'Heart Base'
+        #     else:
+        #         self.GemShape = 'Heart'
+        #     self.LoadBaseOutline(self.GemShape)
+
+        # if sender == self.ConfigurationDropDown and self.GemHasVerticalSymmetry:
+        #     if 'Fixed' in self.ConfigurationDropDown.SelectedValue and 'Adjustable' in self.ConfigurationDropDown.SelectedValue:
+        #         fixed_count, adj_count = self.GetFixedAndAdjustableProngCount()
+        #         if adj_count == 4:
+        #             self.ProngPositionSliderGroup2.SetValue(0.25)
+        
+        self.ProngConfiguration = self.ConfigurationDropDown.SelectedValue
+
+        if sender == self.ConfigurationDropDown:
+            self.UpdatePositions()
+
+        self.LayoutForm()
+
+        if sender == self.PullToFingerCheckBox and self.PullToFingerCheckBox.Checked and not self.SizingCircle:
+            rs.MessageBox('This will not affect anything until you set the sizing circle.')
+        
+        self.Solve(sender)
+
+    def UpdatePositions(self):
+        if 'Cabochon' in self.GemType:
+            self.VOffsetSliderGroup.SetValue(0.0)
+
+        if self.GemShape == 'Pear':
+            self.ProngPositionSliderGroup.SetValue(0.79)
+            self.ProngPositionSliderGroup2.SetValue(0.24)
+        elif self.GemShape == 'Oval':
+            self.ProngPositionSliderGroup.SetValue(0.55)
+        elif self.GemShape == 'Heart':
+            self.ProngPositionSliderGroup.SetValue(0.74)
+            self.ProngPositionSliderGroup2.SetValue(0.25)
+        elif self.GemShape == 'Heart Base':
+            self.ProngPositionSliderGroup.SetValue(0.86)
+            self.ProngPositionSliderGroup2.SetValue(0.25)
+        elif self.GemShape == 'Hexagon':
+            self.ProngPositionSliderGroup.SetValue(0.45)
+        elif self.GemShape == 'Round':
+            if self.ConfigurationDropDown.SelectedValue == '3 (1 Fixed, 2 Adjustable)':
+                self.ProngPositionSliderGroup.SetValue(0.67)
+            elif self.ConfigurationDropDown.SelectedValue == '4 (Adjustable)':
+                self.ProngPositionSliderGroup.SetValue(0.5)
+            elif self.ConfigurationDropDown.SelectedValue == '6 (2 Fixed, 4 Adjustable)':
+                self.ProngPositionSliderGroup.SetValue(0.5)
+
+    def OnSetButtonClick(self, sender, e):
+        Rhino.UI.EtoExtensions.PushPickButton(self, self.OnPushPickButton)
+
+    def OnSetButton2Click(self, sender, e):
+        Rhino.UI.EtoExtensions.PushPickButton(self, self.OnPushPickButton2)
+        
+    def OnPushPickButton(self, sender, e):
+        try:
+            self.Set(sender)
+        except Exception as e:
+            app.WriteLine("line 697: " + str(e))
+
+    def OnPushPickButton2(self, sender, e):
+        try:
+            self.SetSizingCircle(sender)
+        except Exception as e:
+            app.WriteLine("line 703: " + str(e))
+
+    def SetSizingCircle(self, sender):
+        self.DisposeObject(self.SizingCircle)
+        self.SizingCircleID = None
+        self.SizingCircle = None
+        
+        # if objects are already selected
+        selected_obs = rs.SelectedObjects()
+        if len(selected_obs) == 1:
+            if 'Size' in rs.ObjectName(selected_obs[0]):
+                self.SizingCircleID = selected_obs[0]
+                self.SizingCircle = rs.coercecurve(self.SizingCircleID)
+                rs.UnselectObjects(selected_obs)
+        elif len(selected_obs) > 1:
+            rs.MessageBox('Please select a single sizing circle curve.')
+
+        if not self.SizingCircleID:
+            selected_ob = rs.GetObject('Select the sizing circle', rs.filter.curve, preselect = False) 
+            if 'Size' in rs.ObjectName(selected_ob):
+                self.SizingCircleID = selected_ob
+                self.SizingCircle = rs.coercecurve(self.SizingCircleID)
+                self.SizingCircleLabel.Text = rs.ObjectName(selected_ob)
+
+        if not self.SizingCircleID:
+            rs.MessageBox('No sizing circle selected!')
+        else:
+            self.LayoutForm()
+            self.Solve(sender)
+                    
+    def Set(self, sender):
+        self.DisposeObject(self.BaseGem)
+        self.DisposeObject(self.BaseOutline)
+        self.DisposeObject(self.Gem)
+        self.DisposeObject(self.GemOutline)
+        self.DisposeObject(self.GemPlane)
+
+        self.BaseGem = None
+        self.BaseOutline = None
+        self.GemID = None
+        self.Gem = None
+        self.GemOutline = None
+        self.GemPlane = None
+
+        gem_id = None
+
+        # give error message if more than one object selected
+        selected_obs = rs.SelectedObjects()
+        if len(selected_obs) == 1:
+            if rs.ObjectName(selected_obs[0]) == 'wdGem':
+                gem_id = selected_obs[0]
+                rs.UnselectObjects(selected_obs)
+        elif len(selected_obs) > 1:
+            rs.MessageBox('Please select a single gem.')
+        
+        if not gem_id:
+            selected_ob = rs.GetObject('Select a gem', rs.filter.polysurface, preselect = False, custom_filter = IsGem) 
+            if selected_ob and rs.ObjectName(selected_ob) == 'wdGem':
+                gem_id = selected_ob
+
+        if not gem_id:
+            rs.MessageBox('No gems were selected.')
+        else:
+            # get gem's shape and type
+            self.GemShape = rs.GetUserText(gem_id, 'shape')
+            self.GemType = rs.GetUserText(gem_id, 'type')
+
+            # get the base gem, base outline and bounding box for base gem
+            try:
+                self.BaseOutline = self.LoadBaseOutline(self.GemShape)
+                self.BaseGem = self.LoadBaseGem(self.GemType, self.GemShape)
+                self.BaseBoundingBox = self.BaseGem.GetBoundingBox(True)
+            except Exception as e:
+                app.WriteLine('line 622: ' + str(e))
+            
+            self.GemID = gem_id
+            self.Gem = rs.coercebrep(gem_id)
+
+            # get gem's plane & bounding box
+            self.GemPlane = SpatialData.GetPlane(self.GemID)
+            self.GemBoundingBox = self.Gem.GetBoundingBox(self.GemPlane)
+
+            # get the base gem's dimensions
+            self.BaseWidth, self.BaseLength, self.BaseDepth = self.GetDimensionsFromBoundingBox(self.BaseBoundingBox)
+            self.BaseCrownHeight = self.BaseBoundingBox.Max.Z
+            self.BasePavilionDepth = abs(self.BaseBoundingBox.Min.Z)
+
+            # get the actual gem's dimensions
+            self.GemWidth, self.GemLength, self.GemDepth = self.GetDimensionsFromBoundingBox(self.GemBoundingBox)
+            self.GemCrownHeight = self.GemBoundingBox.Max.Z
+            self.GemPavilionDepth = abs(self.GemBoundingBox.Min.Z)
+
+            # get the scale factors
+            self.ScaleFactorX = self.GemWidth / self.BaseWidth
+            self.ScaleFactorY = self.GemLength / self.BaseLength
+            self.ScaleFactorZ = self.GemDepth / self.BaseDepth 
+
+            # scale the base outline
+            self.GemOutline = self.BaseOutline.DuplicateCurve()
+            xform = rg.Transform.Scale(rg.Plane.WorldXY, self.ScaleFactorX, self.ScaleFactorY, self.ScaleFactorZ)   
+            self.GemOutline.Transform(xform)
+
+            # give outline a domain from 0 to 1
+            self.GemOutline.Domain = rg.Interval(0,1) 
+
+            # is it round?
+            # just being named 'round' doesn't guarantee roundness
+            # we must also consider the length-to-width ratio
+            if self.GemShape == 'Round' and abs(self.GemWidth - self.GemLength) < 0.001:
+                self.GemIsRound = True
+            else:
+                self.GemIsRound = False
+
+            # determine if gem has vertical symmetry
+            if abs(self.GemBoundingBox.Max.Y + self.GemBoundingBox.Min.Y) < 0.001:
+                self.GemHasVerticalSymmetry = True
+            else:
+                self.GemHasVerticalSymmetry = False
+
+            # update form
+            self.GemShapeLabel.Text = self.GemShape + ' (' + self.GemType + ')'
+            self.ConfigurationDropDown.SelectedValueChanged -= self.OnFormChanged
+            self.ConfigurationDropDown.DataStore = self.Configurations[self.GemShape]
+            self.ConfigurationDropDown.SelectedIndex = 0
+            self.ProngConfiguration = self.ConfigurationDropDown.SelectedValue
+            self.UpdatePositions()
+            self.ConfigurationDropDown.SelectedValueChanged += self.OnFormChanged
+            self.LayoutForm()
+
+            self.Solve(sender)
+
+    def BrepToMesh(self, brep):
+        meshing_params = Rhino.Geometry.MeshingParameters.QualityRenderMesh
+        meshes = Rhino.Geometry.Mesh.CreateFromBrep(brep, meshing_params)
+        the_mesh = Rhino.Geometry.Mesh()
+        for mesh in meshes:
+            the_mesh.Append(mesh)
+        the_mesh.Normals.ComputeNormals()
+        return the_mesh
+
+    def AddEdgeCurves(self, brep):
+        for edge in brep.Edges:
+            crv = edge.DuplicateCurve()
+            if crv.IsValid:
+                self.EdgeCurves.append(crv)
+
+    def Solve(self, sender): 
+        if self.GemID:
+            # clear some variables and dispose of some objects
+            self.DisposeObject(self.UnderBezel)
+            self.DisposeObject(self.Rail1)
+            self.DisposeObject(self.Rail2)
+            self.DisposeObject(self.UnderBezelMesh)
+            self.DisposeObject(self.Rail1Mesh)
+            self.DisposeObject(self.Rail2Mesh)
+            self.DisposeObjects(self.ProngLines)
+            self.DisposeObjects(self.Prongs)
+            self.DisposeObjects(self.ProngMeshes)
+            self.DisposeRenderObjects()
+            self.DisposeTempObs()
+
+            self.ProngPoints = []
+            self.BottomProngPoints = []
+            self.ProngLines = []
+            self.Prongs = []
+            self.UnderBezel = None
+            self.Rail1 = None
+            self.Rail2 = None
+            self.UnderBezelMesh = None
+            self.Rail1Mesh = None
+            self.Rail2Mesh = None
+            self.ProngMeshes = []            
+            self.EdgeCurves = []
+            self.RenderObjects = []
+            self.TempObs = []
+
+            # deal with locked sliders
+            if sender == self.LockBottomScalesCheckBox or sender == self:
+                if self.LockBottomScalesCheckBox.Checked:
+                    self.BottomScaleYSliderGroup.Unsubscribe(self.Solve)
+                    self.BottomScaleYSliderGroup.SetEnabled(False)
+                    self.BottomScaleYSliderGroup.SetValue(self.BottomScaleXSliderGroup.Value)
+                else:
+                    self.BottomScaleYSliderGroup.Subscribe(self.Solve)
+                    self.BottomScaleYSliderGroup.SetEnabled(True)
+
+            if self.LockBottomScalesCheckBox.Checked:
+                if sender == self.BottomScaleXSliderGroup:
+                    self.BottomScaleYSliderGroup.SetValue(self.BottomScaleXSliderGroup.Value) 
+
+
+            # update the form variables 
+            self.ProngsLines = self.ProngsLinesDropDown.SelectedValue
+            self.ProngConfiguration = self.ConfigurationDropDown.SelectedValue
+            self.ProngCount = int(self.ConfigurationDropDown.SelectedValue[0])
+            self.FixedProngSize = self.FixedProngSizeSliderGroup.Value
+            self.AdjustableProngSize = self.AdjustableProngSizeSliderGroup.Value
+            self.ProngHeight = self.GemCrownHeight + self.ProngHeightSliderGroup.Value
+            self.Depth = self.DepthSliderGroup.Value
+            self.Overlap = self.OverlapSliderGroup.Value
+            self.BottomScaleX = self.BottomScaleXSliderGroup.Value
+            self.BottomScaleY = self.BottomScaleYSliderGroup.Value
+            self.RotationAngle = self.RotationSliderGroup.Value
+            self.ProngPosition = self.ProngPositionSliderGroup.Value
+            self.ProngPosition2 = self.ProngPositionSliderGroup2.Value
+            if self.ProngPosition < 0.05: self.ProngPosition = 0.05
+            if self.ProngPosition > 0.95: self.ProngPosition = 0.95
+            self.HOffset = self.HOffsetSliderGroup.Value
+            self.VOffset = self.VOffsetSliderGroup.Value
+            self.WallThickness = self.ThicknessSliderGroup.Value
+            self.Rail1Depth = self.Rail1DepthSliderGroup.Value
+            self.Rail2Depth = self.Rail2DepthSliderGroup.Value
+            self.PullToFinger = self.PullToFingerCheckBox.Checked 
+
+            # get this transform obj that we will be using a LOT
+            xform_p2p = rg.Transform.PlaneToPlane(rg.Plane.WorldXY, self.GemPlane)
+
+            # reset the prong and prong line objects
+            for prong in self.Prongs:
+                prong.Dispose()
+
+            for line in self.ProngLines:
+                line.Dispose()
+
+            self.ProngLines = []
+            self.Prongs = []
+
+            self.ProngPoints = []
+            self.BottomProngPoints = []
+
+            if self.UnderBezel: self.UnderBezel = None
+
+            # get a test point to find out if we can use the sizing circle cutter or not
+            test_pnt = rg.Point3d(0,0,-self.Depth)
+            test_pnt.Transform(xform_p2p)
+
+            # left point (for adjusting curve seam in bezel later)
+            left_pnt = rg.Point3d(self.GemBoundingBox.Min.X, 0, 0)
+
+            # MAKE THE BOTTOM CUTTERS
+            # make the flat cutter
+            btm_cutter1 = rg.Box(rg.Plane.WorldXY, rg.Interval(-100, 100), rg.Interval(-100, 100), rg.Interval(-100, -self.Depth)).ToBrep()
+            btm_cutter1.Transform(xform_p2p)
+
+            # make the sizing circle cutter
+            btm_cutter2 = None
+            can_use_btm_cutter2 = False
+            if self.SizingCircle:
+                cir = self.SizingCircle.DuplicateCurve()
+                cir = cir.ToNurbsCurve()
+                cir.Translate(0, -50, 0)
+                btm_cutter2 = rg.Surface.CreateExtrusion(cir, rg.Vector3d(0, 100, 0))
+                btm_cutter2 = btm_cutter2.Rebuild(3, 3, 20, 20)
+                btm_cutter2 = btm_cutter2.ToBrep()
+                btm_cutter2 = btm_cutter2.CapPlanarHoles(0.001)
+                if btm_cutter2.SolidOrientation == rg.BrepSolidOrientation.Inward: btm_cutter2.Flip() 
+                can_use_btm_cutter2 = btm_cutter2.IsPointInside(test_pnt, 0.001, True)
+
+            btm_cutter = None
+            if self.SizingCircle and self.PullToFinger and can_use_btm_cutter2:
+                btm_cutter = btm_cutter2
+            else:
+                btm_cutter = btm_cutter1  
+
+            self.TempObs.append(btm_cutter1)
+            self.TempObs.append(btm_cutter2)
+            self.TempObs.append(btm_cutter)
+
+            # get the prong points (at girdle level)
+            prong_points = []
+            prong_radii = []
+            cross = True if 'X' in self.ProngConfiguration else False
+            if self.GemShape == 'Round' and 'Adjustable' not in self.ProngConfiguration:                    
+                    prong_radii, prong_points = self.GetProngPointsRoundFixed(self.ProngCount, cross)           
+            elif 'Adjustable' in self.ProngConfiguration and 'Fixed' not in self.ProngConfiguration:
+                prong_radii, prong_points = self.GetProngPointsAdjustable(4)
+            elif 'Adjustable' in self.ProngConfiguration and 'Fixed' in self.ProngConfiguration:
+                prong_radii, prong_points = self.GetProngPointsFixedAndAdjustable()
+            elif 'Corners' in self.ProngConfiguration:
+                if 'Flat' in self.ProngConfiguration:
+                    prong_radii, prong_points = self.GetProngPointsFlatCorners()
+                else:
+                    prong_radii, prong_points = self.GetProngPointsCorners()
+            elif 'Ends' in self.ProngConfiguration:
+                prong_radii, prong_points = self.GetProngPointsEnds()
+            elif 'Edges' in self.ProngConfiguration:
+                prong_radii, prong_points = self.GetProngPointsEdges()
+
+            # rotate the points
+            if self.GemIsRound:
+                for pnt in prong_points:
+                    cross_angle = 45 if cross else 0
+                    xform = rg.Transform.RotationZYX(math.radians(-self.RotationAngle - cross_angle), 0, 0)
+                    pnt.Transform(xform)               
+
+            # get bottom points 
+            btm_points = []
+            for pnt in prong_points:
+                btm_points.append(rg.Point3d(pnt.X, pnt.Y, -self.Depth))
+
+            # scale bottom points in x and y directions
+            xform = rg.Transform.Scale(rg.Plane.WorldXY, 1-self.BottomScaleX, 1-self.BottomScaleY, 1)
+            for pnt in btm_points:
+                pnt.Transform(xform)
+
+            # MAKE THE PRONGS
+            prong_lines = []
+            prongs = []
+            for i in range(len(prong_points)):
+                # move points to gem plane
+                prong_points[i].Transform(xform_p2p)
+                btm_points[i].Transform(xform_p2p)
+
+                # make the line and add it to prong_lines
+                line = rg.Line(prong_points[i], btm_points[i]).ToNurbsCurve()
+                line = line.Extend(rg.CurveEnd.Start, self.ProngHeight, rg.CurveExtensionStyle.Line)
+                line = line.Extend(rg.CurveEnd.End, 3, rg.CurveExtensionStyle.Line)
+                prong_lines.append(line)
+
+                if 'Prongs'in self.ProngsLinesDropDown.SelectedValue: 
+                    # pipe the line and trim it
+                    pipe = rg.Brep.CreatePipe(line, prong_radii[i], False, rg.PipeCapMode.Round, True, 0.001, 0.001)[0]
+
+                    result = rg.Brep.CreateBooleanDifference(pipe, btm_cutter, 0.001)
+                    if result and len(result) > 0:
+                        prong = result[0]
+                    else:
+                        print2('line 964', 'Failed to trim prong ' + str(i))
+
+                    # add prong to prongs array
+                    prongs.append(prong)
+
+            self.TempObs.append(prong_lines)
+            self.TempObs.append(prongs)
+
+            # MAKE THE UNDERBEZEL
+            underbezel = None
+            if self.UnderBezelModeDropDown.SelectedValue != 'None':
+                # make the underbezel's top outline
+                top_outline = self.GemOutline.DuplicateCurve().ToNurbsCurve()
+
+                # offset by horizontal offset if needed
+                if self.HOffset != 0:
+                    # corner_style = rg.CurveOffsetCornerStyle.Smooth if self.GemShape == 'Heart' else rg.CurveOffsetCornerStyle.Sharp
+                    corner_style = rg.CurveOffsetCornerStyle.Sharp
+                    top_outline = top_outline.Offset(rg.Point3d.Origin, rg.Plane.WorldXY.ZAxis, -self.HOffset, 0.001, corner_style)[0]
+                    b, t = top_outline.ClosestPoint(left_pnt)
+                    top_outline.ChangeClosedCurveSeam(t) 
+
+                # move outline up or down
+                top_outline.Translate(0, 0, -self.VOffset)   
+                self.TempObs.append(top_outline)
+
+                # BOTTOM OUTLINE
+                # create bottom outline from top outline
+                bottom_outline = top_outline.DuplicateCurve()
+
+                # scale bottom outline to make taper
+                taperSFX = 1 - self.BottomScaleX
+                taperSFY = 1 - self.BottomScaleY
+                xform = rg.Transform.Scale(rg.Plane.WorldXY, taperSFX, taperSFY, 1)
+                bottom_outline.Transform(xform)  
+
+                # move bottom outline down
+                bottom_outline.Translate(0, 0, self.VOffset - self.Depth) 
+                self.TempObs.append(bottom_outline)
+
+                # make the underbezel
+                underbezel = rg.Brep.CreateFromLoft([top_outline, bottom_outline], rg.Point3d.Unset, rg.Point3d.Unset, rg.LoftType.Straight, False)[0]
+                underbezel = underbezel.CapPlanarHoles(0.001)
+
+                # make sure the normals are correct
+                if underbezel.SolidOrientation == rg.BrepSolidOrientation.Inward:
+                    underbezel.Flip()
+
+                # move the underbezel to the gem plane
+                if underbezel: underbezel.Transform(xform_p2p)
+                self.TempObs.append(underbezel)
+
+                # make the center cutter        
+                btm_outline_bbox = bottom_outline.GetBoundingBox(True)
+                btm_outline_width = btm_outline_bbox.Max.X - btm_outline_bbox.Min.X
+                btm_outline_length = btm_outline_bbox.Max.Y - btm_outline_bbox.Min.Y
+
+                thickness = self.WallThickness
+                min_size = 0.4 + (2 * thickness)            
+                if btm_outline_width >= min_size and btm_outline_length >= min_size:
+                    center_cutter = None
+                    inner_top_outline = None
+                    inner_bottom_outline = None                        
+                    corner_style = rg.CurveOffsetCornerStyle.Smooth if self.GemShape == 'Heart' else rg.CurveOffsetCornerStyle.Sharp
+
+                    # try to make the center cutter's top outline                   
+                    result = top_outline.Offset(rg.Point3d.Origin, rg.Plane.WorldXY.ZAxis, thickness, 0.001, corner_style)
+                    if result and len(result) > 0:
+                        inner_top_outline = result[0]
+                        inner_top_outline = inner_top_outline.Fit(3, 0.001, 0.001)
+                        fc_attempt = rg.Curve.CreateFilletCornersCurve(inner_top_outline, 0.05, 0.001, 0.001)
+                        if fc_attempt: inner_top_outline = fc_attempt
+                        inner_top_outline.Translate(0, 0, 0.02)
+                    else:
+                        print2('Line 1103', 'Failed to offset top outline for center cutter')
+
+                    # try to make the center cutter's bottom outline 
+                    if inner_top_outline:                        
+                        result = bottom_outline.Offset(rg.Point3d.Origin, rg.Plane.WorldXY.ZAxis, thickness, 0.001, corner_style)
+                        self.TempObs.append(result)
+                        if result and len(result) > 0:
+                            inner_bottom_outline = result[0]
+                            inner_bottom_outline = inner_bottom_outline.Fit(3, 0.001, 0.001)
+                            fc_attempt = rg.Curve.CreateFilletCornersCurve(inner_bottom_outline, 0.05, 0.001, 0.001)
+                            if fc_attempt: inner_bottom_outline = fc_attempt
+                            inner_bottom_outline.Translate(0, 0, -0.02)
+                    else:
+                        print2('line 1118', 'Failed to offset bottom outline for center cutter')
+
+                    # try to make the center cutter
+                    if inner_top_outline and inner_bottom_outline:
+                        center_cutter = rg.Brep.CreateFromLoft([inner_top_outline, inner_bottom_outline], rg.Point3d.Unset, rg.Point3d.Unset, rg.LoftType.Straight, False)[0]
+                        self.TempObs.append(center_cutter)
+
+                        center_cutter = center_cutter.CapPlanarHoles(0.001)
+                        self.TempObs.append(center_cutter)
+
+                        if center_cutter.SolidOrientation == rg.BrepSolidOrientation.Inward:
+                            center_cutter.Flip()
+                        center_cutter.Faces.SplitKinkyFaces() 
+                        center_cutter.Transform(xform_p2p)
+
+                    self.TempObs.append(inner_bottom_outline)
+                    self.TempObs.append(inner_top_outline)
+
+
+                    # cut out the center, if possible
+                    # if something goes wrong, we will just return
+                    # a solid bezel as that is better than crashing
+                    result = None
+                    if center_cutter:
+                        result = rg.Brep.CreateBooleanDifference(underbezel, center_cutter, 0.001)
+                        self.TempObs.append(result)
+                        if result and len(result) > 0:
+                            underbezel = result[0]
+                            self.TempObs.append(underbezel)
+
+                # trim the bezel's bottom
+                result = rg.Brep.CreateBooleanDifference(underbezel, btm_cutter, 0.001)
+                self.TempObs.append(result)
+                if result and len(result) > 0:
+                    underbezel = result[0]
+                    self.TempObs.append(underbezel)
+                else:
+                    print2('line 1040', 'Failed to trim bottom of underbezel')
+
+            # MAKE THE GALLERY RAILS
+            rail1 = None
+            rail2 = None
+            if self.UnderBezelModeDropDown.SelectedValue == 'Gallery Rails':
+                # make upper rail
+                rail1 = underbezel.DuplicateBrep()
+                rail1_cutter = rg.Box(rg.Plane.WorldXY, rg.Interval(-100, 100), rg.Interval(-100, 100), rg.Interval(-100, -self.Rail1Depth - self.VOffset)).ToBrep()
+                rail1_cutter.Transform(xform_p2p)
+
+                result = rg.Brep.CreateBooleanDifference(rail1, rail1_cutter, 0.001)
+                if result and len(result) > 0:
+                    rail1 = result[0]
+                else:
+                    print2('line 1081: failed to make upper rail')
+                    rail1 = None
+
+                # make lower rail
+                rail2 = underbezel.DuplicateBrep()
+                rail2_cutter = None
+                if self.SizingCircle and self.PullToFinger and can_use_btm_cutter2:
+                    # make round cutter
+                    cir = self.SizingCircle.Offset(rg.Point3d.Origin, rg.Plane.WorldZX.ZAxis, -self.Rail2Depth, 0.001, rg.CurveOffsetCornerStyle.Smooth)[0]
+                    cir.ToNurbsCurve()
+                    cir.Translate(0,-50,0)
+                    rail2_cutter = rg.Surface.CreateExtrusion(cir, rg.Vector3d(0,100,0))
+                    rail2_cutter.Rebuild(3, 3, 20, 20)
+                    rail2_cutter = rail2_cutter.ToBrep()
+                    rail2_cutter = rail2_cutter.CapPlanarHoles(0.001)
+
+                    if rail2_cutter.SolidOrientation == rg.BrepSolidOrientation.Inward:
+                        rail2_cutter.Flip()
+                else:
+                    # make flat cutter
+                    rail2_cutter = rg.Box(rg.Plane.WorldXY, rg.Interval(-100, 100), rg.Interval(-100, 100), rg.Interval(-100, -self.Depth + self.Rail2Depth)).ToBrep()
+                    rail2_cutter.Transform(xform_p2p)
+
+                result = rg.Brep.CreateBooleanIntersection(rail2, rail2_cutter, 0.001)
+                if result and len(result) > 0:
+                    rail2 = result[0]
+                else:
+                    print2('line 1105: failed to make lower rail')
+                    rail2 = None
+
+                if rail1 and rail2:
+                    underbezel = None
+
+            # *************************************************  
+
+            if underbezel:
+                underbezel.Faces.SplitKinkyFaces() 
+            if rail1:
+                rail1.Faces.SplitKinkyFaces()
+            if rail2:
+                rail2.Faces.SplitKinkyFaces()
+
+            self.TempObs.append(underbezel)
+            self.TempObs.append(rail1)
+            self.TempObs.append(rail2)
+
+            # update objects we want to render / create
+            self.ProngPoints = prong_points 
+            self.BottomProngPoints = btm_points
+            self.ProngLines = prong_lines
+            self.Prongs = prongs
+            self.UnderBezel = underbezel
+            self.Rail1 = rail1
+            self.Rail2 = rail2
+
+            # add objects to render pipeline
+            if 'Lines' in self.ProngsLinesDropDown.SelectedValue:
+                for ln in self.ProngLines:
+                    self.RenderObjects.append([ln, cam.CurveColor])
+
+            if 'Prongs' in self.ProngsLinesDropDown.SelectedValue:
+                for prong in self.Prongs:
+                    self.ProngMeshes.append(self.BrepToMesh(prong))
+                    self.AddEdgeCurves(prong)
+                for prong in self.ProngMeshes:
+                    self.RenderObjects.append([prong, cam.ProngMaterial])
+                
+
+            if self.UnderBezel:
+                self.UnderBezelMesh = self.BrepToMesh(self.UnderBezel)
+                self.RenderObjects.append([self.UnderBezelMesh, cam.ProngMaterial])
+                self.AddEdgeCurves(self.UnderBezel)
+
+            if self.Rail1:
+                self.Rail1Mesh = self.BrepToMesh(self.Rail1)
+                self.RenderObjects.append([self.Rail1Mesh, cam.ProngMaterial])
+                self.AddEdgeCurves(self.Rail1)
+
+            if self.Rail2:
+                self.Rail2Mesh = self.BrepToMesh(self.Rail2)
+                self.RenderObjects.append([self.Rail2Mesh, cam.ProngMaterial])
+                self.AddEdgeCurves(self.Rail2)
+
+            # for crv in self.ProngEdgeCurves:
+            #     self.RenderObjects.append([crv, cam.ProngColor])
+
+            
+            
+            # redraw                
+            sc.doc.Views.Redraw()
+
+        
+# the main code
+if __name__ == "__main__":        
+    dialog = wdDialog()
+    if rs.ExeVersion() > 6:
+        parent = Rhino.UI.RhinoEtoApp.MainWindowForDocument(sc.doc)
+    else:
+        parent = Rhino.UI.RhinoEtoApp.MainWindow
+    Rhino.UI.EtoExtensions.ShowSemiModal(dialog, sc.doc, parent)
