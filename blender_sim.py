@@ -43,7 +43,7 @@ def simulate_blender_execution(args):
         logger.info(f"Applying artistic modifiers: {blueprint['artistic_modifier_parameters']}")
         
         # Create a simple placeholder STL file
-        stl_content = f"""solid AuraV5Simulation
+        stl_content = f"""solid V5Simulation
 facet normal 0.0 0.0 1.0
   outer loop
     vertex 0.0 0.0 0.0
@@ -58,7 +58,7 @@ facet normal 0.0 0.0 1.0
     vertex 0.0 1.0 0.0
   endloop
 endfacet
-endsolid AuraV5Simulation
+endsolid V5Simulation
 """
         
         # Write the STL file

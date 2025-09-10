@@ -1,10 +1,10 @@
 bl_info = {
-    "name": "Aura Design Engine V20.0",
-    "author": "Aura Design Engine Development Team",
+    "name": "Design Engine V20.0",
+    "author": "Design Engine Development Team",
     "version": (20, 0, 0),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > Design",
-    "description": "Aura V20.0 Design Engine - State-of-the-art implicit function-based AI co-pilot with real-time cognitive streaming and Marching Cubes surface extraction for procedural asset generation",
+    "description": "V20.0 Design Engine - State-of-the-art implicit function-based AI co-pilot with real-time cognitive streaming and Marching Cubes surface extraction for procedural asset generation",
     "category": "3D View",
 }
 

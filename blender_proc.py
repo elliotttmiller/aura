@@ -1,5 +1,5 @@
 """
-Aura V20.0 Design Engine - High-Resolution Implicit Surface Extractor
+V20.0 Design Engine - High-Resolution Implicit Surface Extractor
 ================================================================
 
 A revolutionary rewrite for implicit function-based 3D generation featuring:
@@ -10,7 +10,7 @@ A revolutionary rewrite for implicit function-based 3D generation featuring:
 - Professional scene setup and dynamic camera framing
 
 Implements Pillar 2: Engineering the High-Resolution Blender Engine
-Part of the Aura V20.0 Design Engine.
+Part of the V20.0 Design Engine.
 """
 
 import os
@@ -303,7 +303,7 @@ def setup_scene() -> bpy.types.Scene:
         bpy.data.textures.remove(texture, do_unlink=True)
     
     scene = bpy.context.scene
-    scene.name = "Aura_V7_Professional_Scene"
+    scene.name = "V7_Professional_Scene"
     
     logger.info("Clean scene setup completed")
     return scene
@@ -594,7 +594,7 @@ def generate_implicit_based_asset(args, params: Dict) -> bpy.types.Object:
         decoder_path=args.decoder_path,
         texture_path=args.texture_path,
         mesh_quality=args.mesh_quality,
-        object_name="Aura_V20_Implicit_Asset"
+        object_name="V20_Implicit_Asset"
     )
     
     # Apply procedural knowledge enhancements if specified
@@ -821,7 +821,7 @@ def main():
         logger.error("No arguments provided. Script must be called with -- separator.")
         return
     
-    parser = ArgumentParser(description="Aura V17.0 High-Resolution Implicit Surface Extractor")
+    parser = ArgumentParser(description="V17.0 High-Resolution Implicit Surface Extractor")
     parser.add_argument("--mode", type=str, choices=["extract", "analyze"], default="extract",
                        help="Operation mode: 'extract' for implicit surface extraction, 'analyze' for geometric analysis")
     parser.add_argument("--decoder_path", type=str, required=True,
@@ -848,7 +848,7 @@ def main():
     argv = sys.argv[sys.argv.index('--') + 1:]
     args = parser.parse_args(argv)
     
-    logger.info("=== AURA DESIGN ENGINE V20.0 HIGH-RESOLUTION IMPLICIT SURFACE EXTRACTOR ===")
+    logger.info("=== DESIGN ENGINE V20.0 HIGH-RESOLUTION IMPLICIT SURFACE EXTRACTOR ===")
     logger.info("Revolutionary implicit function-based 3D processing")
     logger.info(f"Mode: {args.mode.upper()}")
     logger.info(f"Decoder: {args.decoder_path}")

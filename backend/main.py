@@ -1,6 +1,6 @@
 """
-Aura V7.0 Backend Orchestrator - Professional AI Pipeline
-========================================================
+V7.0 Backend Orchestrator - Professional AI Pipeline
+====================================================
 
 This orchestrator manages the V7.0 professional workflow:
 Stage 1: LLM (Llama 3.1 via LM Studio) generates Master Blueprint
@@ -20,13 +20,13 @@ import requests
 import shlex
 import time
 
-app = FastAPI(title="Aura V7.0 Backend Orchestrator", version="7.0")
+app = FastAPI(title="V7.0 Backend Orchestrator", version="7.0")
 
 logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
 # V6.0/V7.0 Configuration - Sandbox and Production modes
-SANDBOX_MODE = os.environ.get("AURA_SANDBOX_MODE", "").lower() == "true"
+SANDBOX_MODE = os.environ.get("SANDBOX_MODE", "").lower() == "true"
 BLENDER_PATH = os.environ.get("BLENDER_PATH", r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe")
 BLENDER_PROC_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "blender_proc.py"))
 BLENDER_SIM_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "blender_sim.py"))
@@ -667,7 +667,7 @@ async def generate_design(request: Request):
     Main endpoint for V6.0/V7.0 professional design generation.
     Orchestrates the complete state-of-the-art AI pipeline.
     """
-    logger.info("=== AURA V6.0/V7.0 PROFESSIONAL DESIGN GENERATION ===")
+    logger.info("=== V6.0/V7.0 PROFESSIONAL DESIGN GENERATION ===")
     logger.info(f"Architecture: {'V6.0 Sentient Cognitive Loop (Sandbox)' if SANDBOX_MODE else 'V7.0 Professional (Production)'}")
     
     try:
@@ -716,7 +716,7 @@ async def refine_design(request: Request):
     """
     V6.0 Sentient Cognitive Loop: Refine existing design based on geometric analysis and user feedback.
     """
-    logger.info("=== AURA V6.0 SENTIENT COGNITIVE LOOP - REFINEMENT ===")
+    logger.info("=== V6.0 SENTIENT COGNITIVE LOOP - REFINEMENT ===")
     logger.info("Multi-pass iterative design process initiated")
     
     try:
@@ -807,7 +807,7 @@ async def health_check():
     """Health check endpoint."""
     if SANDBOX_MODE:
         return {
-            "service": "Aura V6.0 Sentient Cognitive Loop",
+            "service": "V6.0 Sentient Cognitive Loop",
             "status": "running",
             "version": "6.0",
             "mode": "sandbox",
@@ -815,7 +815,7 @@ async def health_check():
         }
     else:
         return {
-            "service": "Aura V7.0 Backend Orchestrator", 
+            "service": "V7.0 Backend Orchestrator", 
             "status": "running",
             "version": "7.0",
             "mode": "production",
@@ -826,14 +826,14 @@ async def health_check():
 async def root():
     if SANDBOX_MODE:
         return {
-            "service": "Aura V6.0 Sentient Cognitive Loop",
+            "service": "V6.0 Sentient Cognitive Loop",
             "version": "6.0",
             "mode": "sandbox",
             "status": "Cognitive Loop Architecture Active - Verifiable Testing Environment"
         }
     else:
         return {
-            "service": "Aura V7.0 Backend Orchestrator",
+            "service": "V7.0 Backend Orchestrator",
             "version": "7.0", 
             "mode": "production",
             "status": "Professional Integration Active"

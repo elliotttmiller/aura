@@ -1,6 +1,6 @@
 """
-Aura V20.0 Sentient Artisan Environment - Native Chat Interface
-============================================================
+V20.0 Design Engine - Native Chat Interface
+===========================================
 
 Modern AI chat sidebar interface for real-time cognitive streaming.
 This provides a native Blender experience for procedural asset generation.
@@ -17,11 +17,11 @@ from typing import List, Dict, Any
 logger = logging.getLogger(__name__)
 
 
-class AuraChatPanel(bpy.types.Panel):
-    """Main AI chat interface panel for Aura V20.0 Design Engine."""
+class ChatPanel(bpy.types.Panel):
+    """Main AI chat interface panel for V20.0 Design Engine."""
     
-    bl_label = "Aura Design Engine V20.0"
-    bl_idname = "AURA_PT_ChatPanel"
+    bl_label = "Design Engine V20.0"
+    bl_idname = "DESIGN_PT_ChatPanel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'Design'
@@ -29,7 +29,7 @@ class AuraChatPanel(bpy.types.Panel):
     
     def draw(self, context):
         layout = self.layout
-        settings = context.scene.aura_settings
+        settings = context.scene.settings
         
         # Header with version and status
         header_box = layout.box()
@@ -39,9 +39,9 @@ class AuraChatPanel(bpy.types.Panel):
         status_icon = 'TIME' if settings.is_processing else 'CHECKMARK'
         header_box.label(text=f"Status: {status_text}", icon=status_icon)
         
-        # Start/Stop Aura Operator
-        if not self._is_aura_operator_running(context):
-            layout.operator("aura.sentient_operator", text="🚀 Activate Design Engine", icon='PLAY')
+        # Start/Stop Design Operator
+        if not self._is_design_operator_running(context):
+            layout.operator("design.sentient_operator", text="🚀 Activate Design Engine", icon='PLAY')
             layout.separator()
             return
         
@@ -90,12 +90,12 @@ class AuraChatPanel(bpy.types.Panel):
         button_row.scale_y = 1.5
         
         # Generate button (primary action)
-        generate_op = button_row.operator("tool.generate_design", text="🎨 Generate", icon='PLAY')
+        generate_op = button_row.operator("design.generate_design", text="🎨 Generate", icon='PLAY')
         generate_op.is_refinement = False
         
         # Refine button (secondary action)
         if not settings.is_processing:
-            refine_op = button_row.operator("tool.generate_design", text="✨ Refine", icon='MODIFIER')
+            refine_op = button_row.operator("design.generate_design", text="✨ Refine", icon='MODIFIER')
             refine_op.is_refinement = True
         
         # Processing indicator
@@ -145,35 +145,35 @@ class AuraChatPanel(bpy.types.Panel):
         specs_col.label(text="⚙️ Preferred Generation Technique")
         specs_col.prop(settings, "preferred_technique", text="")
     
-    def _is_aura_operator_running(self, context):
-        """Check if the aura operator is currently running."""
+    def _is_design_operator_running(self, context):
+        """Check if the design operator is currently running."""
         # This would be implemented to check the modal operator state
-        # For now, assume it's running if aura_settings exists and is initialized
-        return hasattr(context.scene, 'aura_settings') and context.scene.aura_settings is not None
+        # For now, assume it's running if settings exists and is initialized
+        return hasattr(context.scene, 'settings') and context.scene.settings is not None
 
 
-class AuraGenerateOperator(bpy.types.Operator):
+class GenerateOperator(bpy.types.Operator):
     """Operator to trigger AI design generation or refinement."""
     
-    bl_idname = "aura.generate_design"
+    bl_idname = "design.generate_design"
     bl_label = "Generate Design"
     bl_description = "Generate or refine a procedural asset design using AI"
     
     is_refinement: bpy.props.BoolProperty(default=False)
     
     def execute(self, context):
-        settings = context.scene.aura_settings
+        settings = context.scene.settings
         prompt = settings.current_prompt.strip()
         
         if not prompt:
             self.report({'WARNING'}, "Please enter a design request")
             return {'CANCELLED'}
         
-        # Find and call the aura operator
-        aura_ops = [op for op in context.window_manager.operators if hasattr(op, 'start_ai_processing')]
+        # Find and call the design operator
+        design_ops = [op for op in context.window_manager.operators if hasattr(op, 'start_ai_processing')]
         
-        if aura_ops:
-            aura_operator = aura_ops[0]
+        if design_ops:
+            design_operator = design_ops[0]
             
             # Add user message to chat
             try:
@@ -188,7 +188,7 @@ class AuraGenerateOperator(bpy.types.Operator):
                 pass
             
             # Start AI processing
-            aura_operator.start_ai_processing(prompt, self.is_refinement)
+            design_operator.start_ai_processing(prompt, self.is_refinement)
             
             # Clear the prompt
             settings.current_prompt = ""
@@ -196,17 +196,17 @@ class AuraGenerateOperator(bpy.types.Operator):
             action_text = "Refinement" if self.is_refinement else "Generation"
             self.report({'INFO'}, f"{action_text} started: {prompt}")
         else:
-            self.report({'ERROR'}, "Aura Design Engine not active. Please activate the Design Engine first.")
+            self.report({'ERROR'}, "Design Engine not active. Please activate the Design Engine first.")
             return {'CANCELLED'}
         
         return {'FINISHED'}
 
 
-class AuraModalOperator(bpy.types.Operator):
+class ModalOperator(bpy.types.Operator):
     """Lightweight modal operator for UI responsiveness."""
     
-    bl_idname = "aura.modal_ui"
-    bl_label = "Aura Modal UI"
+    bl_idname = "design.modal_ui"
+    bl_label = "Design Modal UI"
     bl_description = "Modal operator for responsive UI updates"
     
     def execute(self, context):
@@ -224,102 +224,4 @@ class AuraModalOperator(bpy.types.Operator):
         return {'PASS_THROUGH'}
 
 
-# Enhanced settings for V20.0
-class AuraEngineSettings(bpy.types.PropertyGroup):
-    """Extended settings for Aura V20.0 Design Engine."""
-    
-    # Core system properties
-    is_processing: bpy.props.BoolProperty(
-        name="Is Processing",
-        description="Whether AI is currently processing",
-        default=False
-    )
-    
-    chat_messages: bpy.props.StringProperty(
-        name="Chat Messages",
-        description="JSON string containing chat history",
-        default=""
-    )
-    
-    current_prompt: bpy.props.StringProperty(
-        name="Design Request",
-        description="Current design request from user",
-        default="",
-        maxlen=512
-    )
-    
-    # V20.0 Mesh Quality Control with 8GB VRAM optimization
-    mesh_quality: bpy.props.IntProperty(
-        name="Mesh Resolution",
-        description="Marching Cubes resolution for implicit surface extraction",
-        default=64,
-        min=16,
-        max=256,
-        step=16
-    )
-    
-    # Asset specifications
-    asset_size: bpy.props.FloatProperty(
-        name="Asset Scale",
-        description="Overall scale factor for the generated asset",
-        default=1.0,
-        min=0.1,
-        max=20.0
-    )
-    
-    material_type: bpy.props.EnumProperty(
-        name="Material Type",
-        description="Type of material for the asset",
-        items=[
-            ('METAL', 'Metal', 'Metallic material'),
-            ('CERAMIC', 'Ceramic', 'Ceramic material'),
-            ('PLASTIC', 'Plastic', 'Plastic material'),
-            ('ORGANIC', 'Organic', 'Organic/wood material'),
-        ],
-        default='METAL'
-    )
-    
-    feature_shape: bpy.props.EnumProperty(
-        name="Feature Shape",
-        description="Shape of the primary feature",
-        items=[
-            ('ROUND', 'Round', 'Circular feature'),
-            ('SQUARE', 'Square', 'Square/rectangular feature'),
-            ('ORGANIC', 'Organic', 'Organic/curved feature'),
-            ('GEOMETRIC', 'Geometric', 'Geometric/angular feature'),
-            ('TWISTED', 'Twisted', 'Twisted/spiral feature'),
-        ],
-        default='ROUND'
-    )
-    
-    feature_scale: bpy.props.FloatProperty(
-        name="Feature Scale",
-        description="Scale of the primary feature relative to asset",
-        default=1.0,
-        min=0.1,
-        max=10.0
-    )
-    
-    # V20.0 Professional technique selection
-    preferred_technique: bpy.props.EnumProperty(
-        name="Generation Technique",
-        description="Preferred procedural generation technique",
-        items=[
-            ('AUTO', 'AI Selects', 'Let AI choose the best technique'),
-            ('IMPLICIT', 'Implicit Functions', 'Neural implicit function generation'),
-            ('PROCEDURAL', 'Procedural', 'Rule-based procedural generation'),
-            ('HYBRID', 'Hybrid', 'Combined implicit and procedural techniques'),
-        ],
-        default='AUTO'
-    )
 
-
-def register():
-    bpy.utils.register_class(AuraEngineSettings)
-    bpy.types.Scene.aura_settings = bpy.props.PointerProperty(type=AuraEngineSettings)
-
-
-def unregister():
-    if hasattr(bpy.types.Scene, 'aura_settings'):
-        del bpy.types.Scene.aura_settings
-    bpy.utils.unregister_class(AuraEngineSettings)
