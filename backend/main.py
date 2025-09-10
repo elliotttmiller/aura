@@ -1,65 +1,297 @@
+"""
+Aura V5.0 Backend Orchestrator - Two-Stage Autonomous AI Pipeline
+================================================================
+
+This orchestrator manages the complete V5.0 autonomous workflow:
+Stage 1: LLM (Llama 3.1) generates Master Blueprint
+Stage 2: Shap-E generates 3D base geometry  
+Stage 3: Blender executes the Master Blueprint deterministically
+
+Part of the V5.0 Autonomous Cognitive Architecture.
+"""
+
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse, FileResponse
 import subprocess
 import os
 import logging
+import json
+import requests
 import shlex
 
-app = FastAPI()
+app = FastAPI(title="Aura V5.0 Backend Orchestrator", version="5.0")
 
 logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
+# Configuration
 BLENDER_PATH = os.environ.get("BLENDER_PATH", r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe")
-AURA_BACKEND_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "aura_backend.py"))
+BLENDER_PROC_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "blender_proc.py"))
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "output"))
-if not os.path.exists(OUTPUT_DIR):
-    os.makedirs(OUTPUT_DIR)
+LM_STUDIO_URL = os.environ.get("LM_STUDIO_URL", "http://localhost:1234/v1/chat/completions")
+AI_SERVER_URL = "http://localhost:8002"
 
+# Ensure output directory exists
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# Master Blueprint Prompt Template for Llama 3.1
+MASTER_BLUEPRINT_PROMPT = """You are a world-class, expert jewelry CAD designer and system architect. Your mission is to translate a user's creative request into a complete, precise, and manufacturable 3D design blueprint.
+
+You must generate a single, valid JSON object that contains ALL the necessary parameters to construct the final piece. Do not include any other text, explanations, or markdown formatting. Adhere strictly to the schema.
+
+This is the required JSON Master Blueprint schema:
+{{
+  "creative_prompt_for_3d_model": "A rich, descriptive paragraph for the 3D generative model. Describe the visual style, textures, and artistic elements. This is the most important creative step.",
+  "shank_parameters": {{
+    "profile_shape": "A string, either 'D-Shape' or 'Round'.",
+    "thickness_mm": "A float, between 1.5 and 2.5."
+  }},
+  "setting_parameters": {{
+    "prong_count": "An integer, either 4 or 6.",
+    "style": "A string, either 'Classic' for straight prongs or 'Sweeping' for curved prongs.",
+    "height_above_shank_mm": "A float, representing the height of the stone setting from the top of the ring band."
+  }},
+  "artistic_modifier_parameters": {{
+    "twist_angle_degrees": "An integer, from 0 to 180. 0 means no twist.",
+    "organic_displacement_strength": "A float, from 0.0 to 0.001. 0.0 means no organic texture."
+  }}
+}}
+
+Analyze the following user request and generate the complete JSON Master Blueprint.
+
+USER'S REQUEST: "{user_prompt}"
+TECHNICAL SPECIFICATIONS:
+- Ring Size (US): {ring_size}
+- Metal: {metal}
+- Stone Shape: {stone_shape}
+- Stone Carat: {stone_carat}"""
 
 def get_output_path(prompt: str) -> str:
+    """Generate output file path based on prompt."""
     safe_name = "".join(c for c in prompt.lower() if c.isalnum() or c in (' ', '_')).rstrip()
     safe_name = "_".join(safe_name.split())[:40]
     return os.path.join(OUTPUT_DIR, f"output_{safe_name}.stl")
 
+async def generate_master_blueprint(user_prompt: str, user_specs: dict) -> dict:
+    """
+    Stage 1: Generate Master Blueprint using Llama 3.1 via LM Studio.
+    
+    Args:
+        user_prompt: User's creative request
+        user_specs: Technical specifications
+        
+    Returns:
+        Parsed JSON Master Blueprint
+    """
+    logger.info("=== STAGE 1: AI SYSTEM ARCHITECT (LLAMA 3.1) ===")
+    logger.info(f"Generating Master Blueprint for: '{user_prompt}'")
+    
+    # Construct the master prompt
+    master_prompt = MASTER_BLUEPRINT_PROMPT.format(
+        user_prompt=user_prompt,
+        ring_size=user_specs['ring_size'],
+        metal=user_specs['metal'],
+        stone_shape=user_specs['stone_shape'],
+        stone_carat=user_specs['stone_carat']
+    )
+    
+    # Prepare LM Studio request
+    lm_request = {
+        "model": "llama-3.1-8b-instruct",
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a master jewelry designer. Respond only with valid JSON, no other text."
+            },
+            {
+                "role": "user", 
+                "content": master_prompt
+            }
+        ],
+        "temperature": 0.7,
+        "max_tokens": 1000
+    }
+    
+    try:
+        logger.debug(f"Sending request to LM Studio: {LM_STUDIO_URL}")
+        response = requests.post(LM_STUDIO_URL, json=lm_request, timeout=60)
+        response.raise_for_status()
+        
+        lm_data = response.json()
+        blueprint_text = lm_data['choices'][0]['message']['content'].strip()
+        
+        logger.debug(f"LLM Response: {blueprint_text}")
+        
+        # Parse JSON Master Blueprint
+        blueprint = json.loads(blueprint_text)
+        logger.info("Master Blueprint generated successfully")
+        logger.debug(f"Blueprint: {json.dumps(blueprint, indent=2)}")
+        
+        return blueprint
+        
+    except requests.RequestException as e:
+        logger.error(f"LM Studio connection failed: {e}")
+        # Fallback blueprint for testing
+        logger.warning("Using fallback Master Blueprint")
+        return create_fallback_blueprint(user_prompt)
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON from LLM: {e}")
+        return create_fallback_blueprint(user_prompt)
+
+def create_fallback_blueprint(user_prompt: str) -> dict:
+    """Create a fallback Master Blueprint when LLM is unavailable."""
+    return {
+        "creative_prompt_for_3d_model": f"An elegant jewelry piece inspired by: {user_prompt}. The design features smooth curves and sophisticated metalwork with fine details and artistic flourishes.",
+        "shank_parameters": {
+            "profile_shape": "Round",
+            "thickness_mm": 2.0
+        },
+        "setting_parameters": {
+            "prong_count": 4,
+            "style": "Classic",
+            "height_above_shank_mm": 3.5
+        },
+        "artistic_modifier_parameters": {
+            "twist_angle_degrees": 15 if "twist" in user_prompt.lower() else 0,
+            "organic_displacement_strength": 0.0005 if "organic" in user_prompt.lower() or "vine" in user_prompt.lower() else 0.0
+        }
+    }
+
+async def generate_3d_base_geometry(blueprint: dict) -> str:
+    """
+    Stage 2: Generate 3D base geometry using Shap-E.
+    
+    Args:
+        blueprint: Master Blueprint containing creative_prompt_for_3d_model
+        
+    Returns:
+        Path to generated .obj file
+    """
+    logger.info("=== STAGE 2: AI MASTER ARTISAN (SHAP-E) ===")
+    creative_prompt = blueprint['creative_prompt_for_3d_model']
+    logger.info(f"Generating 3D geometry for: '{creative_prompt}'")
+    
+    try:
+        # Send request to AI server
+        ai_request = {
+            "prompt": creative_prompt,
+            "guidance_scale": 15.0,
+            "num_inference_steps": 64
+        }
+        
+        logger.debug(f"Sending request to AI server: {AI_SERVER_URL}")
+        response = requests.post(f"{AI_SERVER_URL}/generate", json=ai_request, timeout=120)
+        response.raise_for_status()
+        
+        ai_data = response.json()
+        
+        if not ai_data.get('success'):
+            raise RuntimeError(f"AI server error: {ai_data.get('error', 'Unknown error')}")
+        
+        obj_path = ai_data['obj_path']
+        logger.info(f"3D base geometry generated: {obj_path}")
+        
+        return obj_path
+        
+    except requests.RequestException as e:
+        logger.error(f"AI server connection failed: {e}")
+        raise RuntimeError(f"Could not connect to AI server: {e}")
+
+async def execute_blender_processor(blueprint: dict, obj_path: str, output_path: str, user_specs: dict):
+    """
+    Stage 3: Execute Blender Hyper-Parametric Processor.
+    
+    Args:
+        blueprint: Complete Master Blueprint
+        obj_path: Path to AI-generated base geometry
+        output_path: Final STL output path
+        user_specs: User specifications
+    """
+    logger.info("=== STAGE 3: HYPER-PARAMETRIC EXECUTOR (BLENDER) ===")
+    logger.info(f"Executing Master Blueprint with: {obj_path}")
+    
+    # Prepare command
+    blueprint_json = json.dumps(blueprint)
+    command = [
+        BLENDER_PATH, "--background", "--python", BLENDER_PROC_SCRIPT, "--",
+        "--input", obj_path,
+        "--output", output_path,
+        "--params", blueprint_json,
+        "--ring_size", str(user_specs['ring_size']),
+        "--stone_carat", str(user_specs['stone_carat']),
+        "--stone_shape", user_specs['stone_shape'],
+        "--metal", user_specs['metal']
+    ]
+    
+    logger.debug(f"Blender command: {' '.join(command[:8])}... [params truncated]")
+    
+    # Execute Blender processor
+    result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=300)
+    
+    logger.debug("[Blender stdout]\n%s", result.stdout)
+    if result.stderr:
+        logger.error("[Blender stderr]\n%s", result.stderr)
+    
+    if result.returncode != 0:
+        raise RuntimeError(f"Blender execution failed: {result.stderr}")
+    
+    if not os.path.exists(output_path):
+        raise RuntimeError("Blender did not generate output file")
+    
+    logger.info("Master Blueprint execution completed successfully")
+
 @app.post("/generate")
 async def generate_design(request: Request):
-    logger.debug('Received /generate request')
+    """
+    Main endpoint for V5.0 autonomous design generation.
+    Orchestrates the complete two-stage AI pipeline.
+    """
+    logger.info("=== AURA V5.0 AUTONOMOUS DESIGN GENERATION ===")
+    
     try:
         data = await request.json()
-        logger.debug('Request data: %s', data)
-        prompt = data.get("prompt", "default_prompt")
-        output_file = get_output_path(prompt)
+        logger.debug(f'Request data: {data}')
+        
+        # Extract user inputs
+        user_prompt = data.get("prompt", "elegant engagement ring")
+        user_specs = {
+            'ring_size': data.get("ring_size", 7.0),
+            'stone_carat': data.get("stone_carat", 1.0),
+            'stone_shape': data.get("stone_shape", "ROUND"),
+            'metal': data.get("metal", "GOLD")
+        }
+        
+        output_file = get_output_path(user_prompt)
         if os.path.exists(output_file):
             os.remove(output_file)
-        command = [
-            BLENDER_PATH, "--background", "--python", AURA_BACKEND_SCRIPT, "--",
-            shlex.quote(prompt),
-            "--output", output_file,
-            "--ring_size", str(data.get("ring_size", 7.0)),
-            "--stone_carat", str(data.get("stone_carat", 1.0)),
-            "--stone_shape", data.get("stone_shape", "ROUND"),
-            "--metal", data.get("metal", "GOLD")
-        ]
-        logger.debug(f"Blender command: {' '.join(command)}")
-        result = subprocess.run(command, capture_output=True, text=True, check=False)
-        logger.debug("[Blender stdout]\n%s", result.stdout)
-        if result.stderr:
-            logger.error("[Blender stderr]\n%s", result.stderr)
-        if result.returncode != 0 or not os.path.exists(output_file):
-            error_message = result.stderr or "Blender process failed and no output file was generated."
-            return JSONResponse(status_code=500, content={"error": error_message, "stdout": result.stdout})
-        logger.debug('Design generated successfully: %s', output_file)
+        
+        # Stage 1: Generate Master Blueprint (LLM)
+        blueprint = await generate_master_blueprint(user_prompt, user_specs)
+        
+        # Stage 2: Generate 3D base geometry (Shap-E)
+        obj_path = await generate_3d_base_geometry(blueprint)
+        
+        # Stage 3: Execute Blender processor
+        await execute_blender_processor(blueprint, obj_path, output_file, user_specs)
+        
+        logger.info("=== V5.0 AUTONOMOUS DESIGN GENERATION COMPLETED ===")
+        
         return JSONResponse({
             "file": os.path.basename(output_file),
-            "message": "Design generated successfully."
+            "message": "V5.0 autonomous design generated successfully",
+            "blueprint_used": blueprint
         })
+        
     except Exception as e:
-        logger.exception('Exception in /generate')
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        logger.exception('V5.0 generation pipeline failed')
+        return JSONResponse(status_code=500, content={
+            "error": str(e),
+            "message": "V5.0 autonomous generation failed"
+        })
 
 @app.get("/output/{filename}")
 async def serve_stl(filename: str):
+    """Serve generated STL files."""
     logger.debug('Received STL file request: %s', filename)
     try:
         if not filename.startswith("output_") or not filename.endswith(".stl"):
@@ -76,6 +308,20 @@ async def serve_stl(filename: str):
         logger.exception('Exception serving STL file')
         return Response(content=str(e), status_code=500)
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {
+        "service": "Aura V5.0 Backend Orchestrator",
+        "status": "running",
+        "version": "5.0",
+        "architecture": "Two-Stage Autonomous AI Pipeline"
+    }
+
 @app.get("/")
 async def root():
-    return {"status": "Aura backend running"}
+    return {
+        "service": "Aura V5.0 Backend Orchestrator",
+        "version": "5.0",
+        "status": "Autonomous Cognitive Architecture Active"
+    }
