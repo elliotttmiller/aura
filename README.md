@@ -4,6 +4,69 @@
 
 V23.0 Generative Artisan represents the **ultimate evolutionary achievement** in AI-driven creative systems, introducing revolutionary dynamic code generation that transforms the AI from a tool-using artisan into a master inventor. When faced with novel geometry requirements, the AI autonomously writes, validates, and executes its own bmesh Python code, creating an infinite universe of creative possibilities while maintaining complete transparency and security.
 
+## 🎮 System Control & Management
+
+### Interactive Control Panel
+Aura V24 features a sophisticated dual-interface control system for managing the entire AI pipeline:
+
+#### 🖥️ Interactive Python Control Panel
+```bash
+# Start interactive menu system
+python startup.py
+
+# Or use the control panel directly
+python backend/system_control_panel.py
+```
+
+**Features:**
+- 📊 **Visual Status Display**: Real-time service health monitoring with color-coded status
+- 🚀 **Smart Startup**: Automatic dependency management (LM Studio → Blender → AI Server → Backend → Frontend)
+- 🔄 **System Management**: Start, stop, restart all services with proper cleanup
+- 💻 **Health Monitoring**: Comprehensive health checks and system diagnostics  
+- 🧹 **Process Management**: Clean restart functionality with existing process cleanup
+- 📈 **Live Monitoring**: Real-time monitoring dashboard with configurable intervals
+
+#### 🌐 Web-Based Control Panel
+```bash
+# Start services and open web control panel
+python startup.py --web
+```
+
+**Access at:** http://localhost:8001/control-panel
+
+**Features:**
+- 🎨 **Modern UI**: Beautiful gradient interface with responsive design
+- 📱 **Mobile Friendly**: Works perfectly on tablets and mobile devices
+- 🔄 **Real-time Updates**: Auto-refreshing service status every 30 seconds
+- 🚦 **Visual Indicators**: Color-coded service status with pulse animations
+- 📊 **System Dashboard**: Live system metrics (CPU, Memory, Disk usage)
+- 📄 **Live Logs**: Real-time log streaming with timestamp display
+- 🛠️ **Advanced Tools**: Configuration validation, log export, documentation links
+
+#### 🚀 Quick Start Commands
+```bash
+# Full system startup with dependency management
+python startup.py --full
+
+# Clean restart (kills existing processes first)  
+python startup.py --clean
+
+# Interactive menu for manual control
+python startup.py --interactive
+
+# Start specific services only
+python backend/system_control_panel.py start
+```
+
+### Service Startup Order
+The system enforces strict dependency management:
+
+1. **LM Studio** (External - manual start required)
+2. **Blender** (Background processing engine)  
+3. **AI Server** (Depends on Blender + LM Studio)
+4. **Backend** (Depends on AI Server)
+5. **Frontend** (Depends on Backend)
+
 ## 🚀 V23.0 Generative Overview
 
 ### The Four Pillars of V23.0 Mastery

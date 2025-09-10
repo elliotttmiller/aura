@@ -11,7 +11,7 @@ Part of the V7.0 Professional Integration.
 """
 
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 import subprocess
 import os
 import logging
@@ -876,15 +876,143 @@ async def health_check():
 async def root():
     if SANDBOX_MODE:
         return {
-            "service": "V6.0 Sentient Cognitive Loop",
-            "version": "6.0",
+            "service": "V24 Backend Orchestrator",
+            "version": "24.0",
             "mode": "sandbox",
             "status": "Cognitive Loop Architecture Active - Verifiable Testing Environment"
         }
     else:
         return {
-            "service": "V7.0 Backend Orchestrator",
-            "version": "7.0", 
+            "service": "V24 Backend Orchestrator",
+            "version": "24.0", 
             "mode": "production",
             "status": "Professional Integration Active"
         }
+
+# V24 Enhancement: Control Panel API Endpoints
+@app.post("/start-services")
+async def start_services_endpoint():
+    """Start all system services."""
+    try:
+        from .system_control_panel import SystemControlPanel
+        control_panel = SystemControlPanel()
+        success = control_panel.start_all_services()
+        
+        return JSONResponse({
+            "success": success,
+            "message": "Services startup initiated" if success else "Some services failed to start"
+        })
+    except Exception as e:
+        return JSONResponse(status_code=500, content={
+            "success": False,
+            "error": str(e)
+        })
+
+@app.post("/stop-services")  
+async def stop_services_endpoint():
+    """Stop all system services."""
+    try:
+        from .system_control_panel import SystemControlPanel
+        control_panel = SystemControlPanel()
+        success = control_panel.stop_all_services()
+        
+        return JSONResponse({
+            "success": success,
+            "message": "Services shutdown completed" if success else "Some services failed to stop"
+        })
+    except Exception as e:
+        return JSONResponse(status_code=500, content={
+            "success": False,
+            "error": str(e)
+        })
+
+@app.post("/restart-services")
+async def restart_services_endpoint():
+    """Restart all system services."""
+    try:
+        from .system_control_panel import SystemControlPanel
+        control_panel = SystemControlPanel()
+        success = control_panel.restart_all_services()
+        
+        return JSONResponse({
+            "success": success,
+            "message": "Services restart completed" if success else "Restart failed"
+        })
+    except Exception as e:
+        return JSONResponse(status_code=500, content={
+            "success": False,
+            "error": str(e)
+        })
+
+@app.get("/system-status")
+async def get_system_status():
+    """Get comprehensive system status."""
+    try:
+        from .system_control_panel import SystemControlPanel
+        control_panel = SystemControlPanel()
+        status = control_panel.get_system_status()
+        
+        return JSONResponse({
+            "success": True,
+            "status": status
+        })
+    except Exception as e:
+        return JSONResponse(status_code=500, content={
+            "success": False,
+            "error": str(e)
+        })
+
+@app.get("/health-check")
+async def health_check_endpoint():
+    """Run health checks on all services."""
+    try:
+        from .system_control_panel import SystemControlPanel
+        control_panel = SystemControlPanel()
+        
+        results = {}
+        for service_name in control_panel.services:
+            results[service_name] = control_panel.check_service_health(service_name)
+        
+        return JSONResponse({
+            "success": True,
+            "health_checks": results,
+            "all_healthy": all(results.values())
+        })
+    except Exception as e:
+        return JSONResponse(status_code=500, content={
+            "success": False,
+            "error": str(e)
+        })
+
+@app.get("/diagnostics")
+async def get_diagnostics():
+    """Get comprehensive system diagnostics."""
+    try:
+        from .system_control_panel import SystemControlPanel
+        control_panel = SystemControlPanel()
+        diagnostics = control_panel.run_diagnostics()
+        
+        return JSONResponse({
+            "success": True,
+            "diagnostics": diagnostics
+        })
+    except Exception as e:
+        return JSONResponse(status_code=500, content={
+            "success": False,
+            "error": str(e)
+        })
+
+# Serve the control panel HTML
+@app.get("/control-panel")
+async def serve_control_panel():
+    """Serve the web-based control panel."""
+    from fastapi.responses import HTMLResponse
+    import os
+    
+    try:
+        control_panel_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "control_panel.html")
+        with open(control_panel_path, 'r') as f:
+            html_content = f.read()
+        return HTMLResponse(content=html_content)
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Control Panel Not Found</h1><p>The control panel HTML file could not be found.</p>", status_code=404)

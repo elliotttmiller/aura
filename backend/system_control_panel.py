@@ -46,6 +46,7 @@ import logging
 import argparse
 import threading
 import subprocess
+import webbrowser
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
 from pathlib import Path
@@ -135,12 +136,12 @@ class SystemControlPanel:
         logger.info("🚀 Aura V24 System Control Panel initialized")
     
     def _setup_services(self):
-        """Setup service configurations."""
+        """Setup service configurations with strict dependency ordering."""
         if CONFIG_AVAILABLE:
             # LM Studio (external service - we monitor but don't start)
             self.services['lm_studio'] = ServiceConfig(
                 name='lm_studio',
-                command=[],  # External service
+                command=[],  # External service - must be started manually
                 cwd='.',
                 host=config.get('LM_STUDIO_HOST', 'localhost'),
                 port=config.get_int('LM_STUDIO_PORT', 1234),
@@ -148,19 +149,33 @@ class SystemControlPanel:
                 required=True
             )
             
-            # AI Server
+            # Blender (must start before AI server)
+            blender_path = config.get('BLENDER_PATH', r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe")
+            self.services['blender'] = ServiceConfig(
+                name='blender',
+                command=[blender_path, '--background', '--python-exit-code', '1'],
+                cwd='.',
+                host='localhost',
+                port=9999,  # Dummy port for Blender
+                startup_timeout=30,
+                depends_on=['lm_studio'],  # Blender needs LM Studio running
+                required=True
+            )
+            
+            # AI Server (depends on Blender and LM Studio)
             self.services['ai_server'] = ServiceConfig(
                 name='ai_server',
-                command=[sys.executable, 'ai_server.py'],
+                command=[sys.executable, 'backend/ai_server.py'],
                 cwd='.',
                 host=config.get('AI_SERVER_HOST', '0.0.0.0'),
                 port=config.get_int('AI_SERVER_PORT', 8002),
                 health_endpoint='/health',
                 startup_timeout=60,
+                depends_on=['blender', 'lm_studio'],  # AI Server needs both
                 required=True
             )
             
-            # Backend Orchestrator  
+            # Backend Orchestrator (depends on AI Server)  
             self.services['backend'] = ServiceConfig(
                 name='backend',
                 command=[sys.executable, '-m', 'uvicorn', 'backend.main:app', 
@@ -170,15 +185,29 @@ class SystemControlPanel:
                 host=config.get('BACKEND_HOST', 'localhost'),
                 port=config.get_int('BACKEND_PORT', 8001),
                 health_endpoint='/health',
-                depends_on=['lm_studio'],
+                depends_on=['ai_server'],  # Backend needs AI Server
                 required=True
             )
+            
+            # Frontend (depends on Backend)
+            if config.get('FRONTEND_ENABLED', True):
+                frontend_port = config.get_int('FRONTEND_PORT', 3000)
+                self.services['frontend'] = ServiceConfig(
+                    name='frontend',
+                    command=[sys.executable, '-m', 'http.server', str(frontend_port)],
+                    cwd='frontend',
+                    host=config.get('FRONTEND_HOST', 'localhost'),
+                    port=frontend_port,
+                    depends_on=['backend'],  # Frontend needs Backend
+                    startup_timeout=15,
+                    required=True
+                )
             
             # Sandbox Server (optional)
             if config.get_bool('SANDBOX_MODE', False):
                 self.services['sandbox'] = ServiceConfig(
                     name='sandbox',
-                    command=[sys.executable, 'sandbox_3d_server.py'],
+                    command=[sys.executable, 'backend/sandbox_3d_server.py'],
                     cwd='.',
                     host=config.get('SANDBOX_SERVER_HOST', '0.0.0.0'),
                     port=config.get_int('SANDBOX_SERVER_PORT', 8003),
@@ -210,13 +239,42 @@ class SystemControlPanel:
                 health_endpoint='/v1/models',
                 required=True
             ),
+            'blender': ServiceConfig(
+                name='blender',
+                command=['blender', '--background'],
+                cwd='.',
+                host='localhost',
+                port=9999,  # Dummy port
+                depends_on=['lm_studio'],
+                required=True
+            ),
             'ai_server': ServiceConfig(
                 name='ai_server', 
-                command=[sys.executable, 'ai_server.py'],
+                command=[sys.executable, 'backend/ai_server.py'],
                 cwd='.',
                 host='0.0.0.0',
                 port=8002,
                 health_endpoint='/health',
+                depends_on=['blender', 'lm_studio'],
+                required=True
+            ),
+            'backend': ServiceConfig(
+                name='backend',
+                command=[sys.executable, '-m', 'uvicorn', 'backend.main:app', '--host', 'localhost', '--port', '8001'],
+                cwd='.',
+                host='localhost',
+                port=8001,
+                health_endpoint='/health',
+                depends_on=['ai_server'],
+                required=True
+            ),
+            'frontend': ServiceConfig(
+                name='frontend',
+                command=[sys.executable, '-m', 'http.server', '3000'],
+                cwd='frontend',
+                host='localhost',
+                port=3000,
+                depends_on=['backend'],
                 required=True
             )
         }
@@ -307,14 +365,25 @@ class SystemControlPanel:
         # Check dependencies
         if service.depends_on:
             for dep in service.depends_on:
-                if not self.status.get(dep, ServiceStatus(dep)).running:
+                if dep not in self.status or not self.status[dep].running:
+                    # For LM Studio, check if it's actually available
+                    if dep == 'lm_studio':
+                        if self.check_service_health(dep):
+                            self.status[dep].running = True  # Mark as running if available
+                            continue
                     logger.error(f"Cannot start {service_name}: dependency {dep} not running")
                     return False
         
         # Skip external services
         if not service.command:
-            logger.info(f"Skipping external service: {service_name}")
-            return self.check_service_health(service_name)
+            logger.info(f"Checking external service: {service_name}")
+            is_available = self.check_service_health(service_name)
+            if is_available:
+                status.running = True
+                logger.info(f"✅ External service {service_name} is available")
+            else:
+                logger.error(f"❌ External service {service_name} is not available - please start it manually")
+            return is_available
         
         logger.info(f"🚀 Starting service: {service_name}")
         
@@ -324,15 +393,27 @@ class SystemControlPanel:
             if service.environment:
                 env.update(service.environment)
             
-            # Start process
-            process = subprocess.Popen(
-                service.command,
-                cwd=service.cwd,
-                env=env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                universal_newlines=True
-            )
+            # Special handling for Blender
+            if service_name == 'blender':
+                # Start Blender in background mode for processing
+                process = subprocess.Popen(
+                    service.command,
+                    cwd=service.cwd,
+                    env=env,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True
+                )
+            else:
+                # Start process normally
+                process = subprocess.Popen(
+                    service.command,
+                    cwd=service.cwd,
+                    env=env,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True
+                )
             
             self.processes[service_name] = process
             status.running = True
@@ -341,6 +422,14 @@ class SystemControlPanel:
             status.errors.clear()
             
             logger.info(f"✅ Service {service_name} started with PID {process.pid}")
+            
+            # For Blender, we don't wait for health check since it runs as background process
+            if service_name == 'blender':
+                # Give Blender a moment to initialize
+                time.sleep(3)
+                status.healthy = True
+                logger.info(f"🎉 Service {service_name} initialized in background")
+                return True
             
             # Wait for service to be ready
             ready = False
@@ -694,13 +783,265 @@ class SystemControlPanel:
             except FileNotFoundError:
                 print("No system log file found")
 
+def interactive_menu():
+    """
+    Interactive menu system for user-friendly control panel operation.
+    Allows users to scroll through menu options and choose without command-line args.
+    """
+    def print_menu():
+        print("\n" + "=" * 60)
+        print("🤖 AURA V24 SYSTEM CONTROL PANEL")
+        print("=" * 60)
+        print("Select an option by entering the number:")
+        print()
+        print("1. 🚀 Start All Services")
+        print("2. 🛑 Stop All Services") 
+        print("3. 🔄 Restart All Services")
+        print("4. 📊 Show System Status")
+        print("5. 🏥 Run Health Checks")
+        print("6. 🔍 Run System Diagnostics")
+        print("7. 📈 Start Monitoring Dashboard")
+        print("8. ⚙️  Validate Configuration")
+        print("9. 📄 View System Logs")
+        print("10. 🔧 Kill Existing Processes (Clean Restart)")
+        print("11. 🌐 Open Frontend UI")
+        print("0. ❌ Exit")
+        print("-" * 60)
+    
+    control_panel = None
+    
+    try:
+        print("🔧 Initializing Aura V24 System Control Panel...")
+        control_panel = SystemControlPanel()
+        print("✅ Control panel initialized successfully!")
+    except Exception as e:
+        print(f"❌ Failed to initialize control panel: {e}")
+        return
+    
+    while True:
+        try:
+            print_menu()
+            choice = input("Enter your choice (0-11): ").strip()
+            
+            if choice == '0':
+                print("\n👋 Goodbye! Aura V24 Control Panel exiting...")
+                if control_panel:
+                    control_panel.stop_all_services()
+                break
+            elif choice == '1':
+                print("\n🚀 Starting all services...")
+                success = control_panel.start_all_services()
+                if success:
+                    print("✅ All services started successfully!")
+                    control_panel.print_status_table()
+                    # Open browser to frontend after successful startup
+                    _open_frontend_browser()
+                else:
+                    print("❌ Some services failed to start")
+                    
+            elif choice == '2':
+                print("\n🛑 Stopping all services...")
+                success = control_panel.stop_all_services()
+                if success:
+                    print("✅ All services stopped successfully")
+                else:
+                    print("⚠️ Some services failed to stop cleanly")
+                    
+            elif choice == '3':
+                print("\n🔄 Restarting all services...")
+                success = control_panel.restart_all_services()
+                if success:
+                    print("✅ All services restarted successfully!")
+                    control_panel.print_status_table()
+                    _open_frontend_browser()
+                else:
+                    print("❌ Restart failed")
+                    
+            elif choice == '4':
+                print("\n📊 Current system status:")
+                control_panel.print_status_table()
+                
+            elif choice == '5':
+                print("\n🏥 Running health checks...")
+                all_healthy = True
+                for service_name in control_panel.services:
+                    healthy = control_panel.check_service_health(service_name)
+                    status_icon = "✅" if healthy else "❌"
+                    print(f"  {status_icon} {service_name}: {'Healthy' if healthy else 'Unhealthy'}")
+                    if not healthy:
+                        all_healthy = False
+                
+                if all_healthy:
+                    print("\n🎉 All services are healthy!")
+                else:
+                    print("\n⚠️ Some services are unhealthy")
+                    
+            elif choice == '6':
+                print("\n🔍 Running comprehensive system diagnostics...")
+                diagnostics = control_panel.run_diagnostics()
+                print(json.dumps(diagnostics, indent=2, default=str))
+                
+            elif choice == '7':
+                print("\n📈 Starting monitoring dashboard...")
+                print("Press Ctrl+C to stop monitoring and return to menu")
+                try:
+                    control_panel.start_monitoring(30)
+                except KeyboardInterrupt:
+                    print("\n📈 Monitoring stopped, returning to menu...")
+                    
+            elif choice == '8':
+                print("\n⚙️ Validating system configuration...")
+                if CONFIG_AVAILABLE:
+                    from ..config import validate_system_config
+                    issues = validate_system_config()
+                    if not any(issues.values()):
+                        print("✅ Configuration is valid")
+                    else:
+                        print("❌ Configuration issues found:")
+                        for category, items in issues.items():
+                            if items:
+                                print(f"  {category.title()}: {', '.join(items)}")
+                else:
+                    print("⚠️ Configuration validation not available")
+                    
+            elif choice == '9':
+                print("\n📄 System logs (last 50 lines):")
+                control_panel.show_logs(None, 50)
+                
+            elif choice == '10':
+                print("\n🔧 Killing existing processes for clean restart...")
+                _kill_existing_processes()
+                print("✅ Process cleanup completed")
+                
+            elif choice == '11':
+                print("\n🌐 Opening frontend UI in browser...")
+                _open_frontend_browser()
+                
+            else:
+                print("❌ Invalid choice. Please enter a number between 0-11.")
+                
+            if choice != '0':
+                input("\nPress Enter to continue...")
+                
+        except KeyboardInterrupt:
+            print("\n\n🛑 Interrupted by user")
+            if control_panel:
+                control_panel.stop_all_services()
+            break
+        except Exception as e:
+            print(f"\n❌ Error: {e}")
+            input("Press Enter to continue...")
+
+def _kill_existing_processes():
+    """Kill existing Aura processes for clean startup."""
+    import psutil
+    
+    if not PSUTIL_AVAILABLE:
+        print("⚠️ psutil not available - cannot kill processes")
+        return
+    
+    process_names = ['blender', 'python', 'uvicorn', 'flask', 'fastapi']
+    aura_keywords = ['aura', 'ai_server', 'backend', 'frontend', 'blender_proc']
+    
+    killed_processes = []
+    
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            proc_info = proc.info
+            if not proc_info['cmdline']:
+                continue
+                
+            cmdline_str = ' '.join(proc_info['cmdline']).lower()
+            
+            # Check if this is an Aura-related process
+            is_aura_process = any(keyword in cmdline_str for keyword in aura_keywords)
+            
+            if is_aura_process:
+                print(f"🔧 Killing process: {proc_info['name']} (PID: {proc_info['pid']})")
+                proc.terminate()
+                killed_processes.append(proc_info['pid'])
+                
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    
+    # Wait for processes to terminate
+    if killed_processes:
+        time.sleep(2)
+        for pid in killed_processes:
+            try:
+                proc = psutil.Process(pid)
+                if proc.is_running():
+                    proc.kill()  # Force kill if still running
+            except psutil.NoSuchProcess:
+                pass
+        
+        print(f"✅ Killed {len(killed_processes)} Aura processes")
+    else:
+        print("ℹ️ No Aura processes found to kill")
+
+def _open_frontend_browser():
+    """Open the frontend UI in the default browser."""
+    import webbrowser
+    import time
+    
+    # Wait a moment for services to be fully ready
+    time.sleep(2)
+    
+    # Try different possible frontend URLs
+    frontend_urls = [
+        "http://localhost:8001/control-panel",  # Web control panel
+        "http://localhost:3000",  # React/Next.js default
+        "http://localhost:8080",  # Vue.js default  
+        "http://localhost:5000",  # Flask default
+        "http://localhost:8001/docs",  # Backend API docs
+    ]
+    
+    for url in frontend_urls:
+        try:
+            if _check_url_available(url):
+                print(f"🌐 Opening {url} in browser...")
+                webbrowser.open(url)
+                return
+        except Exception as e:
+            logger.debug(f"Could not open {url}: {e}")
+    
+    print("⚠️ No frontend service found. Make sure backend is running.")
+    print("💡 Available endpoints:")
+    print("   - Control Panel: http://localhost:8001/control-panel")
+    print("   - Backend API: http://localhost:8001/docs")
+    print("   - AI Server: http://localhost:8002") 
+
+def _check_url_available(url: str) -> bool:
+    """Check if a URL is available."""
+    try:
+        import urllib.parse
+        import socket
+        
+        parsed = urllib.parse.urlparse(url)
+        host = parsed.hostname or 'localhost'
+        port = parsed.port or (443 if parsed.scheme == 'https' else 80)
+        
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(1)
+            result = sock.connect_ex((host, port))
+            return result == 0
+    except Exception:
+        return False
+
 def main():
-    """Main entry point with CLI interface."""
+    """Main entry point with CLI interface and interactive menu support."""
+    # Check if running in interactive mode (no arguments)
+    if len(sys.argv) == 1:
+        interactive_menu()
+        return
+        
+    # Otherwise use CLI argument parsing
     parser = argparse.ArgumentParser(
         description='Aura V24 System Control Panel',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  %(prog)s                    # Start interactive menu
   %(prog)s start              # Start all services
   %(prog)s stop               # Stop all services  
   %(prog)s status             # Show service status
@@ -714,8 +1055,9 @@ Examples:
     
     parser.add_argument(
         'command',
+        nargs='?',
         choices=['start', 'stop', 'restart', 'status', 'health', 'diagnose', 'monitor', 'config', 'logs'],
-        help='Command to execute'
+        help='Command to execute (leave empty for interactive menu)'
     )
     
     parser.add_argument(
@@ -739,6 +1081,11 @@ Examples:
     )
     
     args = parser.parse_args()
+    
+    # If no command specified, start interactive menu
+    if not args.command:
+        interactive_menu()
+        return
     
     # Initialize control panel
     try:
