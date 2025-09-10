@@ -1,0 +1,10 @@
+
+# Cache and build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Test outputs
+3d-object-generation/output/
+output/test_*.stl

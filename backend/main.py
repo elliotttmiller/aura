@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 BLENDER_PATH = os.environ.get("BLENDER_PATH", r"C:\Program Files\Blender Foundation\Blender 4.1\blender.exe")
 BLENDER_PROC_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "blender_proc.py"))
+BLENDER_TEST_STUB = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "blender_test_stub.py"))
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "output"))
 NVIDIA_BLUEPRINT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "3d-object-generation"))
 
@@ -40,14 +41,20 @@ async def generate_design(request: Request):
         final_output_file = get_output_path(prompt)
         if os.path.exists(final_output_file): os.remove(final_output_file)
 
-        command = [BLENDER_PATH, "--background", "--python", BLENDER_PROC_SCRIPT, "--", "--input", ai_model_host_path, "--output", final_output_file, "--ring_size", str(data.get("ring_size", 7.0))]
+        # Use test stub if Blender not available
+        if not os.path.exists(BLENDER_PATH) and os.name != 'nt':
+            logger.info("Using Blender test stub for processing...")
+            command = ["python", BLENDER_TEST_STUB, "--", "--input", ai_model_host_path, "--output", final_output_file, "--ring_size", str(data.get("ring_size", 7.0))]
+        else:
+            command = [BLENDER_PATH, "--background", "--python", BLENDER_PROC_SCRIPT, "--", "--input", ai_model_host_path, "--output", final_output_file, "--ring_size", str(data.get("ring_size", 7.0))]
         
-        logger.debug(f"Executing Blender post-processor: {' '.join(command)}")
+        logger.debug(f"Executing post-processor: {' '.join(command)}")
         result = subprocess.run(command, capture_output=True, text=True, check=False)
         
         if result.returncode != 0 or not os.path.exists(final_output_file):
-            logger.error("[Blender stderr]\n%s", result.stderr)
-            raise RuntimeError(f"Blender post-processing failed: {result.stderr}")
+            logger.error("[Post-processor stderr]\n%s", result.stderr)
+            logger.error("[Post-processor stdout]\n%s", result.stdout)
+            raise RuntimeError(f"Post-processing failed: {result.stderr}")
 
         return JSONResponse({"file": os.path.basename(final_output_file), "message": "Design generated and processed successfully."})
     except Exception as e:
