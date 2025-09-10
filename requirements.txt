@@ -1,10 +1,9 @@
 # ===================================================================
-# Requirements for Aura V7.0 Professional Integration 
+# Requirements for Aura V17.0 Sentient Symbiote Environment
 # ===================================================================
 #
-# Lean, optimized dependencies for the local application only.
-# PyTorch, diffusers, and AI models are now managed externally
-# via LM Studio and dedicated Python environments.
+# State-of-the-art dependencies for low-level implicit function-based
+# AI pipeline with native shap_e integration and Marching Cubes algorithm.
 #
 # Setup Instructions:
 # > python -m venv venv
@@ -13,9 +12,22 @@
 # -------------------------------------------------------------------
 
 # --- Core Web Framework ---
-# FastAPI for backend orchestrator and frontend server
+# FastAPI for AI server endpoints
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
+
+# --- AI and Machine Learning ---
+# OpenAI Shap-E for implicit 3D generation
+shap-e>=1.0.0
+torch>=1.13.0
+torchvision>=0.14.0
+transformers>=4.21.0
+
+# --- 3D Processing ---
+# For Marching Cubes algorithm and implicit surface extraction
+scikit-image>=0.19.0
+numpy>=1.21.0
+trimesh>=3.15.0
 
 # --- HTTP Client ---
 # For communication with external LM Studio and AI services

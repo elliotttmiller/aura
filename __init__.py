@@ -1,10 +1,10 @@
 bl_info = {
-    "name": "Aura V14.0 Sentient Artisan Environment",
+    "name": "Aura V17.0 Sentient Symbiote Environment",
     "author": "Aura Development Team",
-    "version": (14, 0, 0),
+    "version": (17, 0, 0),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > Design",
-    "description": "V14.0 Sentient Artisan Environment - AI co-pilot for master-level jewelry design with real-time cognitive streaming",
+    "description": "V17.0 Sentient Symbiote Environment - State-of-the-art implicit function-based AI co-pilot with real-time cognitive streaming and Marching Cubes surface extraction",
     "category": "3D View",
 }
 

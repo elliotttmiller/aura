@@ -15,6 +15,16 @@ class SceneSettings(bpy.types.PropertyGroup):
         default="Select an object and run a check."
     )
     
+    # V17.0 Mesh Quality Control for Marching Cubes
+    mesh_quality = bpy.props.IntProperty(
+        name="Mesh Quality",
+        description="Resolution for Marching Cubes algorithm (32=low, 64=med, 128=high, 256=ultra)",
+        default=64,
+        min=16,
+        max=512,
+        step=1
+    )
+    
     # --- For async operations ---
     is_processing = bpy.props.BoolProperty(default=False)
     progress = bpy.props.IntProperty(subtype='PERCENTAGE', min=0, max=100, default=0)
