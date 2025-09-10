@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 # Configuration
 BLENDER_PATH = os.environ.get("BLENDER_PATH", r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe")
 BLENDER_PROC_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "blender_proc.py"))
+BLENDER_SIM_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "blender_sim.py"))
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "output"))
 LM_STUDIO_URL = os.environ.get("LM_STUDIO_URL", "http://localhost:1234/v1/chat/completions")
 AI_SERVER_URL = "http://localhost:8002"
@@ -210,35 +211,53 @@ async def execute_blender_processor(blueprint: dict, obj_path: str, output_path:
     logger.info("=== STAGE 3: HYPER-PARAMETRIC EXECUTOR (BLENDER) ===")
     logger.info(f"Executing Master Blueprint with: {obj_path}")
     
-    # Prepare command
+    # Prepare command - use simulator if Blender not available
     blueprint_json = json.dumps(blueprint)
-    command = [
-        BLENDER_PATH, "--background", "--python", BLENDER_PROC_SCRIPT, "--",
-        "--input", obj_path,
-        "--output", output_path,
-        "--params", blueprint_json,
-        "--ring_size", str(user_specs['ring_size']),
-        "--stone_carat", str(user_specs['stone_carat']),
-        "--stone_shape", user_specs['stone_shape'],
-        "--metal", user_specs['metal']
-    ]
     
-    logger.debug(f"Blender command: {' '.join(command[:8])}... [params truncated]")
+    # Check if we should use simulator (when Blender is not available)
+    use_simulator = not os.path.exists(BLENDER_PATH)
     
-    # Execute Blender processor
+    if use_simulator:
+        logger.info("Using Blender simulator for testing")
+        command = [
+            "python", BLENDER_SIM_SCRIPT, "--",
+            "--input", obj_path,
+            "--output", output_path,
+            "--params", blueprint_json,
+            "--ring_size", str(user_specs['ring_size']),
+            "--stone_carat", str(user_specs['stone_carat']),
+            "--stone_shape", user_specs['stone_shape'],
+            "--metal", user_specs['metal']
+        ]
+    else:
+        command = [
+            BLENDER_PATH, "--background", "--python", BLENDER_PROC_SCRIPT, "--",
+            "--input", obj_path,
+            "--output", output_path,
+            "--params", blueprint_json,
+            "--ring_size", str(user_specs['ring_size']),
+            "--stone_carat", str(user_specs['stone_carat']),
+            "--stone_shape", user_specs['stone_shape'],
+            "--metal", user_specs['metal']
+        ]
+    
+    logger.debug(f"Execution command: {' '.join(command[:8])}... [params truncated]")
+    
+    # Execute processor
     result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=300)
     
-    logger.debug("[Blender stdout]\n%s", result.stdout)
+    logger.debug("[Processor stdout]\n%s", result.stdout)
     if result.stderr:
-        logger.error("[Blender stderr]\n%s", result.stderr)
+        logger.error("[Processor stderr]\n%s", result.stderr)
     
     if result.returncode != 0:
-        raise RuntimeError(f"Blender execution failed: {result.stderr}")
+        raise RuntimeError(f"Processor execution failed: {result.stderr}")
     
     if not os.path.exists(output_path):
-        raise RuntimeError("Blender did not generate output file")
+        raise RuntimeError("Processor did not generate output file")
     
-    logger.info("Master Blueprint execution completed successfully")
+    mode_text = "simulation" if use_simulator else "Blender"
+    logger.info(f"Master Blueprint execution completed successfully ({mode_text})")
 
 @app.post("/generate")
 async def generate_design(request: Request):
