@@ -19,6 +19,7 @@ import os
 import sys
 import json
 import math
+import time
 import logging
 from argparse import ArgumentParser
 from typing import Dict, List, Tuple, Optional
@@ -463,6 +464,103 @@ def export_stl(obj: bpy.types.Object, output_path: str) -> None:
     logger.info("STL export completed successfully")
 
 # =============================================================================
+# V6.0 GEOMETRIC ANALYSIS MODE - COGNITIVE LOOP INTELLIGENCE
+# =============================================================================
+
+def analyze_geometry(input_path: str, output_path: str) -> None:
+    """
+    V6.0 Analysis Mode: Perform geometric analysis of an STL file.
+    
+    Args:
+        input_path: Path to STL file to analyze
+        output_path: Path for JSON analysis output
+    """
+    logger.info("=== V6.0 BLENDER ENGINE - GEOMETRIC ANALYSIS MODE ===")
+    logger.info(f"Analyzing STL file: {input_path}")
+    
+    # Setup clean scene
+    scene = setup_scene()
+    
+    # Import the STL file
+    if not os.path.exists(input_path):
+        raise FileNotFoundError(f"STL file not found: {input_path}")
+    
+    # Import STL
+    bpy.ops.import_mesh.stl(filepath=input_path)
+    analyzed_object = bpy.context.active_object
+    
+    if not analyzed_object:
+        raise RuntimeError("Failed to import STL file")
+    
+    # Ensure we're in object mode for analysis
+    bpy.context.view_layer.objects.active = analyzed_object
+    bpy.ops.object.mode_set(mode='OBJECT')
+    
+    # Get mesh data
+    mesh = analyzed_object.data
+    
+    # Calculate bounding box
+    bbox = [analyzed_object.matrix_world @ Vector(corner) for corner in analyzed_object.bound_box]
+    bbox_min = Vector((min(pt.x for pt in bbox), min(pt.y for pt in bbox), min(pt.z for pt in bbox)))
+    bbox_max = Vector((max(pt.x for pt in bbox), max(pt.y for pt in bbox), max(pt.z for pt in bbox)))
+    dimensions = bbox_max - bbox_min
+    
+    # Calculate volume (approximate using bounding box)
+    volume_approx = dimensions.x * dimensions.y * dimensions.z
+    
+    # Calculate surface area (approximate)
+    bpy.context.view_layer.objects.active = analyzed_object
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.object.mode_set(mode='OBJECT')
+    
+    # Get mesh statistics
+    vertex_count = len(mesh.vertices)
+    edge_count = len(mesh.edges)
+    face_count = len(mesh.polygons)
+    
+    # Calculate center of mass
+    center_of_mass = analyzed_object.location + (bbox_min + bbox_max) * 0.5
+    
+    # Generate analysis report
+    analysis_report = {
+        "analysis_timestamp": str(json.dumps({"timestamp": time.time()})).strip('"'),
+        "geometry_metrics": {
+            "vertex_count": vertex_count,
+            "edge_count": edge_count,
+            "face_count": face_count,
+            "bounding_box": {
+                "min": [bbox_min.x, bbox_min.y, bbox_min.z],
+                "max": [bbox_max.x, bbox_max.y, bbox_max.z],
+                "dimensions": [dimensions.x, dimensions.y, dimensions.z]
+            },
+            "approximate_volume_cubic_mm": volume_approx * 1000000,  # Convert to mm³
+            "center_of_mass": [center_of_mass.x, center_of_mass.y, center_of_mass.z]
+        },
+        "manufacturing_assessment": {
+            "complexity_level": "high" if face_count > 1000 else "medium" if face_count > 500 else "low",
+            "printability_score": 0.9 if face_count < 2000 else 0.7,
+            "estimated_material_usage_grams": volume_approx * 19.3 * 1000,  # Assuming gold density
+            "structural_integrity": "good" if vertex_count > 100 else "needs_review"
+        },
+        "design_characteristics": {
+            "dominant_dimension": "width" if dimensions.x > max(dimensions.y, dimensions.z) else 
+                                  "height" if dimensions.y > dimensions.z else "depth",
+            "aspect_ratio": max(dimensions.x, dimensions.y, dimensions.z) / min(dimensions.x, dimensions.y, dimensions.z),
+            "symmetry_assessment": "likely_symmetric" if abs(center_of_mass.x) < 0.001 else "asymmetric"
+        }
+    }
+    
+    # Write analysis to JSON file
+    with open(output_path, 'w') as f:
+        json.dump(analysis_report, f, indent=2)
+    
+    logger.info(f"Geometric analysis completed: {output_path}")
+    logger.info(f"Vertices: {vertex_count}, Faces: {face_count}")
+    logger.info(f"Dimensions: {dimensions.x:.3f}x{dimensions.y:.3f}x{dimensions.z:.3f}")
+    logger.info("=== V6.0 GEOMETRIC ANALYSIS COMPLETED ===")
+
+# =============================================================================
 # MAIN EXECUTION FUNCTION - PROFESSIONAL ORCHESTRATION
 # =============================================================================
 
@@ -475,11 +573,13 @@ def main():
         logger.error("No arguments provided. Script must be called with -- separator.")
         return
     
-    parser = ArgumentParser(description="Aura V7.0 Professional State-of-the-Art Blender Engine")
+    parser = ArgumentParser(description="Aura V6.0/V7.0 State-of-the-Art Blender Engine with Dual-Mode Intelligence")
+    parser.add_argument("--mode", type=str, choices=["generate", "analyze"], default="generate",
+                       help="Operation mode: 'generate' for creation, 'analyze' for geometric analysis")
     parser.add_argument("--input", type=str, required=True,
                        help="Path to AI-generated .obj file")
     parser.add_argument("--output", type=str, required=True,
-                       help="Path for final .stl export")
+                       help="Path for final .stl export or analysis JSON")
     parser.add_argument("--params", type=str, required=True,
                        help="JSON Master Blueprint parameters")
     parser.add_argument("--ring_size", type=float, default=7.0)
@@ -490,10 +590,18 @@ def main():
     argv = sys.argv[sys.argv.index('--') + 1:]
     args = parser.parse_args(argv)
     
-    logger.info("=== AURA V7.0 PROFESSIONAL STATE-OF-THE-ART BLENDER ENGINE ===")
+    logger.info("=== AURA V6.0/V7.0 PROFESSIONAL STATE-OF-THE-ART BLENDER ENGINE ===")
     logger.info("Architecturally aligned with OpenAI Shap-E best practices")
-    logger.info(f"Input AI geometry: {args.input}")
-    logger.info(f"Output STL: {args.output}")
+    logger.info(f"Mode: {args.mode.upper()}")
+    logger.info(f"Input: {args.input}")
+    logger.info(f"Output: {args.output}")
+    
+    if args.mode == "analyze":
+        # V6.0 Analysis Mode - Geometric Intelligence
+        analyze_geometry(args.input, args.output)
+        return
+    
+    # V6.0/V7.0 Generation Mode - Original functionality
     logger.info(f"Ring specifications: Size {args.ring_size}, {args.stone_carat}ct {args.stone_shape}")
     
     try:

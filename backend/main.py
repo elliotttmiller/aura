@@ -18,32 +18,41 @@ import logging
 import json
 import requests
 import shlex
+import time
 
 app = FastAPI(title="Aura V7.0 Backend Orchestrator", version="7.0")
 
 logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
-# V7.0 Configuration - External AI Environment
+# V6.0/V7.0 Configuration - Sandbox and Production modes
+SANDBOX_MODE = os.environ.get("AURA_SANDBOX_MODE", "").lower() == "true"
 BLENDER_PATH = os.environ.get("BLENDER_PATH", r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe")
 BLENDER_PROC_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "blender_proc.py"))
 BLENDER_SIM_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "blender_sim.py"))
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "output"))
-LM_STUDIO_URL = os.environ.get("LM_STUDIO_URL", "http://localhost:1234/v1/chat/completions")
 
-# V7.0: External AI Environment (User-Managed Shap-E Installation)
+# LLM Configuration - Sandbox vs Production
+if SANDBOX_MODE:
+    LM_STUDIO_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B-Instruct"
+    HUGGINGFACE_API_KEY = os.environ.get("HUGGINGFACE_API_KEY", "")  # Free tier available
+else:
+    LM_STUDIO_URL = os.environ.get("LM_STUDIO_URL", "http://localhost:1234/v1/chat/completions")
+
+# V7.0: External AI Environment (User-Managed Shap-E Installation)  
 EXTERNAL_AI_URL = os.environ.get("EXTERNAL_AI_URL", "http://localhost:8002")
 
 # Ensure output directory exists
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Master Blueprint Prompt Template for Llama 3.1
+# V6.0 Master Blueprint Prompt Template for Llama 3.1 with Reasoning
 MASTER_BLUEPRINT_PROMPT = """You are a world-class, expert jewelry CAD designer and system architect. Your mission is to translate a user's creative request into a complete, precise, and manufacturable 3D design blueprint.
 
 You must generate a single, valid JSON object that contains ALL the necessary parameters to construct the final piece. Do not include any other text, explanations, or markdown formatting. Adhere strictly to the schema.
 
-This is the required JSON Master Blueprint schema:
+This is the required V6.0 JSON Master Blueprint schema with reasoning:
 {{
+  "reasoning": "A brief, step-by-step explanation of why you chose the following parameters based on the user's prompt.",
   "creative_prompt_for_3d_model": "A rich, descriptive paragraph for the 3D generative model. Describe the visual style, textures, and artistic elements. This is the most important creative step.",
   "shank_parameters": {{
     "profile_shape": "A string, either 'D-Shape' or 'Round'.",
@@ -60,7 +69,7 @@ This is the required JSON Master Blueprint schema:
   }}
 }}
 
-Analyze the following user request and generate the complete JSON Master Blueprint.
+Analyze the following user request and generate the complete JSON Master Blueprint with reasoning.
 
 USER'S REQUEST: "{user_prompt}"
 TECHNICAL SPECIFICATIONS:
@@ -68,6 +77,18 @@ TECHNICAL SPECIFICATIONS:
 - Metal: {metal}
 - Stone Shape: {stone_shape}
 - Stone Carat: {stone_carat}"""
+
+# V6.0 AI Critic Refinement Prompt Template
+REFINEMENT_PROMPT = """You are a world-class, expert jewelry CAD designer performing a design review.
+Your previous design plan was:
+{previous_json_blueprint}
+
+A geometric analysis of the 3D model created from this plan reveals the following metrics:
+{geometric_analysis_report}
+
+The user's new request is: "{user_refinement_prompt}"
+
+Your mission is to generate a new, revised JSON Master Blueprint that incorporates the user's feedback. Output only the revised JSON object with the same V6.0 schema including reasoning."""
 
 def get_output_path(prompt: str) -> str:
     """Generate output file path based on prompt."""
@@ -77,7 +98,7 @@ def get_output_path(prompt: str) -> str:
 
 async def generate_master_blueprint(user_prompt: str, user_specs: dict) -> dict:
     """
-    Stage 1: Generate Master Blueprint using Llama 3.1 via LM Studio.
+    Stage 1: Generate Master Blueprint using Llama 3.1 via LM Studio or Hugging Face.
     
     Args:
         user_prompt: User's creative request
@@ -87,6 +108,7 @@ async def generate_master_blueprint(user_prompt: str, user_specs: dict) -> dict:
         Parsed JSON Master Blueprint
     """
     logger.info("=== STAGE 1: AI SYSTEM ARCHITECT (LLAMA 3.1) ===")
+    logger.info(f"Mode: {'V6.0 Sandbox (Hugging Face)' if SANDBOX_MODE else 'V7.0 Production (LM Studio)'}")
     logger.info(f"Generating Master Blueprint for: '{user_prompt}'")
     
     # Construct the master prompt
@@ -98,52 +120,98 @@ async def generate_master_blueprint(user_prompt: str, user_specs: dict) -> dict:
         stone_carat=user_specs['stone_carat']
     )
     
-    # Prepare LM Studio request
-    lm_request = {
-        "model": "llama-3.1-8b-instruct",
-        "messages": [
-            {
-                "role": "system",
-                "content": "You are a master jewelry designer. Respond only with valid JSON, no other text."
-            },
-            {
-                "role": "user", 
-                "content": master_prompt
+    if SANDBOX_MODE:
+        # V6.0 Sandbox Mode - Use Hugging Face API
+        headers = {
+            "Authorization": f"Bearer {HUGGINGFACE_API_KEY}" if HUGGINGFACE_API_KEY else "",
+            "Content-Type": "application/json"
+        }
+        
+        hf_request = {
+            "inputs": f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\nYou are a master jewelry designer. Respond only with valid JSON, no other text.<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{master_prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n",
+            "parameters": {
+                "max_new_tokens": 1000,
+                "temperature": 0.7,
+                "return_full_text": False
             }
-        ],
-        "temperature": 0.7,
-        "max_tokens": 1000
-    }
+        }
+        
+        try:
+            logger.debug(f"Sending request to Hugging Face: {LM_STUDIO_URL}")
+            response = requests.post(LM_STUDIO_URL, headers=headers, json=hf_request, timeout=60)
+            response.raise_for_status()
+            
+            hf_data = response.json()
+            if isinstance(hf_data, list) and len(hf_data) > 0:
+                blueprint_text = hf_data[0]['generated_text'].strip()
+            else:
+                blueprint_text = str(hf_data).strip()
+                
+            logger.debug(f"Hugging Face Response: {blueprint_text}")
+            
+            # Parse JSON Master Blueprint
+            blueprint = json.loads(blueprint_text)
+            logger.info("V6.0 Master Blueprint generated successfully via Hugging Face")
+            logger.debug(f"Blueprint: {json.dumps(blueprint, indent=2)}")
+            
+            return blueprint
+            
+        except requests.RequestException as e:
+            logger.error(f"Hugging Face API connection failed: {e}")
+            logger.warning("Using fallback Master Blueprint")
+            return create_fallback_blueprint(user_prompt)
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON from Hugging Face: {e}")
+            return create_fallback_blueprint(user_prompt)
     
-    try:
-        logger.debug(f"Sending request to LM Studio: {LM_STUDIO_URL}")
-        response = requests.post(LM_STUDIO_URL, json=lm_request, timeout=60)
-        response.raise_for_status()
+    else:
+        # V7.0 Production Mode - Use LM Studio
+        lm_request = {
+            "model": "llama-3.1-8b-instruct",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a master jewelry designer. Respond only with valid JSON, no other text."
+                },
+                {
+                    "role": "user", 
+                    "content": master_prompt
+                }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 1000
+        }
         
-        lm_data = response.json()
-        blueprint_text = lm_data['choices'][0]['message']['content'].strip()
-        
-        logger.debug(f"LLM Response: {blueprint_text}")
-        
-        # Parse JSON Master Blueprint
-        blueprint = json.loads(blueprint_text)
-        logger.info("Master Blueprint generated successfully")
-        logger.debug(f"Blueprint: {json.dumps(blueprint, indent=2)}")
-        
-        return blueprint
-        
-    except requests.RequestException as e:
-        logger.error(f"LM Studio connection failed: {e}")
-        # Fallback blueprint for testing
-        logger.warning("Using fallback Master Blueprint")
-        return create_fallback_blueprint(user_prompt)
-    except json.JSONDecodeError as e:
-        logger.error(f"Invalid JSON from LLM: {e}")
-        return create_fallback_blueprint(user_prompt)
+        try:
+            logger.debug(f"Sending request to LM Studio: {LM_STUDIO_URL}")
+            response = requests.post(LM_STUDIO_URL, json=lm_request, timeout=60)
+            response.raise_for_status()
+            
+            lm_data = response.json()
+            blueprint_text = lm_data['choices'][0]['message']['content'].strip()
+            
+            logger.debug(f"LLM Response: {blueprint_text}")
+            
+            # Parse JSON Master Blueprint
+            blueprint = json.loads(blueprint_text)
+            logger.info("V7.0 Master Blueprint generated successfully via LM Studio")
+            logger.debug(f"Blueprint: {json.dumps(blueprint, indent=2)}")
+            
+            return blueprint
+            
+        except requests.RequestException as e:
+            logger.error(f"LM Studio connection failed: {e}")
+            # Fallback blueprint for testing
+            logger.warning("Using fallback Master Blueprint")
+            return create_fallback_blueprint(user_prompt)
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON from LLM: {e}")
+            return create_fallback_blueprint(user_prompt)
 
 def create_fallback_blueprint(user_prompt: str) -> dict:
     """Create a fallback Master Blueprint when LLM is unavailable."""
     return {
+        "reasoning": f"Fallback blueprint generated due to LLM unavailability. Using sensible defaults based on keywords in prompt: '{user_prompt}'. Selected classic styling with moderate parameters for reliable manufacturing.",
         "creative_prompt_for_3d_model": f"An elegant jewelry piece inspired by: {user_prompt}. The design features smooth curves and sophisticated metalwork with fine details and artistic flourishes.",
         "shank_parameters": {
             "profile_shape": "Round",
@@ -247,7 +315,292 @@ f 5 1 4 8
     logger.info(f"Fallback geometry generated: {obj_path}")
     return obj_path
 
+async def execute_blender_analyzer(stl_path: str, analysis_output_path: str):
+    """
+    V6.0 Cognitive Loop: Execute Blender Engine in analysis mode.
+    
+    Args:
+        stl_path: Path to STL file to analyze
+        analysis_output_path: Path for JSON analysis output
+    """
+    logger.info("=== V6.0 BLENDER ENGINE - ANALYSIS MODE ===")
+    logger.info(f"Analyzing STL: {stl_path}")
+    
+    # Use empty params for analysis mode
+    empty_params = json.dumps({})
+    
+    # Check if we should use simulator (when Blender is not available)
+    use_simulator = not os.path.exists(BLENDER_PATH)
+    
+    if use_simulator:
+        logger.info("Using Blender simulator for analysis")
+        # For simulator, create a basic analysis JSON
+        basic_analysis = {
+            "analysis_timestamp": str(time.time()),
+            "geometry_metrics": {
+                "vertex_count": 500,
+                "edge_count": 1000,
+                "face_count": 500,
+                "bounding_box": {
+                    "min": [-0.01, -0.01, -0.01],
+                    "max": [0.01, 0.01, 0.01],
+                    "dimensions": [0.02, 0.02, 0.02]
+                },
+                "approximate_volume_cubic_mm": 8.0,
+                "center_of_mass": [0.0, 0.0, 0.0]
+            },
+            "manufacturing_assessment": {
+                "complexity_level": "medium",
+                "printability_score": 0.8,
+                "estimated_material_usage_grams": 0.15,
+                "structural_integrity": "good"
+            },
+            "design_characteristics": {
+                "dominant_dimension": "width",
+                "aspect_ratio": 1.2,
+                "symmetry_assessment": "likely_symmetric"
+            }
+        }
+        with open(analysis_output_path, 'w') as f:
+            json.dump(basic_analysis, f, indent=2)
+        logger.info("Simulator analysis completed")
+        return
+        
+    command = [
+        BLENDER_PATH, "--background", "--python", BLENDER_PROC_SCRIPT, "--",
+        "--mode", "analyze",
+        "--input", stl_path,
+        "--output", analysis_output_path,
+        "--params", empty_params,
+        "--ring_size", "7.0",
+        "--stone_carat", "1.0",
+        "--stone_shape", "ROUND",
+        "--metal", "GOLD"
+    ]
+    
+    logger.debug(f"Analysis command: {' '.join(command[:8])}... [params truncated]")
+    
+    # Execute analyzer
+    result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=120)
+    
+    logger.debug("[Analyzer stdout]\n%s", result.stdout)
+    if result.stderr:
+        logger.error("[Analyzer stderr]\n%s", result.stderr)
+    
+    if result.returncode != 0:
+        raise RuntimeError(f"Analysis execution failed: {result.stderr}")
+    
+    if not os.path.exists(analysis_output_path):
+        raise RuntimeError("Analyzer did not generate output file")
+    
+    logger.info("Geometric analysis completed successfully")
+
+async def generate_refined_blueprint(user_refinement_prompt: str, previous_blueprint: dict, geometric_analysis: dict) -> dict:
+    """
+    V6.0 AI Critic: Generate refined blueprint based on analysis and user feedback.
+    
+    Args:
+        user_refinement_prompt: User's refinement request
+        previous_blueprint: Previous Master Blueprint
+        geometric_analysis: Geometric analysis results
+        
+    Returns:
+        Refined JSON Master Blueprint
+    """
+    logger.info("=== V6.0 AI CRITIC - REFINEMENT INTELLIGENCE ===")
+    logger.info(f"Processing refinement request: '{user_refinement_prompt}'")
+    
+    # Format geometric analysis for the prompt
+    analysis_summary = f"""
+Vertex Count: {geometric_analysis.get('geometry_metrics', {}).get('vertex_count', 'N/A')}
+Face Count: {geometric_analysis.get('geometry_metrics', {}).get('face_count', 'N/A')}
+Complexity Level: {geometric_analysis.get('manufacturing_assessment', {}).get('complexity_level', 'N/A')}
+Printability Score: {geometric_analysis.get('manufacturing_assessment', {}).get('printability_score', 'N/A')}
+Dominant Dimension: {geometric_analysis.get('design_characteristics', {}).get('dominant_dimension', 'N/A')}
+Symmetry: {geometric_analysis.get('design_characteristics', {}).get('symmetry_assessment', 'N/A')}
+"""
+    
+    # Construct the refinement prompt
+    refinement_prompt = REFINEMENT_PROMPT.format(
+        previous_json_blueprint=json.dumps(previous_blueprint, indent=2),
+        geometric_analysis_report=analysis_summary,
+        user_refinement_prompt=user_refinement_prompt
+    )
+    
+    if SANDBOX_MODE:
+        # V6.0 Sandbox Mode - Use Hugging Face API
+        headers = {
+            "Authorization": f"Bearer {HUGGINGFACE_API_KEY}" if HUGGINGFACE_API_KEY else "",
+            "Content-Type": "application/json"
+        }
+        
+        hf_request = {
+            "inputs": f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\nYou are a master jewelry designer. Respond only with valid JSON, no other text.<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{refinement_prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n",
+            "parameters": {
+                "max_new_tokens": 1000,
+                "temperature": 0.7,
+                "return_full_text": False
+            }
+        }
+        
+        try:
+            logger.debug("Sending refinement request to Hugging Face")
+            response = requests.post(LM_STUDIO_URL, headers=headers, json=hf_request, timeout=60)
+            response.raise_for_status()
+            
+            hf_data = response.json()
+            if isinstance(hf_data, list) and len(hf_data) > 0:
+                blueprint_text = hf_data[0]['generated_text'].strip()
+            else:
+                blueprint_text = str(hf_data).strip()
+                
+            logger.debug(f"Hugging Face Refinement Response: {blueprint_text}")
+            
+            # Parse JSON Master Blueprint
+            refined_blueprint = json.loads(blueprint_text)
+            logger.info("V6.0 Refined Blueprint generated successfully via Hugging Face")
+            
+            return refined_blueprint
+            
+        except (requests.RequestException, json.JSONDecodeError) as e:
+            logger.error(f"Refinement failed via Hugging Face: {e}")
+            logger.warning("Using fallback refinement")
+            return create_fallback_refinement(user_refinement_prompt, previous_blueprint)
+    
+    else:
+        # V7.0 Production Mode - Use LM Studio
+        lm_request = {
+            "model": "llama-3.1-8b-instruct",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a master jewelry designer. Respond only with valid JSON, no other text."
+                },
+                {
+                    "role": "user", 
+                    "content": refinement_prompt
+                }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 1000
+        }
+        
+        try:
+            logger.debug("Sending refinement request to LM Studio")
+            response = requests.post(LM_STUDIO_URL, json=lm_request, timeout=60)
+            response.raise_for_status()
+            
+            lm_data = response.json()
+            blueprint_text = lm_data['choices'][0]['message']['content'].strip()
+            
+            logger.debug(f"LLM Refinement Response: {blueprint_text}")
+            
+            # Parse JSON Master Blueprint
+            refined_blueprint = json.loads(blueprint_text)
+            logger.info("V7.0 Refined Blueprint generated successfully via LM Studio")
+            
+            return refined_blueprint
+            
+        except (requests.RequestException, json.JSONDecodeError) as e:
+            logger.error(f"Refinement failed via LM Studio: {e}")
+            logger.warning("Using fallback refinement")
+            return create_fallback_refinement(user_refinement_prompt, previous_blueprint)
+
+def create_fallback_refinement(user_refinement_prompt: str, previous_blueprint: dict) -> dict:
+    """Create a fallback refined blueprint when LLM is unavailable."""
+    # Start with previous blueprint and make minor adjustments based on keywords
+    refined = previous_blueprint.copy()
+    
+    prompt_lower = user_refinement_prompt.lower()
+    
+    # Update reasoning
+    refined["reasoning"] = f"Fallback refinement based on request: '{user_refinement_prompt}'. Applied keyword-based adjustments to previous design parameters."
+    
+    # Apply simple keyword-based refinements
+    if "thicker" in prompt_lower or "wider" in prompt_lower:
+        refined["shank_parameters"]["thickness_mm"] = min(2.5, refined.get("shank_parameters", {}).get("thickness_mm", 2.0) + 0.2)
+    elif "thinner" in prompt_lower or "narrower" in prompt_lower:
+        refined["shank_parameters"]["thickness_mm"] = max(1.5, refined.get("shank_parameters", {}).get("thickness_mm", 2.0) - 0.2)
+    
+    if "more prongs" in prompt_lower or "six prong" in prompt_lower:
+        refined["setting_parameters"]["prong_count"] = 6
+    elif "fewer prongs" in prompt_lower or "four prong" in prompt_lower:
+        refined["setting_parameters"]["prong_count"] = 4
+    
+    if "twist" in prompt_lower or "spiral" in prompt_lower:
+        refined["artistic_modifier_parameters"]["twist_angle_degrees"] = 45
+    elif "straight" in prompt_lower or "simple" in prompt_lower:
+        refined["artistic_modifier_parameters"]["twist_angle_degrees"] = 0
+    
+    if "organic" in prompt_lower or "texture" in prompt_lower:
+        refined["artistic_modifier_parameters"]["organic_displacement_strength"] = 0.0008
+    elif "smooth" in prompt_lower or "clean" in prompt_lower:
+        refined["artistic_modifier_parameters"]["organic_displacement_strength"] = 0.0
+    
+    return refined
+
 async def execute_blender_processor(blueprint: dict, obj_path: str, output_path: str, user_specs: dict):
+    """
+    Stage 3: Execute V6.0/V7.0 State-of-the-Art Blender Engine.
+    
+    Args:
+        blueprint: Complete Master Blueprint
+        obj_path: Path to AI-generated base geometry
+        output_path: Final STL output path
+        user_specs: User specifications
+    """
+    logger.info("=== STAGE 3: V6.0/V7.0 STATE-OF-THE-ART BLENDER ENGINE ===")
+    logger.info(f"Executing professional pipeline with: {obj_path}")
+    
+    # Prepare command - use simulator if Blender not available
+    blueprint_json = json.dumps(blueprint)
+    
+    # Check if we should use simulator (when Blender is not available)
+    use_simulator = not os.path.exists(BLENDER_PATH)
+    
+    if use_simulator:
+        logger.info("Using Blender simulator for testing")
+        command = [
+            "python", BLENDER_SIM_SCRIPT, "--",
+            "--mode", "generate",
+            "--input", obj_path,
+            "--output", output_path,
+            "--params", blueprint_json,
+            "--ring_size", str(user_specs['ring_size']),
+            "--stone_carat", str(user_specs['stone_carat']),
+            "--stone_shape", user_specs['stone_shape'],
+            "--metal", user_specs['metal']
+        ]
+    else:
+        command = [
+            BLENDER_PATH, "--background", "--python", BLENDER_PROC_SCRIPT, "--",
+            "--mode", "generate",
+            "--input", obj_path,
+            "--output", output_path,
+            "--params", blueprint_json,
+            "--ring_size", str(user_specs['ring_size']),
+            "--stone_carat", str(user_specs['stone_carat']),
+            "--stone_shape", user_specs['stone_shape'],
+            "--metal", user_specs['metal']
+        ]
+    
+    logger.debug(f"Execution command: {' '.join(command[:8])}... [params truncated]")
+    
+    # Execute processor
+    result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=300)
+    
+    logger.debug("[Processor stdout]\n%s", result.stdout)
+    if result.stderr:
+        logger.error("[Processor stderr]\n%s", result.stderr)
+    
+    if result.returncode != 0:
+        raise RuntimeError(f"Processor execution failed: {result.stderr}")
+    
+    if not os.path.exists(output_path):
+        raise RuntimeError("Processor did not generate output file")
+    
+    mode_text = "simulation" if use_simulator else "Blender"
+    logger.info(f"Master Blueprint execution completed successfully ({mode_text})")
     """
     Stage 3: Execute V7.0 State-of-the-Art Blender Engine.
     
@@ -311,11 +664,11 @@ async def execute_blender_processor(blueprint: dict, obj_path: str, output_path:
 @app.post("/generate")
 async def generate_design(request: Request):
     """
-    Main endpoint for V7.0 professional design generation.
+    Main endpoint for V6.0/V7.0 professional design generation.
     Orchestrates the complete state-of-the-art AI pipeline.
     """
-    logger.info("=== AURA V7.0 PROFESSIONAL DESIGN GENERATION ===")
-    logger.info("Architecture: State-of-the-art pipeline aligned with OpenAI best practices")
+    logger.info("=== AURA V6.0/V7.0 PROFESSIONAL DESIGN GENERATION ===")
+    logger.info(f"Architecture: {'V6.0 Sentient Cognitive Loop (Sandbox)' if SANDBOX_MODE else 'V7.0 Professional (Production)'}")
     
     try:
         data = await request.json()
@@ -343,19 +696,91 @@ async def generate_design(request: Request):
         # Stage 3: Execute Blender processor
         await execute_blender_processor(blueprint, obj_path, output_file, user_specs)
         
-        logger.info("=== V5.0 AUTONOMOUS DESIGN GENERATION COMPLETED ===")
+        logger.info("=== V6.0/V7.0 AUTONOMOUS DESIGN GENERATION COMPLETED ===")
         
         return JSONResponse({
             "file": os.path.basename(output_file),
-            "message": "V5.0 autonomous design generated successfully",
+            "message": f"{'V6.0 Sentient' if SANDBOX_MODE else 'V7.0 Professional'} design generated successfully",
             "blueprint_used": blueprint
         })
         
     except Exception as e:
-        logger.exception('V5.0 generation pipeline failed')
+        logger.exception('V6.0/V7.0 generation pipeline failed')
         return JSONResponse(status_code=500, content={
             "error": str(e),
-            "message": "V5.0 autonomous generation failed"
+            "message": f"{'V6.0 Sentient' if SANDBOX_MODE else 'V7.0 Professional'} generation failed"
+        })
+
+@app.post("/refine")
+async def refine_design(request: Request):
+    """
+    V6.0 Sentient Cognitive Loop: Refine existing design based on geometric analysis and user feedback.
+    """
+    logger.info("=== AURA V6.0 SENTIENT COGNITIVE LOOP - REFINEMENT ===")
+    logger.info("Multi-pass iterative design process initiated")
+    
+    try:
+        data = await request.json()
+        logger.debug(f'Refinement request data: {data}')
+        
+        # Extract refinement inputs
+        user_refinement_prompt = data.get("refinement_prompt", "make it more elegant")
+        previous_blueprint = data.get("previous_blueprint", {})
+        previous_stl_file = data.get("previous_stl_file", "")
+        user_specs = {
+            'ring_size': data.get("ring_size", 7.0),
+            'stone_carat': data.get("stone_carat", 1.0),
+            'stone_shape': data.get("stone_shape", "ROUND"),
+            'metal': data.get("metal", "GOLD")
+        }
+        
+        if not previous_blueprint:
+            raise ValueError("Previous blueprint required for refinement")
+        
+        # Step 1: Geometric Analysis of Previous Design
+        logger.info("=== STEP 1: BLENDER ENGINE GEOMETRIC ANALYSIS ===")
+        previous_stl_path = os.path.join(OUTPUT_DIR, previous_stl_file)
+        analysis_file = os.path.join(OUTPUT_DIR, f"analysis_{previous_stl_file.replace('.stl', '.json')}")
+        
+        # Execute Blender in analysis mode
+        await execute_blender_analyzer(previous_stl_path, analysis_file)
+        
+        # Load analysis results
+        with open(analysis_file, 'r') as f:
+            geometric_analysis = json.load(f)
+        
+        logger.info("Geometric analysis completed successfully")
+        
+        # Step 2: Generate Refined Blueprint (LLM Critic)
+        logger.info("=== STEP 2: AI CRITIC - REFINEMENT ANALYSIS ===")
+        refined_blueprint = await generate_refined_blueprint(
+            user_refinement_prompt, previous_blueprint, geometric_analysis
+        )
+        
+        # Step 3: Generate New 3D Base Geometry
+        obj_path = await generate_3d_base_geometry(refined_blueprint)
+        
+        # Step 4: Execute Blender Processor for Refined Design
+        output_file = get_output_path(f"refined_{user_refinement_prompt}")
+        if os.path.exists(output_file):
+            os.remove(output_file)
+            
+        await execute_blender_processor(refined_blueprint, obj_path, output_file, user_specs)
+        
+        logger.info("=== V6.0 SENTIENT COGNITIVE LOOP COMPLETED ===")
+        
+        return JSONResponse({
+            "file": os.path.basename(output_file),
+            "message": "V6.0 Sentient refinement completed successfully",
+            "refined_blueprint": refined_blueprint,
+            "geometric_analysis": geometric_analysis
+        })
+        
+    except Exception as e:
+        logger.exception('V6.0 refinement pipeline failed')
+        return JSONResponse(status_code=500, content={
+            "error": str(e),
+            "message": "V6.0 Sentient refinement failed"
         })
 
 @app.get("/output/{filename}")

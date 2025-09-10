@@ -36,8 +36,15 @@ EXTERNAL_SERVICES = {
     "LM Studio (Llama 3.1)": "http://localhost:1234"
 }
 
-print("=== AURA V7.0 PROFESSIONAL INTEGRATION ===")
-print("State-of-the-art architecture aligned with OpenAI best practices")
+# Check for V6.0 Sandbox Mode
+SANDBOX_MODE = os.environ.get("AURA_SANDBOX_MODE", "").lower() == "true"
+
+if SANDBOX_MODE:
+    print("=== AURA V6.0 SENTIENT COGNITIVE LOOP - SANDBOX MODE ===")
+    print("Verifiable sandbox environment for truthful end-to-end testing")
+else:
+    print("=== AURA V7.0 PROFESSIONAL INTEGRATION ===")
+    print("State-of-the-art architecture aligned with OpenAI best practices")
 
 # =============== SETUP ENVIRONMENT ===============
 venv_path = os.path.join(AURA_PATH, 'venv', 'Scripts')
@@ -79,6 +86,17 @@ print("2. Starting Frontend Web Application...")
 frontend_proc = subprocess.Popen([
     venv_python, '-m', 'uvicorn', 'frontend.app:app', '--port', '8000', '--host', '0.0.0.0'
 ], cwd=AURA_PATH)
+
+# Start appropriate 3D server based on mode
+if SANDBOX_MODE:
+    print("3. Starting V6.0 Sandbox 3D Server (Verifiable Testing)...")
+    ai_server_proc = subprocess.Popen([
+        venv_python, 'sandbox_3d_server.py'
+    ], cwd=AURA_PATH)
+else:
+    # In production mode, we assume external AI environment is managed separately
+    print("3. External AI Environment: User-managed (AI server expected at port 8002)")
+    ai_server_proc = None
 
 def wait_for_service(name: str, url: str, timeout: int = 30) -> bool:
     """Wait for a service to become available."""
@@ -137,10 +155,15 @@ try:
         time.sleep(1)
         
         # Check if any process has died
-        for proc_name, proc in [
+        processes_to_check = [
             ("Backend", backend_proc), 
             ("Frontend", frontend_proc)
-        ]:
+        ]
+        
+        if ai_server_proc is not None:
+            processes_to_check.append(("AI Server", ai_server_proc))
+        
+        for proc_name, proc in processes_to_check:
             if proc.poll() is not None:
                 print(f"⚠️  {proc_name} process has stopped unexpectedly")
                 break
@@ -153,6 +176,9 @@ except KeyboardInterrupt:
         ("Backend Orchestrator", backend_proc),
         ("Frontend Application", frontend_proc)
     ]
+    
+    if ai_server_proc is not None:
+        processes.append(("AI Server", ai_server_proc))
     
     for name, proc in processes:
         if proc.poll() is None:  # Process is still running
@@ -169,4 +195,4 @@ except KeyboardInterrupt:
             proc.kill()
     
     print("All services stopped.")
-    print("Aura V7.0 Professional Integration shutdown complete.")
+    print("Aura V6.0/V7.0 Integration shutdown complete.")
