@@ -12,6 +12,7 @@ Part of the V7.0 Professional Integration.
 
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
+from fastapi import WebSocket
 import subprocess
 import os
 import logging
@@ -19,6 +20,7 @@ import json
 import requests
 import shlex
 import time
+import asyncio
 
 # V24 Enhancement: Centralized environment configuration
 try:
@@ -60,8 +62,8 @@ else:
     EXTERNAL_AI_URL = os.environ.get("EXTERNAL_AI_URL", "http://localhost:8002")
 
 # V24 Enhanced script paths
-BLENDER_PROC_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "blender_proc.py"))
-BLENDER_SIM_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "blender_sim.py"))
+BLENDER_PROC_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "blender_proc.py"))
+BLENDER_SIM_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "blender_sim.py"))
 
 # Ensure output directory exists
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -1016,3 +1018,77 @@ async def serve_control_panel():
         return HTMLResponse(content=html_content)
     except FileNotFoundError:
         return HTMLResponse(content="<h1>Control Panel Not Found</h1><p>The control panel HTML file could not be found.</p>", status_code=404)
+
+# V24 Enhanced: Serve the AI Design Studio
+@app.get("/design-studio")
+async def serve_design_studio():
+    """Serve the AI Design Studio - Real-time Collaborative Design Interface."""
+    from fastapi.responses import HTMLResponse
+    import os
+    
+    try:
+        design_studio_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "design_studio.html")
+        with open(design_studio_path, 'r') as f:
+            html_content = f.read()
+        return HTMLResponse(content=html_content)
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Design Studio Not Found</h1><p>The AI Design Studio interface could not be found.</p>", status_code=404)
+
+# V24 Enhanced: WebSocket endpoint for real-time collaboration
+@app.websocket("/ws/design-collaboration")
+async def design_collaboration_websocket(websocket):
+    """WebSocket endpoint for real-time design collaboration with AI."""
+    await websocket.accept()
+    
+    try:
+        await websocket.send_json({
+            "type": "connection_established",
+            "message": "🤖 AI Design Collaborator connected - Real-time streaming active",
+            "timestamp": time.time()
+        })
+        
+        while True:
+            data = await websocket.receive_json()
+            
+            if data["type"] == "design_request":
+                # Simulate AI processing
+                await websocket.send_json({
+                    "type": "ai_thinking",
+                    "message": "🧠 Analyzing your design request...",
+                    "timestamp": time.time()
+                })
+                
+                # Simulate generation steps
+                steps = [
+                    "🔍 Processing design requirements",
+                    "🎨 Generating creative concepts", 
+                    "🔮 Building 3D geometry",
+                    "✨ Applying final touches"
+                ]
+                
+                for step in steps:
+                    await websocket.send_json({
+                        "type": "generation_step",
+                        "message": step,
+                        "timestamp": time.time()
+                    })
+                    await asyncio.sleep(1)
+                
+                await websocket.send_json({
+                    "type": "design_complete",
+                    "message": "🎉 Your design is ready! What would you like to refine?",
+                    "timestamp": time.time()
+                })
+                
+            elif data["type"] == "chat_message":
+                # Simulate AI chat response
+                await websocket.send_json({
+                    "type": "ai_response",
+                    "message": f"🤖 I understand your request: '{data['message']}'. Let me help you with that!",
+                    "timestamp": time.time()
+                })
+                
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+    finally:
+        await websocket.close()
