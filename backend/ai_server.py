@@ -21,7 +21,7 @@ from pydantic import BaseModel
 
 # V24 Enhancement: Load centralized configuration
 try:
-    from config import config, get_ai_server_config
+    from ..config import config, get_ai_server_config
     CONFIG_AVAILABLE = True
 except ImportError:
     logging.warning("Config module not available, using defaults")

@@ -3,9 +3,9 @@ import bpy
 from backend.backend import check_dependencies
 
 from .settings import install_settings, uninstall_settings
-from .preferences import AddonPreferences, install_preferences, uninstall_preferences
+from .backend.preferences import AddonPreferences, install_preferences, uninstall_preferences
 from .frontend.tool_panel import ChatPanel, GenerateOperator, ModalOperator
-from .operators import SentientOperator
+from .backend.operators import SentientOperator
 
 
 ALL_CLASSES = [
