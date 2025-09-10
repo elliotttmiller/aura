@@ -1,14 +1,17 @@
 
 """
-Aura V5.0 Master Orchestrator - Launch All Services
-==================================================
+Aura V7.0 Master Orchestrator - Professional 2-Server Architecture  
+================================================================
 
-Launches all three components of the V5.0 Autonomous Cognitive Architecture:
-1. AI Artist Server (Shap-E) - Port 8002
-2. Backend Orchestrator (Two-stage AI pipeline) - Port 8001  
-3. Frontend Web Application - Port 8000
+Launches the V7.0 Professional Integration components:
+1. Backend Orchestrator (Two-stage AI pipeline) - Port 8001
+2. Frontend Web Application - Port 8000
 
-Part of the V5.0 Autonomous Cognitive Architecture.
+External Dependencies (User-Managed):
+- LM Studio with Meta-Llama-3.1-8B-Instruct (Port 1234)
+- Dedicated AI Environment with Shap-E model
+
+Part of the V7.0 Professional Integration.
 """
 
 import sys
@@ -22,15 +25,19 @@ import requests
 AURA_PATH = os.path.abspath(os.path.dirname(__file__))
 VENV_PATH = os.path.join(AURA_PATH, "venv", "Scripts", "python.exe")
 
-# Service URLs
+# V7.0 Service URLs - Lean 2-server architecture
 SERVICES = {
-    "AI Artist Server": "http://localhost:8002",
     "Backend Orchestrator": "http://localhost:8001", 
     "Frontend Application": "http://localhost:8000"
 }
 
-print("=== AURA V5.0 AUTONOMOUS COGNITIVE ARCHITECTURE ===")
-print("Initializing the complete AI pipeline...")
+# External Dependencies
+EXTERNAL_SERVICES = {
+    "LM Studio (Llama 3.1)": "http://localhost:1234"
+}
+
+print("=== AURA V7.0 PROFESSIONAL INTEGRATION ===")
+print("State-of-the-art architecture aligned with OpenAI best practices")
 
 # =============== SETUP ENVIRONMENT ===============
 venv_path = os.path.join(AURA_PATH, 'venv', 'Scripts')
@@ -39,19 +46,36 @@ venv_python = VENV_PATH if os.path.exists(VENV_PATH) else sys.executable
 
 print(f"Using Python: {venv_python}")
 
-# =============== LAUNCH SERVICES ===============
+# =============== CHECK EXTERNAL DEPENDENCIES ===============
+print("\nChecking external dependencies...")
 
-print("\n1. Starting AI Artist Server (Shap-E Model)...")
-ai_server_proc = subprocess.Popen([
-    venv_python, '-m', 'uvicorn', 'ai_server:app', '--port', '8002', '--host', '0.0.0.0'
-], cwd=AURA_PATH)
+def check_external_service(name: str, url: str) -> bool:
+    """Check if external service is available."""
+    try:
+        r = requests.get(url, timeout=3)
+        if r.status_code in [200, 404]:  # 404 is OK for base endpoints
+            print(f"   ✓ {name} is available")
+            return True
+    except Exception:
+        pass
+    print(f"   ⚠️  {name} is not available - ensure it's running")
+    return False
 
-print("2. Starting Backend Orchestrator (Two-Stage AI Pipeline)...")
+lm_studio_available = check_external_service("LM Studio (Llama 3.1)", "http://localhost:1234")
+
+if not lm_studio_available:
+    print("\n⚠️  WARNING: LM Studio is not detected.")
+    print("   Please ensure LM Studio is running with Meta-Llama-3.1-8B-Instruct")
+    print("   on port 1234 for full V7.0 functionality.")
+
+# =============== LAUNCH V7.0 SERVICES ===============
+
+print("\n1. Starting Backend Orchestrator (Professional AI Pipeline)...")
 backend_proc = subprocess.Popen([
     venv_python, '-m', 'uvicorn', 'backend.main:app', '--port', '8001', '--host', '0.0.0.0'
 ], cwd=AURA_PATH)
 
-print("3. Starting Frontend Web Application...")
+print("2. Starting Frontend Web Application...")
 frontend_proc = subprocess.Popen([
     venv_python, '-m', 'uvicorn', 'frontend.app:app', '--port', '8000', '--host', '0.0.0.0'
 ], cwd=AURA_PATH)
@@ -73,7 +97,7 @@ def wait_for_service(name: str, url: str, timeout: int = 30) -> bool:
     return False
 
 # =============== WAIT FOR SERVICES ===============
-print("\nWaiting for services to initialize...")
+print("\nWaiting for V7.0 services to initialize...")
 
 # Check each service
 all_ready = True
@@ -82,25 +106,28 @@ for service_name, service_url in SERVICES.items():
         all_ready = False
 
 if all_ready:
-    print("\n=== AURA V5.0 PIPELINE READY ===")
-    print("Architecture: Two-Stage Autonomous AI")
-    print("Stage 1: LLM System Architect (Llama 3.1)")  
-    print("Stage 2: AI Master Artisan (Shap-E)")
-    print("Stage 3: Hyper-Parametric Executor (Blender)")
+    print("\n=== AURA V7.0 PROFESSIONAL INTEGRATION READY ===")
+    print("Architecture: State-of-the-Art 2-Server Design")
+    print("Blender Engine: Aligned with OpenAI Shap-E Best Practices")  
+    print("Features: Dynamic Camera Framing, GPU Optimization, Professional Scene Management")
     print()
     for service_name, service_url in SERVICES.items():
         print(f"{service_name}: {service_url}")
     print()
-    print("🎨 Submit a creative prompt to experience autonomous AI design!")
+    for service_name, service_url in EXTERNAL_SERVICES.items():
+        status = "✓ Available" if service_name == "LM Studio (Llama 3.1)" and lm_studio_available else "⚠️ External"
+        print(f"{service_name}: {service_url} ({status})")
+    print()
+    print("🎨 Submit a creative prompt to experience the V7.0 professional pipeline!")
     
     # Open frontend in browser
-    print("\nOpening web interface...")
+    print("\nOpening professional web interface...")
     webbrowser.open('http://localhost:8000')
     
 else:
     print("\n⚠️  Some services failed to start. Check the logs above.")
 
-print("\n=== SERVICE MANAGEMENT ===")
+print("\n=== V7.0 SERVICE MANAGEMENT ===")
 print("Press Ctrl+C to stop all services")
 
 # =============== WAIT FOR EXIT ===============
@@ -111,7 +138,6 @@ try:
         
         # Check if any process has died
         for proc_name, proc in [
-            ("AI Server", ai_server_proc),
             ("Backend", backend_proc), 
             ("Frontend", frontend_proc)
         ]:
@@ -120,11 +146,10 @@ try:
                 break
         
 except KeyboardInterrupt:
-    print("\n\nShutting down Aura V5.0 services...")
+    print("\n\nShutting down Aura V7.0 services...")
     
     # Terminate all processes gracefully
     processes = [
-        ("AI Artist Server", ai_server_proc),
         ("Backend Orchestrator", backend_proc),
         ("Frontend Application", frontend_proc)
     ]
@@ -144,4 +169,4 @@ except KeyboardInterrupt:
             proc.kill()
     
     print("All services stopped.")
-    print("Aura V5.0 Autonomous Cognitive Architecture shutdown complete.")
+    print("Aura V7.0 Professional Integration shutdown complete.")
