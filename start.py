@@ -1,73 +1,42 @@
 
-# ================= IMPORTS =================
-import sys
-import os
+# File: aura/start.py
 import subprocess
-import time
 import webbrowser
-import requests
+import time
+import os
+import logging
 
-# ================= PATHS =================
-BLENDER_PATH = r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe"
-AURA_PATH = os.path.abspath(os.path.dirname(__file__))
-VENV_PATH = os.path.join(AURA_PATH, "venv", "Scripts", "python.exe")
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] INFO %(message)s')
 
-# =============== LAUNCH BLENDER ===============
+NVIDIA_BLUEPRINT_PATH = os.environ.get("NVIDIA_BLUEPRINT_PATH", "C:/path/to/your/3d-object-generation")
+AI_SERVER_PORT = 5000; FRONTEND_PORT = 8000; BACKEND_PORT = 8001
 
+def main():
+    processes = []
+    try:
+        logging.info("Launching AI Inference Server...")
+        ai_output_dir = os.path.join(NVIDIA_BLUEPRINT_PATH, "output")
+        if not os.path.exists(ai_output_dir): os.makedirs(ai_output_dir)
+        docker_command = ["docker", "run", "--rm", "--gpus", "all", "-it", "-p", f"{AI_SERVER_PORT}:5000", "-v", f"{ai_output_dir}:/workspace/output", "aura-ai-engine"]
+        processes.append(subprocess.Popen(docker_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True))
+        logging.info(f"AI Server starting... This may take a minute to load the model.")
+        time.sleep(15)
 
+        logging.info("Launching backend service...")
+        processes.append(subprocess.Popen(["uvicorn", "main:app", "--host", "127.0.0.1", "--port", str(BACKEND_PORT)]))
+        
+        logging.info("Launching frontend service...")
+        processes.append(subprocess.Popen(["uvicorn", "app:app", "--host", "127.0.0.1", "--port", str(FRONTEND_PORT)]))
+        
+        time.sleep(2)
+        webbrowser.open(f"http://localhost:{FRONTEND_PORT}")
+        logging.info("Aura pipeline started successfully. Press CTRL+C to shut down.")
+        
+        while True: time.sleep(1)
+    except KeyboardInterrupt: logging.info("Shutting down all services...")
+    finally:
+        for p in processes: p.terminate()
+        logging.info("All services terminated.")
 
-def launch_blender_server():
-    env = os.environ.copy()
-    env["PYTHONHOME"] = os.path.join(AURA_PATH, "venv")
-    env["PYTHONPATH"] = os.path.join(AURA_PATH, "venv", "Lib")
-    blender_script = os.path.join(AURA_PATH, "backend", "aura_backend.py")
-    blender_cmd = [BLENDER_PATH, "--background", "--python", blender_script]
-    subprocess.Popen(blender_cmd, env=env)
-    print("Blender persistent server started in background mode.")
-
-launch_blender_server()
-
-# =============== SETUP VENV ENVIRONMENT ===============
-venv_path = os.path.join(AURA_PATH, 'venv', 'Scripts')
-os.environ['PATH'] = venv_path + os.pathsep + os.environ.get('PATH', '')
-venv_python = VENV_PATH if os.path.exists(VENV_PATH) else sys.executable
-
-# =============== LAUNCH SERVICES ===============
-backend_proc = subprocess.Popen([
-    venv_python, '-m', 'uvicorn', 'backend.main:app', '--port', '8001'
-])
-frontend_proc = subprocess.Popen([
-    venv_python, '-m', 'uvicorn', 'frontend.app:app', '--port', '8000'
-])
-
-def wait_for_service(url, timeout=15):
-    start = time.time()
-    while time.time() - start < timeout:
-        try:
-            r = requests.get(url)
-            if r.status_code == 200:
-                return True
-        except Exception:
-            pass
-        time.sleep(1)
-    return False
-
-print('Aura pipeline started:')
-print('Frontend: http://localhost:8000')
-print('Backend: http://localhost:8001')
-print('Submit a prompt in the web UI to generate a design.')
-
-# Wait for frontend to be available, then open in browser
-if wait_for_service('http://localhost:8000'):
-    webbrowser.open('http://localhost:8000')
-    print('Frontend UI opened in your browser.')
-else:
-    print('Frontend did not start in time. Please open http://localhost:8000 manually.')
-
-# =============== WAIT FOR EXIT ===============
-try:
-    backend_proc.wait()
-    frontend_proc.wait()
-except KeyboardInterrupt:
-    backend_proc.terminate()
-    frontend_proc.terminate()
+if __name__ == "__main__":
+    main()

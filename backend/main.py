@@ -1,69 +1,68 @@
+# File: aura/main.py
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse, FileResponse
-import subprocess
-import os
-import logging
-import shlex
+import subprocess, os, logging, shlex, requests
 
 app = FastAPI()
-
 logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
-BLENDER_PATH = os.environ.get("BLENDER_PATH", r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe")
-AURA_BACKEND_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "aura_backend.py"))
+BLENDER_PATH = os.environ.get("BLENDER_PATH", r"C:\Program Files\Blender Foundation\Blender 4.1\blender.exe")
+BLENDER_PROC_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "blender_proc.py"))
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "output"))
-if not os.path.exists(OUTPUT_DIR):
-    os.makedirs(OUTPUT_DIR)
-
+NVIDIA_BLUEPRINT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "3d-object-generation"))
 
 def get_output_path(prompt: str) -> str:
+    if not os.path.exists(OUTPUT_DIR): os.makedirs(OUTPUT_DIR)
     safe_name = "".join(c for c in prompt.lower() if c.isalnum() or c in (' ', '_')).rstrip()
     safe_name = "_".join(safe_name.split())[:40]
-    return os.path.join(OUTPUT_DIR, f"output_{safe_name}.stl")
+    return os.path.join(OUTPUT_DIR, f"final_{safe_name}.stl")
 
 @app.post("/generate")
 async def generate_design(request: Request):
-    logger.debug('Received /generate request')
     try:
         data = await request.json()
-        logger.debug('Request data: %s', data)
         prompt = data.get("prompt", "default_prompt")
-        output_file = get_output_path(prompt)
-        if os.path.exists(output_file):
-            os.remove(output_file)
-        command = [
-            BLENDER_PATH, "--background", "--python", AURA_BACKEND_SCRIPT, "--",
-            shlex.quote(prompt),
-            "--output", output_file,
-            "--ring_size", str(data.get("ring_size", 7.0)),
-            "--stone_carat", str(data.get("stone_carat", 1.0)),
-            "--stone_shape", data.get("stone_shape", "ROUND"),
-            "--metal", data.get("metal", "GOLD")
-        ]
-        logger.debug(f"Blender command: {' '.join(command)}")
+        
+        logger.info("Sending request to persistent AI Inference Server...")
+        creative_prompt = f"a photorealistic, highly detailed 3d model of a {data.get('metal', 'gold')} ring with {prompt}, jewelry design"
+        ai_response = requests.post("http://localhost:5000/generate", json={"prompt": creative_prompt}, timeout=300)
+        ai_response.raise_for_status()
+        ai_data = ai_response.json()
+        
+        container_path = ai_data['file_path']
+        filename = os.path.basename(container_path)
+        ai_model_host_path = os.path.join(NVIDIA_BLUEPRINT_PATH, "output", filename)
+        
+        if not os.path.exists(ai_model_host_path):
+            raise FileNotFoundError(f"AI file not found on host at: {ai_model_host_path}")
+        
+        final_output_file = get_output_path(prompt)
+        if os.path.exists(final_output_file): os.remove(final_output_file)
+
+        command = [BLENDER_PATH, "--background", "--python", BLENDER_PROC_SCRIPT, "--", "--input", ai_model_host_path, "--output", final_output_file, "--ring_size", str(data.get("ring_size", 7.0))]
+        
+        logger.debug(f"Executing Blender post-processor: {' '.join(command)}")
         result = subprocess.run(command, capture_output=True, text=True, check=False)
-        logger.debug("[Blender stdout]\n%s", result.stdout)
-        if result.stderr:
+        
+        if result.returncode != 0 or not os.path.exists(final_output_file):
             logger.error("[Blender stderr]\n%s", result.stderr)
-        if result.returncode != 0 or not os.path.exists(output_file):
-            error_message = result.stderr or "Blender process failed and no output file was generated."
-            return JSONResponse(status_code=500, content={"error": error_message, "stdout": result.stdout})
-        logger.debug('Design generated successfully: %s', output_file)
-        return JSONResponse({
-            "file": os.path.basename(output_file),
-            "message": "Design generated successfully."
-        })
+            raise RuntimeError(f"Blender post-processing failed: {result.stderr}")
+
+        return JSONResponse({"file": os.path.basename(final_output_file), "message": "Design generated and processed successfully."})
     except Exception as e:
-        logger.exception('Exception in /generate')
+        logger.exception('Exception in /generate orchestrator')
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 @app.get("/output/{filename}")
 async def serve_stl(filename: str):
     logger.debug('Received STL file request: %s', filename)
     try:
-        if not filename.startswith("output_") or not filename.endswith(".stl"):
+        if not filename.startswith("final_") and not filename.startswith("output_"):
             logger.error(f"Rejected STL request: {filename} (invalid pattern)")
+            return Response(status_code=400)
+        if not filename.endswith(".stl"):
+            logger.error(f"Rejected STL request: {filename} (not STL file)")
             return Response(status_code=400)
         file_path = os.path.join(OUTPUT_DIR, filename)
         if os.path.exists(file_path):
