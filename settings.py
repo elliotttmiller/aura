@@ -1,39 +1,103 @@
 import bpy
 
 class SceneSettings(bpy.types.PropertyGroup):
-    """Stores all session settings for the add-on. Accessed via 'context.scene.aura_settings'."""
+    """Stores all session settings for the add-on. Accessed via 'context.scene.settings'."""
     
     prompt_text = bpy.props.StringProperty(
         name="Prompt",
-        description="Describe the detail you want to add or the object to create",
-        default="Swirling floral patterns"
+        description="Describe the procedural asset you want to create or modify",
+        default="Organic flowing patterns with geometric features"
     )
     
     analysis_report = bpy.props.StringProperty(
         name="Analysis Report",
-        description="Results from the manufacturing quality check",
-        default="Select an object and run a check."
+        description="Results from the procedural quality analysis",
+        default="Select an object and run analysis."
     )
     
-    # V17.0 Mesh Quality Control for Marching Cubes
+    # V20.0 Mesh Quality Control for Marching Cubes - 8GB VRAM optimized
     mesh_quality = bpy.props.IntProperty(
         name="Mesh Quality",
         description="Resolution for Marching Cubes algorithm (32=low, 64=med, 128=high, 256=ultra)",
         default=64,
         min=16,
-        max=512,
-        step=1
+        max=256,  # Reduced max for 8GB VRAM optimization
+        step=16   # Stepped intervals for better performance
     )
     
     # --- For async operations ---
     is_processing = bpy.props.BoolProperty(default=False)
     progress = bpy.props.IntProperty(subtype='PERCENTAGE', min=0, max=100, default=0)
     status_message = bpy.props.StringProperty(default="Ready")
+    
+    # --- Chat interface properties ---
+    chat_messages = bpy.props.StringProperty(
+        name="Chat Messages",
+        description="JSON string containing chat history",
+        default=""
+    )
+    
+    current_prompt = bpy.props.StringProperty(
+        name="Design Request",
+        description="Current design request from user",
+        default="",
+        maxlen=512
+    )
+    
+    # --- Asset specifications ---
+    asset_size = bpy.props.FloatProperty(
+        name="Asset Scale",
+        description="Scale of the generated asset in millimeters",
+        default=20.0,
+        min=1.0,
+        max=100.0
+    )
+    
+    material_type = bpy.props.EnumProperty(
+        name="Material Type",
+        description="Preferred material for the design",
+        items=[
+            ('METAL', 'Metal', 'Metallic materials'),
+            ('PLASTIC', 'Plastic', 'Plastic materials'),
+            ('CERAMIC', 'Ceramic', 'Ceramic materials'),
+        ],
+        default='METAL'
+    )
+    
+    feature_shape = bpy.props.EnumProperty(
+        name="Feature Shape",
+        description="Primary geometric feature",
+        items=[
+            ('ROUND', 'Round', 'Circular features'),
+            ('SQUARE', 'Square', 'Angular features'),
+            ('ORGANIC', 'Organic', 'Organic shapes'),
+        ],
+        default='ROUND'
+    )
+    
+    feature_scale = bpy.props.FloatProperty(
+        name="Feature Scale",
+        description="Scale of detailed features",
+        default=1.0,
+        min=0.1,
+        max=5.0
+    )
+    
+    preferred_technique = bpy.props.EnumProperty(
+        name="Generation Technique",
+        description="Preferred technique for asset generation",
+        items=[
+            ('IMPLICIT', 'Implicit Functions', 'Use implicit function modeling'),
+            ('MESH', 'Direct Mesh', 'Direct mesh generation'),
+            ('SCULPT', 'Sculpting', 'Sculpting-based approach'),
+        ],
+        default='IMPLICIT'
+    )
 
 def install_settings():
     bpy.utils.register_class(SceneSettings)
-    bpy.types.Scene.aura_settings = bpy.props.PointerProperty(type=SceneSettings)
+    bpy.types.Scene.settings = bpy.props.PointerProperty(type=SceneSettings)
 
 def uninstall_settings():
-    del bpy.types.Scene.aura_settings
+    del bpy.types.Scene.settings
     bpy.utils.unregister_class(SceneSettings)

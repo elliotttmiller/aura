@@ -1,13 +1,14 @@
 """
-Aura V17.0 Sentient Symbiote Environment - Low-Level AI Artisan Server
-=====================================================================
+Design Engine V20.0 - Low-Level AI Server
+==========================================
 
 This server hosts the native OpenAI Shap-E model with low-level implicit 
-function pipeline. Provides /generate_implicit endpoint for 3D implicit 
-function generation that returns decoder.pt and texture.pt parameter files.
+function pipeline optimized for 8GB VRAM hardware. Provides /generate_implicit 
+endpoint for 3D implicit function generation that returns decoder.pt and texture.pt 
+parameter files with fp16 precision.
 
-Implements Pillar 1: Forging the Low-Level AI Artisan Server
-Part of the V17.0 Sentient Symbiote Environment.
+Implements Pillar 1: Forging the High-Efficiency, Low-Level AI Server
+Part of the V20.0 Design Engine.
 """
 
 import os
@@ -38,13 +39,16 @@ except ImportError as e:
     logger.info("Running in simulation mode with realistic implicit function generation")
 
 # Initialize FastAPI app
-app = FastAPI(title="Aura V17.0 Low-Level AI Artisan Server", version="17.0")
+app = FastAPI(title="Design Engine V20.0 AI Server", version="20.0")
 
 # Global model variables - native Shap-E components
 text_to_latent_model = None
 latent_to_model_diffusion = None
 xm = None
 device = None
+
+# V20.0 FP16 optimization flag for 8GB VRAM
+USE_FP16 = True
 
 # Output directory for implicit function parameters
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "models", "implicit_functions"))
@@ -76,26 +80,32 @@ async def load_native_shap_e_models():
         logger.info(f"Using device: {device}")
         
         if SHAP_E_AVAILABLE:
-            # Load text-to-latent model
-            logger.info("Loading text-to-3D latent model...")
+            # Load text-to-latent model with V20.0 FP16 optimization
+            logger.info("Loading text-to-3D latent model with FP16 precision...")
             text_to_latent_model = load_model('text300M', device=device)
+            if USE_FP16 and device.type == 'cuda':
+                text_to_latent_model = text_to_latent_model.half()
+                logger.info("Applied FP16 optimization to text-to-latent model for 8GB VRAM")
             
             # Load latent-to-model diffusion
             logger.info("Loading latent-to-model diffusion...")
             latent_to_model_diffusion = diffusion_from_config(load_config('diffusion'))
             
-            # Load the 3D model from latents
-            logger.info("Loading latent-to-NeRF model...")
+            # Load the 3D model from latents with FP16 optimization
+            logger.info("Loading latent-to-NeRF model with FP16 precision...")
             xm = load_model('transmitter', device=device)
+            if USE_FP16 and device.type == 'cuda':
+                xm = xm.half()
+                logger.info("Applied FP16 optimization to latent-to-NeRF model for 8GB VRAM")
             
-            logger.info("V17.0 Native Shap-E pipeline loaded successfully")
+            logger.info("V20.0 Native Shap-E pipeline loaded successfully with hardware optimization")
         else:
             logger.info("Shap-E not available - using advanced simulation mode")
             text_to_latent_model = None
             latent_to_model_diffusion = None  
             xm = None
             
-        logger.info("V17.0 AI Artisan Server ready for implicit function generation")
+        logger.info("V20.0 Design Engine AI Server ready for implicit function generation")
         
     except Exception as e:
         logger.error(f"Failed to load native Shap-E models: {e}")
@@ -487,7 +497,7 @@ async def health_check():
 async def root():
     """Root endpoint for V17.0."""
     return {
-        "service": "Aura V17.0 Low-Level AI Artisan Server", 
+        "service": "V17.0 Low-Level AI Artisan Server", 
         "version": "17.0",
         "status": "running",
         "architecture": "Native Shap-E Implicit Function Pipeline",

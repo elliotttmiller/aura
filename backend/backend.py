@@ -1,6 +1,6 @@
 """
-Aura Backend Compatibility Layer
-================================
+Backend Compatibility Layer
+===========================
 
 Minimal backend functions for V14.0 compatibility with existing setup.
 """

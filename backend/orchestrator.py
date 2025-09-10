@@ -1,9 +1,9 @@
 """
-Aura V14.0 Sentient Artisan Environment - Native Orchestrator
-==========================================================
+V20.0 Design Engine - Native Orchestrator
+=========================================
 
 Native Blender orchestrator that manages the AI conversation and 3D processing
-without web server dependencies. Adapted from the V7.0 backend architecture.
+without web server dependencies. Adapted from the V17.0 backend architecture.
 
 Implements Protocol 3: Cognitive Authority (The AI-Minded Principle)
 """
@@ -21,8 +21,8 @@ import bpy
 # Setup logging
 logger = logging.getLogger(__name__)
 
-class AuraOrchestrator:
-    """Native Blender orchestrator for V14.0 Sentient Artisan Environment."""
+class Orchestrator:
+    """Native Blender orchestrator for V20.0 Design Engine."""
     
     def __init__(self):
         self.addon_root = self._get_addon_root()
@@ -37,7 +37,7 @@ class AuraOrchestrator:
         # Paths
         self.blender_proc_script = os.path.join(self.addon_root, "blender_proc.py")
         
-        logger.info("AuraOrchestrator initialized in native Blender mode")
+        logger.info("Orchestrator initialized in native Blender mode")
     
     def _get_addon_root(self) -> str:
         """Get the addon root directory."""
@@ -337,7 +337,7 @@ class AuraOrchestrator:
             from blender_proc import create_blender_mesh_from_implicit
             
             # Get mesh quality setting from scene settings
-            mesh_quality = getattr(bpy.context.scene.aura_settings, 'mesh_quality', 64)
+            mesh_quality = getattr(bpy.context.scene.settings, 'mesh_quality', 64)
             
             logger.info(f"Extracting mesh using Marching Cubes (quality={mesh_quality})")
             
@@ -346,7 +346,7 @@ class AuraOrchestrator:
                 decoder_path=implicit_files['decoder_path'],
                 texture_path=implicit_files['texture_path'],
                 mesh_quality=mesh_quality,
-                object_name="Aura_V17_Symbiotic_Creation"
+                object_name="V17_Symbiotic_Creation"
             )
             
             logger.info("Mesh extraction completed successfully")
@@ -392,14 +392,14 @@ class AuraOrchestrator:
         )
         
         fallback_object = bpy.context.active_object
-        fallback_object.name = "Aura_V17_Fallback_Ring"
+        fallback_object.name = "V17_Fallback_Ring"
         
         return fallback_object
     
     def _apply_material(self, obj: bpy.types.Object, metal_type: str):
         """Apply basic material to the object."""
         
-        material_name = f"Aura_{metal_type}"
+        material_name = f"Material_{metal_type}"
         
         # Create or get existing material
         material = bpy.data.materials.get(material_name)

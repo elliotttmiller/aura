@@ -1,28 +1,29 @@
 
 import bpy
-from backend.aura_backend import check_dependencies
+from backend.backend import check_dependencies
 
 from .settings import install_settings, uninstall_settings
 from .preferences import AddonPreferences, install_preferences, uninstall_preferences
-from .frontend.aura_panel import AuraChatPanel, AuraGenerateOperator, AuraModalOperator
-from .operators import AuraSentientOperator
+from .frontend.tool_panel import ChatPanel, GenerateOperator, ModalOperator
+from .operators import SentientOperator
 
 
 ALL_CLASSES = [
     AddonPreferences,
-    AuraChatPanel, 
-    AuraGenerateOperator,
-    AuraModalOperator,
-    AuraSentientOperator,
+    ChatPanel, 
+    GenerateOperator,
+    ModalOperator,
+    SentientOperator,
 ]
 
-def create_aura_workspace():
-    """Create the dedicated 'Aura' workspace with clean, focused UI."""
-    print("Creating Aura Mode workspace...")
+def create_design_workspace():
+    """Create the dedicated 'Design Studio' workspace with clean, focused UI."""
+    print("Creating Design Studio workspace...")
     
     # Create new workspace
-    if "Aura" not in bpy.data.workspaces:
-        workspace = bpy.data.workspaces.new("Aura")
+    if "Design Studio" not in bpy.data.workspaces:
+        workspace = bpy.data.workspaces.new("Design Studio")
+        workspace = bpy.data.workspaces.new("Design Studio")
         
         # Get the first screen from the workspace
         screen = workspace.screens[0]
@@ -45,16 +46,16 @@ def create_aura_workspace():
                         break
                 break
     
-    # Set Aura workspace as active
-    bpy.context.window.workspace = bpy.data.workspaces["Aura"]
-    print("Aura Mode workspace created and activated")
+    # Set Design Studio workspace as active
+    bpy.context.window.workspace = bpy.data.workspaces["Design Studio"]
+    print("Design Studio workspace created and activated")
 
 def install():
-    print("Installing Aura V14.0 Sentient Artisan Environment...")
+    print("Installing Design Engine V20.0...")
     
     # Perform dependency check
     if not check_dependencies(report_error=False):
-        print("Aura Warning: Critical dependencies not found. Some AI features may be disabled.")
+        print("Design Engine Warning: Critical dependencies not found. Some AI features may be disabled.")
 
     install_settings()
     install_preferences()
@@ -63,13 +64,13 @@ def install():
     for cls in ALL_CLASSES:
         bpy.utils.register_class(cls)
     
-    # Create the Aura workspace
-    bpy.app.timers.register(create_aura_workspace, first_interval=0.1)
+    # Create the Design Studio workspace
+    bpy.app.timers.register(create_design_workspace, first_interval=0.1)
     
-    print("Aura V14.0 Sentient Artisan Environment installed successfully")
+    print("Design Engine V20.0 installed successfully")
 
 def uninstall():
-    print("Uninstalling Aura V14.0 Sentient Artisan Environment...")
+    print("Uninstalling Design Engine V20.0...")
     
     # Unregister classes in reverse order
     for cls in reversed(ALL_CLASSES):
@@ -78,8 +79,8 @@ def uninstall():
     uninstall_preferences()
     uninstall_settings()
     
-    # Remove Aura workspace
-    if "Aura" in bpy.data.workspaces:
-        bpy.data.workspaces.remove(bpy.data.workspaces["Aura"])
+    # Remove Design Studio workspace
+    if "Design Studio" in bpy.data.workspaces:
+        bpy.data.workspaces.remove(bpy.data.workspaces["Design Studio"])
     
-    print("Aura V14.0 uninstalled successfully")
+    print("Design Engine V20.0 uninstalled successfully")

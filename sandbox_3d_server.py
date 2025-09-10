@@ -1,6 +1,6 @@
 """
-Aura V6.0 Sandbox 3D Server - Verifiable Testing Environment
-===========================================================
+V6.0 Sandbox 3D Server - Verifiable Testing Environment
+========================================================
 
 This lightweight FastAPI server mimics the real ai_server.py for truthful
 end-to-end testing. It provides the same /generate endpoint interface but
@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s %(m
 logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
-app = FastAPI(title="Aura V6.0 Sandbox 3D Server", version="6.0")
+app = FastAPI(title="V6.0 Sandbox 3D Server", version="6.0")
 
 # Output directory for generated models
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "models", "generated"))
@@ -52,7 +52,7 @@ def ensure_test_cube_exists() -> str:
     if not os.path.exists(test_cube_path):
         logger.info("Creating test_cube.obj for sandbox mode")
         
-        cube_content = """# Aura V6.0 Sandbox Test Cube
+        cube_content = """# V6.0 Sandbox Test Cube
 # Simple geometric test asset for verifiable sandbox testing
 o TestCube
 
@@ -155,7 +155,7 @@ async def health_check():
 async def root():
     """Root endpoint."""
     return {
-        "service": "Aura V6.0 Sandbox 3D Server",
+        "service": "V6.0 Sandbox 3D Server",
         "version": "6.0", 
         "mode": "sandbox",
         "status": "running - verifiable testing environment"

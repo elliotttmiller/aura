@@ -1,9 +1,10 @@
 # ===================================================================
-# Requirements for Aura V17.0 Sentient Symbiote Environment
+# Requirements for Universal Design Engine V20.0
 # ===================================================================
 #
 # State-of-the-art dependencies for low-level implicit function-based
 # AI pipeline with native shap_e integration and Marching Cubes algorithm.
+# Optimized for 8GB VRAM consumer hardware (NVIDIA 1070).
 #
 # Setup Instructions:
 # > python -m venv venv

@@ -1,6 +1,6 @@
 """
-Aura V14.0 Sentient Artisan Environment - Procedural Knowledge Base
-================================================================
+V14.0 Design Engine - Procedural Knowledge Base
+===============================================
 
 Professional jewelry techniques implemented as discrete Python functions.
 Contains master-level knowledge for creating specific, complex jewelry components.
@@ -293,7 +293,7 @@ def apply_artistic_modifiers(obj: bpy.types.Object, modifiers: Dict[str, Any]) -
     # Apply twist modifier
     twist_angle = modifiers.get('twist_angle_degrees', 0)
     if twist_angle > 0:
-        twist_modifier = obj.modifiers.new(name="AuraTwist", type='SIMPLE_DEFORM')
+        twist_modifier = obj.modifiers.new(name="Twist", type='SIMPLE_DEFORM')
         twist_modifier.deform_method = 'TWIST'
         twist_modifier.angle = math.radians(twist_angle)
         twist_modifier.deform_axis = 'Z'
@@ -304,11 +304,11 @@ def apply_artistic_modifiers(obj: bpy.types.Object, modifiers: Dict[str, Any]) -
     displacement_strength = modifiers.get('organic_displacement_strength', 0.0)
     if displacement_strength > 0:
         # Add displacement modifier with noise texture
-        displacement_modifier = obj.modifiers.new(name="AuraDisplacement", type='DISPLACE')
+        displacement_modifier = obj.modifiers.new(name="Displacement", type='DISPLACE')
         displacement_modifier.strength = displacement_strength
         
         # Create noise texture for organic displacement
-        texture = bpy.data.textures.new(name="AuraOrganicNoise", type='NOISE')
+        texture = bpy.data.textures.new(name="OrganicNoise", type='NOISE')
         texture.noise_scale = 0.5
         displacement_modifier.texture = texture
         
@@ -352,7 +352,7 @@ def create_stone_geometry(stone_shape: str, carat_weight: float) -> bpy.types.Ob
         bpy.ops.mesh.primitive_uv_sphere_add(radius=radius, location=(0, 0, 0.004))
     
     stone_object = bpy.context.active_object
-    stone_object.name = f"AuraStone_{stone_shape}"
+    stone_object.name = f"Stone_{stone_shape}"
     
     # Apply transparent material
     apply_stone_material(stone_object)
@@ -363,7 +363,7 @@ def create_stone_geometry(stone_shape: str, carat_weight: float) -> bpy.types.Ob
 def apply_stone_material(stone_obj: bpy.types.Object):
     """Apply a basic transparent material to represent a gemstone."""
     
-    material_name = "AuraStone_Material"
+    material_name = "Stone_Material"
     material = bpy.data.materials.get(material_name)
     
     if material is None:
