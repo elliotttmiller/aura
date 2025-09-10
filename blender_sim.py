@@ -140,7 +140,7 @@ def simulate_analysis_mode(args):
     with open(args.output, 'w') as f:
         json.dump(analysis_data, f, indent=2)
     
-    logger.info("=== GEOMETRIC ANALYSIS SIMULATION COMPLETED ===\")
+    logger.info("=== GEOMETRIC ANALYSIS SIMULATION COMPLETED ===")
 
 if __name__ == "__main__":
     main()
