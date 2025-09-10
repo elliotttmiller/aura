@@ -246,55 +246,155 @@ class AuraOrchestrator:
     
     def _execute_native_blender_processing(self, blueprint: Dict[str, Any], user_specs: Dict) -> Dict[str, Any]:
         """
-        Execute Blender processing natively within the current session.
+        Execute V17.0 implicit function-based 3D processing natively within Blender.
         
-        This is the key transformation from subprocess to native execution.
+        This is the revolutionary transformation to implicit surface extraction workflow.
         """
         try:
-            logger.info("Starting native Blender processing")
+            logger.info("Starting V17.0 native implicit function processing")
             
-            # Import the procedural knowledge module
-            from .backend.procedural_knowledge import execute_technique
+            # Stage 1: Generate implicit functions via AI server
+            implicit_files = self._generate_implicit_functions(blueprint, user_specs)
             
-            # Create base object
-            bpy.ops.mesh.primitive_torus_add(
-                major_radius=0.009,  # Ring size radius
-                minor_radius=blueprint['shank_parameters']['thickness_mm'] / 1000 / 2
-            )
-            base_object = bpy.context.active_object
-            base_object.name = "AuraRing"
-            
-            # Apply technique from procedural knowledge
-            technique = blueprint['setting_parameters']['technique']
-            technique_params = blueprint['setting_parameters']['parameters']
-            
-            result_object = execute_technique(
-                base_object=base_object,
-                technique=technique,
-                parameters=technique_params,
-                artistic_modifiers=blueprint['artistic_modifier_parameters']
+            # Stage 2: Extract mesh using Marching Cubes
+            result_object = self._extract_mesh_from_implicit_functions(
+                implicit_files, blueprint, user_specs
             )
             
-            # Create Shape Key for animation
+            # Stage 3: Apply procedural knowledge enhancements
+            if blueprint.get('setting_parameters'):
+                result_object = self._apply_procedural_enhancements(
+                    result_object, blueprint
+                )
+            
+            # Stage 4: Create Shape Key for animation
             if result_object.data.shape_keys is None:
                 result_object.shape_key_add(name="Basis")
             
-            shape_key = result_object.shape_key_add(name="AuraModification")
+            shape_key = result_object.shape_key_add(name="V17ImplicitModification")
             shape_key.value = 0.0  # Start at 0 for animation
             
-            # Apply basic material
+            # Stage 5: Apply material
             self._apply_material(result_object, user_specs['metal'])
             
-            logger.info("Native Blender processing completed successfully")
+            logger.info("V17.0 Native implicit function processing completed successfully")
             
             return {
                 'object_name': result_object.name,
-                'shape_key_name': 'AuraModification'
+                'shape_key_name': 'V17ImplicitModification'
             }
             
         except Exception as e:
-            logger.error(f"Native Blender processing failed: {e}")
+            logger.error(f"V17.0 Native implicit processing failed: {e}")
             raise
+    
+    def _generate_implicit_functions(self, blueprint: Dict, user_specs: Dict) -> Dict[str, str]:
+        """Generate implicit function parameters using AI server."""
+        try:
+            # Call the new /generate_implicit endpoint
+            ai_server_url = "http://localhost:8002/generate_implicit"
+            
+            # Create prompt from blueprint
+            prompt = blueprint.get('reasoning', 'Beautiful jewelry design')
+            
+            request_data = {
+                "prompt": prompt,
+                "guidance_scale": 15.0,
+                "num_inference_steps": 64,
+                "batch_size": 4
+            }
+            
+            logger.info(f"Calling AI server for implicit function generation: {prompt}")
+            
+            response = requests.post(ai_server_url, json=request_data, timeout=120)
+            response.raise_for_status()
+            
+            result = response.json()
+            
+            if not result['success']:
+                raise RuntimeError(f"AI server error: {result.get('error', 'Unknown error')}")
+            
+            logger.info("Implicit functions generated successfully")
+            
+            return {
+                'decoder_path': result['decoder_path'],
+                'texture_path': result['texture_path'],
+                'latent_path': result.get('latent_path')
+            }
+            
+        except Exception as e:
+            logger.error(f"Implicit function generation failed: {e}")
+            raise
+    
+    def _extract_mesh_from_implicit_functions(self, implicit_files: Dict[str, str], 
+                                            blueprint: Dict, user_specs: Dict) -> bpy.types.Object:
+        """Extract mesh using Marching Cubes algorithm."""
+        try:
+            # Import the blender_proc functions directly
+            import sys
+            sys.path.append(self.addon_root)
+            
+            from blender_proc import create_blender_mesh_from_implicit
+            
+            # Get mesh quality setting from scene settings
+            mesh_quality = getattr(bpy.context.scene.aura_settings, 'mesh_quality', 64)
+            
+            logger.info(f"Extracting mesh using Marching Cubes (quality={mesh_quality})")
+            
+            # Create mesh from implicit functions
+            result_object = create_blender_mesh_from_implicit(
+                decoder_path=implicit_files['decoder_path'],
+                texture_path=implicit_files['texture_path'],
+                mesh_quality=mesh_quality,
+                object_name="Aura_V17_Symbiotic_Creation"
+            )
+            
+            logger.info("Mesh extraction completed successfully")
+            return result_object
+            
+        except Exception as e:
+            logger.error(f"Mesh extraction failed: {e}")
+            # Fallback to basic ring creation
+            return self._create_fallback_ring(blueprint, user_specs)
+    
+    def _apply_procedural_enhancements(self, obj: bpy.types.Object, blueprint: Dict) -> bpy.types.Object:
+        """Apply procedural knowledge enhancements to the implicit surface."""
+        try:
+            from .procedural_knowledge import execute_technique
+            
+            setting_params = blueprint['setting_parameters']
+            technique = setting_params.get('technique', 'ClassicProng')
+            technique_params = setting_params.get('parameters', {})
+            artistic_modifiers = blueprint.get('artistic_modifier_parameters', {})
+            
+            logger.info(f"Applying procedural enhancement: {technique}")
+            
+            enhanced_object = execute_technique(
+                base_object=obj,
+                technique=technique, 
+                parameters=technique_params,
+                artistic_modifiers=artistic_modifiers
+            )
+            
+            return enhanced_object
+            
+        except Exception as e:
+            logger.warning(f"Procedural enhancement failed: {e}")
+            return obj  # Return original object
+    
+    def _create_fallback_ring(self, blueprint: Dict, user_specs: Dict) -> bpy.types.Object:
+        """Create fallback ring if implicit processing fails."""
+        logger.info("Creating fallback ring geometry")
+        
+        bpy.ops.mesh.primitive_torus_add(
+            major_radius=0.009,  # Ring size radius
+            minor_radius=blueprint['shank_parameters'].get('thickness_mm', 2.0) / 1000 / 2
+        )
+        
+        fallback_object = bpy.context.active_object
+        fallback_object.name = "Aura_V17_Fallback_Ring"
+        
+        return fallback_object
     
     def _apply_material(self, obj: bpy.types.Object, metal_type: str):
         """Apply basic material to the object."""

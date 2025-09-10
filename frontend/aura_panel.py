@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 class AuraChatPanel(bpy.types.Panel):
-    """Main AI chat interface panel for V14.0 Sentient Artisan Environment."""
+    """Main AI chat interface panel for V17.0 Sentient Symbiote Environment."""
     
-    bl_label = "Aura V14.0 Sentient Artisan"
+    bl_label = "Aura V17.0 Sentient Symbiote"
     bl_idname = "AURA_PT_ChatPanel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -33,7 +33,7 @@ class AuraChatPanel(bpy.types.Panel):
         
         # Header with version and status
         header_box = layout.box()
-        header_box.label(text="🧠 Sentient Artisan V14.0", icon='LIGHT')
+        header_box.label(text="🧬 Sentient Symbiote V17.0", icon='LIGHT')
         
         status_text = "Processing..." if settings.is_processing else "Ready"
         status_icon = 'TIME' if settings.is_processing else 'CHECKMARK'
@@ -110,6 +110,28 @@ class AuraChatPanel(bpy.types.Panel):
         
         specs_col = specs_box.column(align=True)
         specs_col.scale_y = 0.9
+        
+        # V17.0 Mesh Quality Control - Revolutionary Marching Cubes Resolution
+        quality_box = specs_col.box()
+        quality_box.label(text="🔬 V17.0 Mesh Quality Control", icon='MESH_GRID')
+        quality_col = quality_box.column(align=True)
+        
+        # Mesh quality slider with intuitive labels
+        quality_col.prop(settings, "mesh_quality", text="Resolution")
+        
+        # Quality indicator
+        mesh_quality = settings.mesh_quality
+        if mesh_quality <= 32:
+            quality_label = "🟡 Low Quality (Fast)"
+        elif mesh_quality <= 64:
+            quality_label = "🟠 Medium Quality (Balanced)"
+        elif mesh_quality <= 128:
+            quality_label = "🔵 High Quality (Detailed)"
+        else:
+            quality_label = "🟣 Ultra Quality (Slow)"
+            
+        quality_col.label(text=quality_label)
+        quality_col.separator()
         
         # Ring specifications
         specs_col.prop(settings, "ring_size", text="Ring Size")
