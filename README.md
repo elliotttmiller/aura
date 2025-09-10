@@ -104,6 +104,33 @@ def create_custom_component(bm, params):
 
 ## 🚀 Quick Start - V23.0 Generative System
 
+## 📁 Project Structure
+
+The AURA V23 Generative Artisan codebase is organized into clean, logical directories:
+
+```
+aura/
+├── backend/           # All backend functionality
+│   ├── main.py           # Main orchestration logic
+│   ├── orchestrator.py   # V23 AI orchestrator with dynamic code generation
+│   ├── ai_server.py      # AI model server
+│   ├── operators.py      # Blender operators
+│   └── ...              # Additional backend modules
+├── frontend/          # User interface components  
+│   └── tool_panel.py     # Main UI panel
+├── tests/            # All test files and certification scripts
+│   ├── test_v23_generative.py  # V23 system tests
+│   └── ...              # Additional test files
+├── docs/             # Documentation and test results
+│   ├── LIVE_TEST_RESULTS_V23.md  # V23 validation results
+│   └── ...              # Additional documentation
+├── models/           # 3D models and assets
+├── output/           # Generated output files
+├── config.py         # Centralized configuration
+├── setup.py          # Add-on setup and registration
+└── requirements.txt  # Python dependencies
+```
+
 ### Installation
 
 1. **Install as Blender Add-on**:

@@ -22,7 +22,7 @@ import bpy
 
 # V24 Enhancement: Load centralized configuration
 try:
-    from config import config, get_lm_studio_url, get_ai_server_config, is_sandbox_mode
+    from ..config import config, get_lm_studio_url, get_ai_server_config, is_sandbox_mode
     CONFIG_AVAILABLE = True
 except ImportError:
     logging.warning("Config module not available, using environment variables")

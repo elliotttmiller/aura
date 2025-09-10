@@ -158,7 +158,7 @@ The system uses a comprehensive .env configuration file with:
     
     print("📋 Key Configuration Variables:")
     try:
-        from config import config
+        from ..config import config
         
         configs = [
             ("LM Studio URL", config.get('LM_STUDIO_URL')),

@@ -69,7 +69,7 @@ except ImportError:
 
 # Load environment configuration
 try:
-    from config import config, validate_system_config
+    from ..config import config, validate_system_config
     CONFIG_AVAILABLE = True
 except ImportError:
     CONFIG_AVAILABLE = False

@@ -174,7 +174,7 @@ if __name__ == "__main__":
     
     # V24 Enhancement: Use configuration for server settings
     try:
-        from config import config
+        from ..config import config
         host = config.get('SANDBOX_SERVER_HOST', '0.0.0.0')
         port = config.get_int('SANDBOX_SERVER_PORT', 8003)  # Changed from 8002 to avoid conflict
         log_level = config.get('LOG_LEVEL', 'info').lower()
