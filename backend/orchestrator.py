@@ -20,26 +20,42 @@ from typing import Dict, Any, Optional
 
 import bpy
 
+# V24 Enhancement: Load centralized configuration
+try:
+    from config import config, get_lm_studio_url, get_ai_server_config, is_sandbox_mode
+    CONFIG_AVAILABLE = True
+except ImportError:
+    logging.warning("Config module not available, using environment variables")
+    CONFIG_AVAILABLE = False
+
 # Setup logging
 logger = logging.getLogger(__name__)
 
 class Orchestrator:
-    """Native Blender orchestrator for V20.0 Design Engine."""
+    """Native Blender orchestrator for V24 Design Engine."""
     
     def __init__(self):
         self.addon_root = self._get_addon_root()
-        self.output_dir = os.path.join(self.addon_root, "output")
-        os.makedirs(self.output_dir, exist_ok=True)
         
-        # AI Configuration - sandbox mode for initial implementation
-        self.sandbox_mode = True
-        self.lm_studio_url = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B-Instruct"
-        self.huggingface_api_key = os.environ.get("HUGGINGFACE_API_KEY", "")
+        # V24 Enhanced directory setup with configuration
+        if CONFIG_AVAILABLE:
+            self.output_dir = os.path.join(self.addon_root, config.get('OUTPUT_DIR', 'output'))
+            self.sandbox_mode = is_sandbox_mode()
+            self.lm_studio_url = get_lm_studio_url()
+            self.huggingface_api_key = config.get('HUGGINGFACE_API_KEY', '')
+        else:
+            # Fallback configuration
+            self.output_dir = os.path.join(self.addon_root, "output")
+            self.sandbox_mode = True
+            self.lm_studio_url = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B-Instruct"
+            self.huggingface_api_key = os.environ.get("HUGGINGFACE_API_KEY", "")
+        
+        os.makedirs(self.output_dir, exist_ok=True)
         
         # Paths
         self.blender_proc_script = os.path.join(self.addon_root, "blender_proc.py")
         
-        logger.info("Orchestrator initialized in native Blender mode")
+        logger.info(f"V24 Orchestrator initialized - Sandbox: {self.sandbox_mode}")
     
     def _get_addon_root(self) -> str:
         """Get the addon root directory."""

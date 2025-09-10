@@ -144,11 +144,19 @@ async def generate_3d_model(request: GenerationRequest) -> GenerationResponse:
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
+    """V24 Enhanced health check endpoint."""
+    import time
+    import os
+    
     return {
         "status": "healthy",
+        "timestamp": time.time(),
+        "service": "V24 Sandbox 3D Server",
+        "version": "24.0",
         "mode": "sandbox",
-        "service": "V6.0 Sandbox 3D Server"
+        "test_assets_available": os.path.exists(TEST_ASSETS_DIR),
+        "output_directory": OUTPUT_DIR,
+        "test_cube_ready": os.path.exists(os.path.join(TEST_ASSETS_DIR, "test_cube.obj"))
     }
 
 @app.get("/")
@@ -163,4 +171,17 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8002, log_level="info")
+    
+    # V24 Enhancement: Use configuration for server settings
+    try:
+        from config import config
+        host = config.get('SANDBOX_SERVER_HOST', '0.0.0.0')
+        port = config.get_int('SANDBOX_SERVER_PORT', 8003)  # Changed from 8002 to avoid conflict
+        log_level = config.get('LOG_LEVEL', 'info').lower()
+    except ImportError:
+        host = "0.0.0.0"
+        port = 8003  # Changed from 8002 to avoid conflict with AI server
+        log_level = "info"
+    
+    logger.info(f"🚀 Starting V24 Sandbox Server on {host}:{port}")
+    uvicorn.run(app, host=host, port=port, log_level=log_level)

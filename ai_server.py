@@ -19,8 +19,21 @@ from typing import Dict, Any, Tuple
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-# Configure logging first
-logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s %(message)s')
+# V24 Enhancement: Load centralized configuration
+try:
+    from config import config, get_ai_server_config
+    CONFIG_AVAILABLE = True
+except ImportError:
+    logging.warning("Config module not available, using defaults")
+    CONFIG_AVAILABLE = False
+
+# V24 Enhanced logging configuration
+if CONFIG_AVAILABLE:
+    log_level = getattr(logging, config.get('LOG_LEVEL', 'INFO').upper())
+    logging.basicConfig(level=log_level, format=config.get('LOG_FORMAT', '[%(asctime)s] %(levelname)s %(message)s'))
+else:
+    logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s %(message)s')
+
 logger = logging.getLogger(__name__)
 
 # Shap-E imports for native implementation (with graceful fallback)
@@ -480,18 +493,29 @@ async def generate_legacy(request: ImplicitGenerationRequest) -> ImplicitGenerat
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint for V17.0."""
-    return {
+    """V24 Enhanced health check endpoint for system monitoring."""
+    health_status = {
         "status": "healthy",
-        "version": "17.0",
+        "timestamp": time.time(),
+        "service": "V24 Low-Level AI Artisan Server",
+        "version": "24.0",
+        "shap_e_available": SHAP_E_AVAILABLE,
         "models_loaded": {
             "text_to_latent": text_to_latent_model is not None,
             "latent_diffusion": latent_to_model_diffusion is not None,
             "implicit_renderer": xm is not None,
         },
-        "device": str(device),
-        "output_directory": OUTPUT_DIR
+        "device": str(device) if device else None,
+        "gpu_available": torch.cuda.is_available() if torch else False,
+        "output_directory": OUTPUT_DIR if 'OUTPUT_DIR' in globals() else None
     }
+    
+    # Check if models are properly loaded
+    if not SHAP_E_AVAILABLE and not text_to_latent_model:
+        health_status["status"] = "degraded"
+        health_status["message"] = "Running in simulation mode"
+    
+    return health_status
 
 @app.get("/")
 async def root():
@@ -516,4 +540,17 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8002, log_level="info")
+    
+    # V24 Enhancement: Use configuration for server settings
+    if CONFIG_AVAILABLE:
+        server_config = get_ai_server_config()
+        host = server_config.get('host', '0.0.0.0')
+        port = server_config.get('port', 8002)
+        log_level = config.get('LOG_LEVEL', 'info').lower()
+    else:
+        host = "0.0.0.0"
+        port = 8002
+        log_level = "info"
+    
+    logger.info(f"🚀 Starting AI Server on {host}:{port}")
+    uvicorn.run(app, host=host, port=port, log_level=log_level)
