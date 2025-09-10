@@ -82,11 +82,23 @@ class Viewer {
 document.addEventListener('DOMContentLoaded', () => {
     const viewer = new Viewer('viewer');
     const form = document.getElementById('jewelry-form');
+    const refineForm = document.getElementById('refine-form');
+    const refineSection = document.getElementById('refine-section');
+    const reasoningDisplay = document.getElementById('reasoning-display');
+    const reasoningText = document.getElementById('reasoning-text');
+    const resultDiv = document.getElementById('result');
+    
+    // V6.0 State Management for Cognitive Loop
+    let lastGenerationData = null;
+    let currentSpecs = null;
+    
+    // Initial Design Generation
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const resultDiv = document.getElementById('result');
-        viewer.displayMessage('Generating design...', false);
+        viewer.displayMessage('Generating initial design...', false);
         resultDiv.innerHTML = '';
+        hideRefinementUI();
+        
         const formData = {
             prompt: document.getElementById('prompt').value,
             metal: document.getElementById('metal').value,
@@ -94,6 +106,9 @@ document.addEventListener('DOMContentLoaded', () => {
             stone_shape: document.getElementById('stone_shape').value,
             stone_carat: parseFloat(document.getElementById('stone_carat').value),
         };
+        
+        currentSpecs = formData;
+        
         try {
             const response = await fetch('/generate', {
                 method: 'POST',
@@ -101,18 +116,118 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(formData)
             });
             const data = await response.json();
+            
             if (!response.ok) {
                 throw new Error(data.error || `HTTP error! status: ${response.status}`);
             }
+            
             if (data.file) {
-                resultDiv.innerHTML = `<b>Design File:</b> <span style='color:#6C47FF'>${data.file}</span>`;
-                viewer.loadSTL(`/output/${data.file}`, formData.metal);
+                lastGenerationData = data;
+                displayGenerationResults(data, formData);
+                showRefinementUI();
             } else {
                 throw new Error(data.error || 'Unknown error occurred in backend.');
             }
         } catch (err) {
-            console.error('Submission error:', err);
+            console.error('Generation error:', err);
             viewer.displayMessage(`Error: ${err.message}`, true);
         }
     });
+    
+    // V6.0 Refinement Process
+    refineForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        
+        if (!lastGenerationData) {
+            alert('Please generate an initial design first.');
+            return;
+        }
+        
+        viewer.displayMessage('Refining design...', false);
+        resultDiv.innerHTML = '';
+        
+        const refinementPrompt = document.getElementById('refinement-prompt').value;
+        
+        const refineData = {
+            refinement_prompt: refinementPrompt,
+            previous_blueprint: lastGenerationData.blueprint_used,
+            previous_stl_file: lastGenerationData.file,
+            ...currentSpecs
+        };
+        
+        try {
+            const response = await fetch('/refine', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(refineData)
+            });
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || `HTTP error! status: ${response.status}`);
+            }
+            
+            if (data.file) {
+                lastGenerationData = {
+                    file: data.file,
+                    blueprint_used: data.refined_blueprint
+                };
+                displayRefinementResults(data, currentSpecs);
+                document.getElementById('refinement-prompt').value = '';
+            } else {
+                throw new Error(data.error || 'Unknown error occurred during refinement.');
+            }
+        } catch (err) {
+            console.error('Refinement error:', err);
+            viewer.displayMessage(`Refinement Error: ${err.message}`, true);
+        }
+    });
+    
+    function displayGenerationResults(data, formData) {
+        // Display result
+        resultDiv.innerHTML = `<b>Initial Design:</b> <span style='color:#6C47FF'>${data.file}</span>`;
+        
+        // Load 3D model
+        viewer.loadSTL(`/output/${data.file}`, formData.metal);
+        
+        // Display AI reasoning if available
+        if (data.blueprint_used && data.blueprint_used.reasoning) {
+            displayReasoning(data.blueprint_used.reasoning);
+        }
+    }
+    
+    function displayRefinementResults(data, formData) {
+        // Display result
+        resultDiv.innerHTML = `<b>Refined Design:</b> <span style='color:#00C6FB'>${data.file}</span>`;
+        
+        // Load 3D model
+        viewer.loadSTL(`/output/${data.file}`, formData.metal);
+        
+        // Display refined AI reasoning
+        if (data.refined_blueprint && data.refined_blueprint.reasoning) {
+            displayReasoning(data.refined_blueprint.reasoning);
+        }
+        
+        // Show analysis data if available
+        if (data.geometric_analysis) {
+            console.log('Geometric Analysis:', data.geometric_analysis);
+        }
+    }
+    
+    function displayReasoning(reasoning) {
+        if (reasoning) {
+            reasoningText.textContent = reasoning;
+            reasoningDisplay.style.display = 'block';
+        }
+    }
+    
+    function showRefinementUI() {
+        refineSection.classList.add('visible');
+    }
+    
+    function hideRefinementUI() {
+        refineSection.classList.remove('visible');
+        reasoningDisplay.style.display = 'none';
+        lastGenerationData = null;
+    }
 });

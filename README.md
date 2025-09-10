@@ -1,6 +1,97 @@
-# Aura V7.0 Professional Integration
+# Aura V6.0 Sentient Cognitive Loop / V7.0 Professional Integration
 
 ## Overview
+
+Aura represents the state-of-the-art in AI-driven jewelry design systems, now featuring **dual architecture support**:
+
+- **V6.0 Sentient Cognitive Loop**: Iterative, self-improving design system with geometric intelligence
+- **V7.0 Professional Integration**: Linear, high-performance production pipeline
+
+The system seamlessly operates in both modes, with V6.0 providing advanced cognitive capabilities for iterative design refinement, while V7.0 maintains the robust production workflow for enterprise use.
+
+## V6.0 Sentient Cognitive Loop Architecture
+
+### Revolutionary Multi-Pass Design Process
+
+The V6.0 architecture introduces true **design sentience** through an iterative cognitive loop:
+
+1. **AI Director**: Generates initial design with reasoning
+2. **Geometric Analyzer**: Intelligent analysis of 3D models  
+3. **AI Critic**: Processes feedback and geometric data
+4. **Iterative Refinement**: Multi-pass design improvement
+5. **Verifiable Testing**: Complete sandbox environment
+
+### Core V6.0 Features
+
+**🧠 Sentient AI Integration**
+- **Reasoning Mode**: AI explains every design decision
+- **Dual-Role LLM**: Acts as both Director and Critic
+- **Geometric Intelligence**: Analyzes and learns from created designs
+
+**🔄 Cognitive Loop Process**
+- **Initial Generation**: Traditional AI → 3D → Blender pipeline
+- **Analysis Phase**: Geometric analysis of created design
+- **Refinement Phase**: AI incorporates analysis + user feedback
+- **Iteration Ready**: Seamless multi-pass improvements
+
+**🧪 Verifiable Sandbox Environment**
+- **AURA_SANDBOX_MODE**: Complete testing environment
+- **Hugging Face Integration**: Free, public LLM endpoints
+- **Test Assets**: Predictable 3D generation for verification
+- **Empirical Validation**: Real-time testing with proof
+
+## V6.0/V7.0 Unified Architecture
+
+### Dual-Mode Operation
+
+```bash
+# V6.0 Sentient Mode (Iterative Design)
+export AURA_SANDBOX_MODE=true
+python start.py
+
+# V7.0 Professional Mode (Production Pipeline)  
+export AURA_SANDBOX_MODE=false
+python start.py
+```
+
+### Service Architecture
+
+**Backend Orchestrator** (Port 8001)
+- V6.0: Cognitive loop endpoints (`/generate`, `/refine`)
+- V7.0: Production AI pipeline coordination
+
+**Frontend Application** (Port 8000)  
+- V6.0: Iterative design UI with reasoning display
+- V7.0: Professional web interface and 3D visualization
+
+**AI Services**
+- V6.0 Sandbox: Hugging Face API + Test 3D server
+- V7.0 Production: LM Studio + External AI environment
+
+### Intelligent Blender Engine
+
+**Dual-Mode Processing**
+- `--mode generate`: Create 3D models from blueprints
+- `--mode analyze`: Geometric analysis for cognitive loop
+
+**V6.0 Analysis Output**
+```json
+{
+  "geometry_metrics": {
+    "vertex_count": 250,
+    "face_count": 250,
+    "complexity_level": "medium"
+  },
+  "manufacturing_assessment": {
+    "printability_score": 0.85,
+    "structural_integrity": "good"
+  },
+  "design_characteristics": {
+    "dominant_dimension": "width",
+    "symmetry_assessment": "likely_symmetric"
+  }
+}
+```
 Aura V7.0 is a revolutionary jewelry design system featuring **State-of-the-Art Professional Architecture** aligned with OpenAI Shap-E best practices. This professional integration transforms jewelry design through an advanced AI-driven pipeline with dynamic camera framing, GPU optimization, and modular Blender engine architecture.
 
 ## V7.0 Professional Architecture - Advanced AI Pipeline
@@ -57,12 +148,13 @@ main() - Clean orchestration entry point
 - **Professional Scene Management**: Industry-standard lighting and rendering pipeline
 - **Modular Design**: Clean separation of concerns for maintainability and extensibility
 
-## Master Blueprint Schema
+## V6.0/V7.0 Master Blueprint Schema
 
-The AI generates a complete JSON Master Blueprint:
+The AI generates a complete JSON Master Blueprint with V6.0 cognitive reasoning:
 
 ```json
 {
+  "reasoning": "Step-by-step explanation of design choices based on user prompt analysis",
   "creative_prompt_for_3d_model": "Rich descriptive paragraph for 3D generation",
   "shank_parameters": {
     "profile_shape": "D-Shape | Round",
@@ -162,17 +254,34 @@ aura/
 └── README.md                # This file
 ```
 
-## Usage - Professional Design Generation
+## Usage - V6.0 Sentient & V7.0 Professional Design
 
-1. **Access Professional Interface**: Navigate to http://localhost:8000
-2. **Enter Creative Vision**: Describe your design (e.g., "organic vine-like earring with twisted elements")
-3. **Configure Specifications**: Ring size, metal type, stone specifications
-4. **Generate Professional Design**: Experience the V7.0 state-of-the-art pipeline
-5. **Review Results**: Dynamic camera-framed preview with downloadable STL
+### V6.0 Sentient Cognitive Loop Usage
 
-### Example Professional Prompts
+1. **Enable Sandbox Mode**: `export AURA_SANDBOX_MODE=true && python start.py`
+2. **Access Sentient Interface**: Navigate to http://localhost:8000
+3. **Initial Generation**: Enter creative prompt → AI generates with reasoning
+4. **Review Reasoning**: See AI's step-by-step design decisions
+5. **Iterative Refinement**: Use "Refine Design" section for improvements
+6. **Multi-Pass Creation**: Continue refining until perfect
+
+#### V6.0 Refinement Examples
+- Initial: "Art Nouveau vine ring" → AI creates with organic elements
+- Refine: "Make it thicker with more texture" → AI analyzes + improves
+- Refine: "Change to 6 prongs, reduce twist" → Further optimization
+
+### V7.0 Professional Production Usage
+
+1. **Production Mode**: `export AURA_SANDBOX_MODE=false && python start.py`
+2. **Professional Interface**: Navigate to http://localhost:8000  
+3. **Enter Creative Vision**: Describe design with technical requirements
+4. **Configure Specifications**: Ring size, metal type, stone specifications
+5. **Generate Professional Design**: V7.0 state-of-the-art pipeline execution
+6. **Download Results**: Dynamic camera-framed preview with manufacturable STL
+
+### Universal Example Prompts
 - "Art Nouveau vine engagement ring with organic twisted elements"
-- "Modern geometric wedding band with algorithmic surface patterns"
+- "Modern geometric wedding band with algorithmic surface patterns"  
 - "Classic solitaire with dynamic swept prongs and mathematical curves"
 - "Vintage-inspired ring with parametric filigree and organic displacement"
 
