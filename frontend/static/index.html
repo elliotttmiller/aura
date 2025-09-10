@@ -45,6 +45,38 @@
         .error {
             color: #FF6B6B; word-break: break-word; white-space: pre-line;
         }
+        
+        /* V6.0 Refinement UI Styles */
+        .refine-section {
+            display: none; width: 100%; max-width: 800px; background: #23262F; border-radius: 12px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        .refine-section.visible {
+            display: block;
+        }
+        .refine-section h3 {
+            margin: 0 0 16px 0; color: #6C47FF; font-size: 1.3rem; font-weight: 600;
+        }
+        .reasoning-display {
+            background: #1A1D23; border-radius: 8px; padding: 16px; margin: 16px 0; border-left: 4px solid #6C47FF;
+        }
+        .reasoning-display h4 {
+            margin: 0 0 8px 0; color: #00C6FB; font-size: 1rem;
+        }
+        .reasoning-text {
+            color: #A5A7B2; line-height: 1.6; font-style: italic;
+        }
+        .refine-form {
+            display: flex; flex-direction: row; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-top: 16px;
+        }
+        .refine-form input {
+            flex: 1; min-width: 300px;
+        }
+        .refine-btn {
+            padding: 12px 24px; font-size: 1rem; background: linear-gradient(90deg, #00C6FB 0%, #6C47FF 100%);
+        }
+        .refine-btn:hover {
+            background: linear-gradient(90deg, #6C47FF 0%, #00C6FB 100%);
+        }
     </style>
     <script type="module" src="/static/js/main.js"></script>
 <!--
@@ -54,8 +86,8 @@
 </head>
 <body>
     <div class='container'>
-        <h1>Aura AI Jewelry Designer</h1>
-        <div class='desc'>Describe your dream jewelry piece and specify technical details for a professional, manufacturable design.</div>
+        <h1>Aura V6.0 Sentient Cognitive Loop</h1>
+        <div class='desc'>Describe your dream jewelry piece and use the iterative refinement system to perfect your design.</div>
         <form id='jewelry-form'>
             <input type='text' id='prompt' name='prompt' placeholder='Creative prompt (e.g. Art Nouveau vines)' required />
             <label for='metal' class='form-label'>Metal Type:</label>
@@ -72,9 +104,27 @@
                 <option value='PRINCESS'>Princess</option>
             </select>
             <input type='number' id='stone_carat' name='stone_carat' min='0.1' max='10' step='0.1' value='1.0' placeholder='Stone Size (Carats)' required />
-            <button type='submit'>Generate Design</button>
+            <button type='submit'>Generate Initial Design</button>
         </form>
+        
+        <!-- V6.0 AI Reasoning Display -->
+        <div id='reasoning-display' class='reasoning-display' style='display: none;'>
+            <h4>AI Designer Reasoning</h4>
+            <div id='reasoning-text' class='reasoning-text'></div>
+        </div>
+        
         <div id='viewer'></div>
+        
+        <!-- V6.0 Refinement Section -->
+        <div id='refine-section' class='refine-section'>
+            <h3>🎯 Refine Your Design</h3>
+            <p>Your design has been analyzed. Describe how you'd like to improve it:</p>
+            <form id='refine-form' class='refine-form'>
+                <input type='text' id='refinement-prompt' placeholder='e.g. make it thicker, add more texture, change to 6 prongs' required />
+                <button type='submit' class='refine-btn'>Refine Design</button>
+            </form>
+        </div>
+        
         <div id='result' class='result'></div>
     </div>
 </body>

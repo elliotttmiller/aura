@@ -10,6 +10,7 @@ when Blender is not available in the environment.
 import os
 import sys
 import json
+import time
 import logging
 from argparse import ArgumentParser
 
@@ -79,11 +80,13 @@ def main():
         logger.error("No arguments provided. Script must be called with -- separator.")
         return
     
-    parser = ArgumentParser(description="Blender Simulator for V5.0 Testing")
+    parser = ArgumentParser(description="Blender Simulator for V6.0/V7.0 Testing with Dual-Mode Support")
+    parser.add_argument("--mode", type=str, choices=["generate", "analyze"], default="generate",
+                       help="Operation mode: 'generate' for creation, 'analyze' for geometric analysis")
     parser.add_argument("--input", type=str, required=True, 
-                       help="Path to AI-generated .obj file")
+                       help="Path to AI-generated .obj file or STL file for analysis")
     parser.add_argument("--output", type=str, required=True,
-                       help="Path for final .stl export")
+                       help="Path for final .stl export or analysis JSON")
     parser.add_argument("--params", type=str, required=True,
                        help="JSON Master Blueprint parameters")
     parser.add_argument("--ring_size", type=float, default=7.0)
@@ -94,7 +97,50 @@ def main():
     argv = sys.argv[sys.argv.index('--') + 1:]
     args = parser.parse_args(argv)
     
-    simulate_blender_execution(args)
+    if args.mode == "analyze":
+        simulate_analysis_mode(args)
+    else:
+        simulate_blender_execution(args)
+
+def simulate_analysis_mode(args):
+    """Simulate the V6.0 geometric analysis mode."""
+    logger.info("=== BLENDER SIMULATION - ANALYSIS MODE ===")
+    logger.info(f"Analyzing file: {args.input}")
+    logger.info(f"Output analysis: {args.output}")
+    
+    # Create a basic analysis JSON for simulation
+    analysis_data = {
+        "analysis_timestamp": str(time.time()),
+        "geometry_metrics": {
+            "vertex_count": 250,
+            "edge_count": 500,
+            "face_count": 250,
+            "bounding_box": {
+                "min": [-0.008, -0.008, -0.005],
+                "max": [0.008, 0.008, 0.005],
+                "dimensions": [0.016, 0.016, 0.010]
+            },
+            "approximate_volume_cubic_mm": 2.56,
+            "center_of_mass": [0.0, 0.0, 0.0]
+        },
+        "manufacturing_assessment": {
+            "complexity_level": "medium",
+            "printability_score": 0.85,
+            "estimated_material_usage_grams": 0.049,
+            "structural_integrity": "good"
+        },
+        "design_characteristics": {
+            "dominant_dimension": "width", 
+            "aspect_ratio": 1.6,
+            "symmetry_assessment": "likely_symmetric"
+        }
+    }
+    
+    # Write analysis to output file
+    with open(args.output, 'w') as f:
+        json.dump(analysis_data, f, indent=2)
+    
+    logger.info("=== GEOMETRIC ANALYSIS SIMULATION COMPLETED ===\")
 
 if __name__ == "__main__":
     main()

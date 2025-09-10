@@ -805,17 +805,36 @@ async def serve_stl(filename: str):
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {
-        "service": "Aura V5.0 Backend Orchestrator",
-        "status": "running",
-        "version": "5.0",
-        "architecture": "Two-Stage Autonomous AI Pipeline"
-    }
+    if SANDBOX_MODE:
+        return {
+            "service": "Aura V6.0 Sentient Cognitive Loop",
+            "status": "running",
+            "version": "6.0",
+            "mode": "sandbox",
+            "architecture": "Multi-Pass Iterative AI Pipeline"
+        }
+    else:
+        return {
+            "service": "Aura V7.0 Backend Orchestrator", 
+            "status": "running",
+            "version": "7.0",
+            "mode": "production",
+            "architecture": "Two-Stage Professional AI Pipeline"
+        }
 
 @app.get("/")
 async def root():
-    return {
-        "service": "Aura V5.0 Backend Orchestrator",
-        "version": "5.0",
-        "status": "Autonomous Cognitive Architecture Active"
-    }
+    if SANDBOX_MODE:
+        return {
+            "service": "Aura V6.0 Sentient Cognitive Loop",
+            "version": "6.0",
+            "mode": "sandbox",
+            "status": "Cognitive Loop Architecture Active - Verifiable Testing Environment"
+        }
+    else:
+        return {
+            "service": "Aura V7.0 Backend Orchestrator",
+            "version": "7.0", 
+            "mode": "production",
+            "status": "Professional Integration Active"
+        }
