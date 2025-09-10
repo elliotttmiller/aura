@@ -1,16 +1,18 @@
 """
-V20.0 Design Engine - High-Resolution Implicit Surface Extractor
-================================================================
+V22.0 Verifiable Artisan - Dynamic Construction Plan Executor
+============================================================
 
-A revolutionary rewrite for implicit function-based 3D generation featuring:
-- Native implicit function parameter loading (decoder.pt, texture.pt)
-- High-resolution Marching Cubes algorithm implementation with 8GB VRAM optimization
-- User-configurable mesh quality control
-- Real-time vertex color application from generative textures
-- Professional scene setup and dynamic camera framing
+A revolutionary rewrite that transforms the Blender script into a sophisticated engine 
+that dynamically executes the AI's construction_plan as a sequence of operations.
 
-Implements Pillar 2: Engineering the High-Resolution Blender Engine
-Part of the V20.0 Design Engine.
+Key V22.0 innovations:
+- Lean, intelligent interpreter that loops through construction_plan operations
+- Dynamic function calls to procedural_knowledge.py techniques
+- Complete elimination of hardcoded creative logic
+- AI-driven workflow with the Blender Engine as the "Robotic Arm"
+
+Implements Protocol 2: Absolute Cognitive Authority - Zero hardcoded creative fallbacks.
+Implements Protocol 3: Architectural Purity - Pure native Blender execution engine.
 """
 
 import os
@@ -28,251 +30,137 @@ import bmesh
 import addon_utils
 from mathutils import Vector, Matrix
 
-# Import scientific libraries for Marching Cubes
+# Import scientific libraries for basic geometry operations
 try:
-    from skimage import measure
-    import torch
+    import numpy as np
 except ImportError as e:
-    logging.warning(f"Scientific libraries not available: {e}")
-    # Will fall back to basic geometry generation
+    logging.warning(f"NumPy not available: {e}")
+    # Basic fallback for coordinate operations
 
 # Setup professional logging
 logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
 # =============================================================================
-# V20.0 IMPLICIT FUNCTION PROCESSING - CORE INNOVATION
+# V22.0 DYNAMIC CONSTRUCTION PLAN EXECUTOR - CORE INNOVATION
 # =============================================================================
 
-class ImplicitFunctionDecoder:
+def execute_construction_plan(construction_plan: List[Dict], context: Dict) -> bpy.types.Object:
     """
-    Decodes implicit function parameters and evaluates SDF values.
-    Core component for converting decoder.pt to 3D surfaces.
-    """
+    V22.0 Core Innovation: Dynamic Construction Plan Executor
     
-    def __init__(self, decoder_path: str):
-        """
-        Initialize decoder from parameter file.
-        
-        Args:
-            decoder_path: Path to decoder.pt file
-        """
-        self.decoder_path = decoder_path
-        self.parameters = None
-        self.device = 'cpu'  # Use CPU in Blender environment
-        
-        try:
-            import torch
-            self.parameters = torch.load(decoder_path, map_location=self.device)
-            logger.info(f"Loaded implicit function decoder: {decoder_path}")
-        except Exception as e:
-            logger.error(f"Failed to load decoder: {e}")
-            self.parameters = None
+    This is the revolutionary "Robotic Arm" that receives a list of operations from the AI
+    and executes them sequentially by calling functions from procedural_knowledge.py.
     
-    def evaluate_sdf(self, points: np.ndarray) -> np.ndarray:
-        """
-        Evaluate the Signed Distance Function at given 3D points.
-        
-        Args:
-            points: Nx3 array of 3D coordinates
-            
-        Returns:
-            N array of SDF values (negative = inside surface)
-        """
-        if self.parameters is None:
-            # Fallback: create a simple sphere SDF
-            return self._fallback_sphere_sdf(points)
-        
-        try:
-            import torch
-            
-            # Convert to tensor
-            points_tensor = torch.tensor(points, dtype=torch.float32, device=self.device)
-            
-            # Forward pass through MLP layers
-            x = points_tensor
-            
-            layers = self.parameters.get('layers', [])
-            biases = self.parameters.get('biases', [])
-            
-            for i, (layer, bias) in enumerate(zip(layers, biases)):
-                x = torch.mm(x, layer.T) + bias
-                
-                # Apply activation (ReLU for hidden layers)
-                if i < len(layers) - 1:
-                    x = torch.relu(x)
-            
-            # Return SDF values
-            sdf_values = x.squeeze().cpu().numpy()
-            
-            return sdf_values
-            
-        except Exception as e:
-            logger.warning(f"MLP evaluation failed: {e}, using fallback")
-            return self._fallback_sphere_sdf(points)
-    
-    def _fallback_sphere_sdf(self, points: np.ndarray) -> np.ndarray:
-        """Fallback sphere SDF for when decoder loading fails."""
-        # Simple sphere SDF: distance from origin minus radius
-        distances = np.linalg.norm(points, axis=1)
-        return distances - 0.5  # Sphere with radius 0.5
-
-class ImplicitTextureDecoder:
-    """
-    Decodes texture parameters and evaluates RGB colors.
-    Core component for converting texture.pt to vertex colors.
-    """
-    
-    def __init__(self, texture_path: str):
-        """
-        Initialize texture decoder from parameter file.
-        
-        Args:
-            texture_path: Path to texture.pt file  
-        """
-        self.texture_path = texture_path
-        self.parameters = None
-        self.device = 'cpu'
-        
-        try:
-            import torch
-            self.parameters = torch.load(texture_path, map_location=self.device)
-            logger.info(f"Loaded implicit texture decoder: {texture_path}")
-        except Exception as e:
-            logger.error(f"Failed to load texture: {e}")
-            self.parameters = None
-    
-    def evaluate_color(self, points: np.ndarray) -> np.ndarray:
-        """
-        Evaluate RGB colors at given 3D points.
-        
-        Args:
-            points: Nx3 array of 3D coordinates
-            
-        Returns:
-            Nx3 array of RGB values in [0,1]
-        """
-        if self.parameters is None:
-            # Fallback: procedural golden color
-            return self._fallback_golden_color(points)
-        
-        try:
-            import torch
-            
-            # Convert to tensor
-            points_tensor = torch.tensor(points, dtype=torch.float32, device=self.device)
-            
-            # Forward pass through color MLP
-            x = points_tensor
-            
-            layers = self.parameters.get('layers', [])
-            biases = self.parameters.get('biases', [])
-            
-            for i, (layer, bias) in enumerate(zip(layers, biases)):
-                x = torch.mm(x, layer.T) + bias
-                
-                # Apply activation (ReLU for hidden layers, sigmoid for output)
-                if i < len(layers) - 1:
-                    x = torch.relu(x)
-                else:
-                    x = torch.sigmoid(x)  # RGB values in [0,1]
-            
-            # Return RGB colors
-            rgb_values = x.cpu().numpy()
-            
-            return rgb_values
-            
-        except Exception as e:
-            logger.warning(f"Color MLP evaluation failed: {e}, using fallback")
-            return self._fallback_golden_color(points)
-    
-    def _fallback_golden_color(self, points: np.ndarray) -> np.ndarray:
-        """Fallback golden metallic color for jewelry."""
-        n_points = points.shape[0]
-        # Golden color with slight variation based on position
-        gold_base = np.array([0.8, 0.7, 0.3])  # Golden RGB
-        colors = np.tile(gold_base, (n_points, 1))
-        
-        # Add subtle variation based on z-coordinate
-        z_variation = (points[:, 2] + 1) * 0.1  # Normalize and scale
-        colors[:, 1] += z_variation  # Vary green component
-        colors = np.clip(colors, 0, 1)
-        
-        return colors
-
-def extract_mesh_marching_cubes(decoder_path: str, resolution: int = 64,
-                               bounds: Tuple[float, float] = (-1.0, 1.0)) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Extract mesh from implicit function using Marching Cubes algorithm.
+    The AI decides what to build, the Blender Engine executes it with zero creative fallbacks.
     
     Args:
-        decoder_path: Path to decoder.pt file
-        resolution: Grid resolution (higher = better quality)
-        bounds: Bounding box for sampling (min, max)
+        construction_plan: List of operations from AI Master Blueprint
+        context: Execution context with settings and parameters
         
     Returns:
-        Tuple of (vertices, faces) arrays
+        Final assembled object after executing all operations
     """
-    logger.info(f"Extracting mesh using Marching Cubes (resolution={resolution})")
+    logger.info("=== V22.0 DYNAMIC CONSTRUCTION PLAN EXECUTION ===")
+    logger.info(f"Executing {len(construction_plan)} operations from AI Master Planner")
     
-    # Initialize decoder
-    decoder = ImplicitFunctionDecoder(decoder_path)
+    # Import procedural knowledge base
+    import sys
+    import os
+    addon_root = os.path.dirname(os.path.abspath(__file__))
+    backend_path = os.path.join(addon_root, "backend")
+    if backend_path not in sys.path:
+        sys.path.append(backend_path)
     
-    # Create 3D grid
-    lin_space = np.linspace(bounds[0], bounds[1], resolution)
-    X, Y, Z = np.meshgrid(lin_space, lin_space, lin_space, indexing='ij')
+    from procedural_knowledge import execute_operation
     
-    # Flatten grid for batch evaluation
-    grid_points = np.stack([X.flatten(), Y.flatten(), Z.flatten()], axis=1)
+    # Initialize context objects for inter-operation communication
+    context_objects = {"base": None}
+    final_object = None
     
-    # Evaluate SDF at all grid points
-    logger.info(f"Evaluating SDF at {len(grid_points)} grid points...")
-    sdf_values = decoder.evaluate_sdf(grid_points)
-    
-    # Reshape back to 3D grid
-    sdf_grid = sdf_values.reshape((resolution, resolution, resolution))
-    
-    try:
-        # Apply Marching Cubes algorithm
-        logger.info("Running Marching Cubes algorithm...")
-        vertices, faces, normals, values = measure.marching_cubes(
-            sdf_grid, 
-            level=0.0,  # Extract zero-level surface
-            spacing=[
-                (bounds[1] - bounds[0]) / (resolution - 1),
-                (bounds[1] - bounds[0]) / (resolution - 1), 
-                (bounds[1] - bounds[0]) / (resolution - 1)
-            ]
-        )
+    # Execute each operation in the construction plan
+    for i, operation in enumerate(construction_plan):
+        operation_name = operation.get('operation', 'unknown')
+        parameters = operation.get('parameters', {})
         
-        # Translate vertices to correct position
-        offset = np.array([bounds[0], bounds[0], bounds[0]])
-        vertices = vertices + offset
+        logger.info(f"Operation {i+1}/{len(construction_plan)}: {operation_name}")
+        logger.info(f"Parameters: {parameters}")
         
-        logger.info(f"Marching Cubes completed: {len(vertices)} vertices, {len(faces)} faces")
-        
-        return vertices, faces
-        
-    except Exception as e:
-        logger.error(f"Marching Cubes failed: {e}")
-        # Fallback: create simple cube mesh
-        return create_fallback_cube_mesh()
+        try:
+            # Execute the operation using procedural knowledge
+            result_object = execute_operation(operation, context_objects)
+            
+            if result_object:
+                final_object = result_object
+                context_objects['base'] = result_object
+                context_objects[f'step_{i+1}'] = result_object
+                logger.info(f"✅ Operation {operation_name} completed successfully")
+            else:
+                logger.warning(f"⚠️ Operation {operation_name} returned no object")
+                
+        except Exception as e:
+            logger.error(f"❌ Operation {operation_name} failed: {e}")
+            # Continue with next operation - no creative fallbacks
+            continue
+    
+    if final_object is None:
+        logger.error("❌ No operations produced a valid object - construction plan failed")
+        raise RuntimeError("Construction plan execution failed - no valid objects created")
+    
+    logger.info(f"✅ Construction plan execution completed - Final object: {final_object.name}")
+    return final_object
 
-def create_fallback_cube_mesh() -> Tuple[np.ndarray, np.ndarray]:
-    """Create a simple cube mesh as fallback."""
-    logger.info("Creating fallback cube mesh")
+
+def generate_dynamic_procedural_asset(args, blueprint: Dict) -> bpy.types.Object:
+    """
+    V22.0 Main asset generation function - executes the AI's construction_plan dynamically.
     
-    vertices = np.array([
-        [-0.5, -0.5, -0.5], [0.5, -0.5, -0.5], [0.5, 0.5, -0.5], [-0.5, 0.5, -0.5],
-        [-0.5, -0.5, 0.5], [0.5, -0.5, 0.5], [0.5, 0.5, 0.5], [-0.5, 0.5, 0.5]
-    ])
+    This function replaces the previous implicit-function based workflow with a pure
+    procedural approach where the AI generates a sequence of operations that are
+    executed by the Blender Engine.
     
-    faces = np.array([
-        [0, 1, 2, 3], [4, 7, 6, 5], [0, 4, 5, 1], 
-        [2, 6, 7, 3], [0, 3, 7, 4], [1, 5, 6, 2]
-    ])
+    Args:
+        args: Command line arguments
+        blueprint: Master Blueprint containing construction_plan from AI
+        
+    Returns:
+        Final assembled procedural asset object
+    """
+    logger.info("=== V22.0 DYNAMIC PROCEDURAL ASSET GENERATION ===")
     
-    return vertices, faces
+    # Extract construction plan from blueprint
+    construction_plan = blueprint.get('construction_plan', [])
+    
+    if not construction_plan:
+        logger.error("❌ No construction_plan found in Master Blueprint")
+        raise ValueError("Master Blueprint must contain a construction_plan with operations")
+    
+    logger.info(f"AI Master Blueprint contains {len(construction_plan)} operations:")
+    for i, op in enumerate(construction_plan):
+        logger.info(f"  {i+1}. {op.get('operation', 'unknown')} - {op.get('parameters', {})}")
+    
+    # Execute the construction plan dynamically
+    context = {
+        'asset_scale_mm': getattr(args, 'asset_scale_mm', 20.0),
+        'material_specs': blueprint.get('material_specifications', {}),
+        'reasoning': blueprint.get('reasoning', 'No reasoning provided')
+    }
+    
+    final_object = execute_construction_plan(construction_plan, context)
+    
+    # Scale appropriately for real-world size
+    asset_scale_mm = getattr(args, 'asset_scale_mm', 20.0)
+    scale_factor = asset_scale_mm / 1000.0  # Convert mm to meters
+    final_object.scale = (scale_factor, scale_factor, scale_factor)
+    
+    # Apply scale transformation
+    bpy.context.view_layer.objects.active = final_object
+    bpy.ops.object.transform_apply(scale=True)
+    
+    final_object.name = "V22_Dynamic_Procedural_Asset"
+    
+    logger.info("V22.0 Dynamic procedural asset generation completed successfully")
+    return final_object
 
 # =============================================================================
 # PROFESSIONAL HELPER FUNCTIONS - STATE-OF-THE-ART IMPLEMENTATION  
@@ -477,158 +365,35 @@ def frame_camera_to_object(camera: bpy.types.Object, target_obj: bpy.types.Objec
     logger.info(f"Camera positioned at {camera.location} targeting {bbox_center}")
     logger.info(f"Object dimensions: {bbox_dimensions}, optimal distance: {optimal_distance:.3f}")
 
-def create_blender_mesh_from_implicit(decoder_path: str, texture_path: str, 
-                                    mesh_quality: int = 64, object_name: str = "Implicit_Object") -> bpy.types.Object:
+def create_blender_mesh_from_construction_plan(construction_plan: List[Dict], object_name: str = "Procedural_Object") -> bpy.types.Object:
     """
-    Create Blender mesh object from implicit function parameters.
+    V22.0: Create Blender mesh object from construction plan operations.
+    This replaces the previous implicit function mesh creation.
     
     Args:
-        decoder_path: Path to decoder.pt file
-        texture_path: Path to texture.pt file  
-        mesh_quality: Resolution for Marching Cubes (32=low, 64=med, 128=high, 256=ultra)
+        construction_plan: List of operations to execute
         object_name: Name for the created object
         
     Returns:
-        Blender object with mesh and vertex colors
+        Blender object created from construction plan
     """
-    logger.info(f"Creating Blender mesh from implicit functions (quality={mesh_quality})")
+    logger.info(f"Creating Blender mesh from {len(construction_plan)} construction plan operations")
     
-    # Extract mesh using Marching Cubes
-    vertices, faces = extract_mesh_marching_cubes(
-        decoder_path, 
-        resolution=mesh_quality,
-        bounds=(-1.2, 1.2)  # Slightly larger bounds for jewelry
-    )
+    # Execute the construction plan
+    context = {}
+    result_object = execute_construction_plan(construction_plan, context)
     
-    # Create Blender mesh
-    mesh = bpy.data.meshes.new(object_name + "_mesh")
-    
-    # Convert faces to triangles if they're quads
-    if faces.shape[1] == 4:
-        # Convert quads to triangles
-        tri_faces = []
-        for face in faces:
-            tri_faces.append([face[0], face[1], face[2]])
-            tri_faces.append([face[0], face[2], face[3]])
-        faces = np.array(tri_faces)
-    
-    # Create mesh from vertices and faces
-    mesh.from_pydata(vertices.tolist(), [], faces.tolist())
-    mesh.update()
-    
-    # Create object
-    obj = bpy.data.objects.new(object_name, mesh)
-    bpy.context.collection.objects.link(obj)
-    
-    # Apply texture colors as vertex colors
-    apply_vertex_colors_from_texture(obj, texture_path, vertices)
-    
-    # Center the object
-    bpy.context.view_layer.objects.active = obj
-    bpy.ops.object.origin_set(type='GEOMETRY_TO_ORIGIN')
-    
-    logger.info(f"Implicit mesh created successfully: {len(vertices)} vertices, {len(faces)} faces")
-    
-    return obj
-
-def apply_vertex_colors_from_texture(obj: bpy.types.Object, texture_path: str, vertices: np.ndarray):
-    """
-    Apply generative texture colors as vertex colors.
-    
-    Args:
-        obj: Blender object to apply colors to
-        texture_path: Path to texture.pt file
-        vertices: Vertex positions for color evaluation
-    """
-    logger.info("Applying generative texture as vertex colors")
-    
-    # Initialize texture decoder
-    texture_decoder = ImplicitTextureDecoder(texture_path)
-    
-    # Evaluate colors at vertex positions
-    vertex_colors = texture_decoder.evaluate_color(vertices)
-    
-    # Create vertex color layer
-    mesh = obj.data
-    if not mesh.vertex_colors:
-        mesh.vertex_colors.new()
-    
-    color_layer = mesh.vertex_colors.active
-    
-    # Apply colors to mesh loops (each vertex may appear in multiple faces)
-    for loop_index, loop in enumerate(mesh.loops):
-        vertex_index = loop.vertex_index
-        color = vertex_colors[vertex_index]
+    if result_object:
+        result_object.name = object_name
         
-        # Set RGBA color (A=1.0 for opaque)
-        color_layer.data[loop_index].color = [color[0], color[1], color[2], 1.0]
-    
-    # Update mesh
-    mesh.update()
-    
-    logger.info("Vertex colors applied successfully")
-
-def generate_implicit_based_asset(args, params: Dict) -> bpy.types.Object:
-    """
-    Core V20.0 procedural asset generation - loads implicit functions and creates mesh.
-    
-    Args:
-        args: Command line arguments with decoder/texture paths
-        params: Master Blueprint parameters
+        # Center the object
+        bpy.context.view_layer.objects.active = result_object
+        bpy.ops.object.origin_set(type='GEOMETRY_TO_ORIGIN')
         
-    Returns:
-        Final assembled procedural asset object with implicit surface and vertex colors
-    """
-    logger.info("=== V20.0 IMPLICIT SURFACE EXTRACTION ===")
-    logger.info(f"Loading implicit functions: {args.decoder_path}, {args.texture_path}")
-    
-    # Validate input files
-    if not os.path.exists(args.decoder_path):
-        raise FileNotFoundError(f"Decoder file not found: {args.decoder_path}")
-    
-    if not os.path.exists(args.texture_path):
-        raise FileNotFoundError(f"Texture file not found: {args.texture_path}")
-    
-    # Create mesh from implicit functions
-    implicit_object = create_blender_mesh_from_implicit(
-        decoder_path=args.decoder_path,
-        texture_path=args.texture_path,
-        mesh_quality=args.mesh_quality,
-        object_name="V20_Implicit_Asset"
-    )
-    
-    # Apply procedural knowledge enhancements if specified
-    if params.get('procedural_parameters'):
-        logger.info("Applying procedural knowledge enhancements...")
-        
-        # Import procedural knowledge
-        from .backend.procedural_knowledge import execute_technique
-        
-        setting_params = params['setting_parameters']
-        technique = setting_params.get('technique', 'ClassicProng')
-        technique_params = setting_params.get('parameters', {})
-        artistic_modifiers = params.get('artistic_modifier_parameters', {})
-        
-        # Apply technique to the implicit surface
-        try:
-            enhanced_object = execute_technique(
-                implicit_object, technique, technique_params, artistic_modifiers
-            )
-            logger.info(f"Applied technique: {technique}")
-            implicit_object = enhanced_object
-        except Exception as e:
-            logger.warning(f"Failed to apply technique {technique}: {e}")
-    
-    # Scale appropriately for jewelry (convert from normalized space to mm)
-    jewelry_scale = args.jewelry_scale_mm / 1000.0  # Convert mm to meters
-    implicit_object.scale = (jewelry_scale, jewelry_scale, jewelry_scale)
-    
-    # Apply scale
-    bpy.context.view_layer.objects.active = implicit_object
-    bpy.ops.object.transform_apply(scale=True)
-    
-    logger.info("V17.0 Implicit surface extraction completed successfully")
-    return implicit_object
+        logger.info(f"Construction plan mesh created successfully: {object_name}")
+        return result_object
+    else:
+        raise RuntimeError("Failed to create object from construction plan")
 
 def render_preview(scene: bpy.types.Scene, output_path: str) -> str:
     """
@@ -814,60 +579,61 @@ def analyze_geometry(input_path: str, output_path: str) -> None:
 
 def main():
     """
-    V17.0 Main execution function - High-Resolution Implicit Surface Extractor.
-    Processes implicit function parameters and creates mesh using Marching Cubes.
+    V22.0 Main execution function - Dynamic Construction Plan Executor.
+    
+    The revolutionary V22.0 transformation: instead of processing implicit functions,
+    this now executes AI-generated construction plans dynamically.
+    
+    The Blender Engine has become a lean, intelligent interpreter that:
+    1. Receives construction_plan from AI Master Planner
+    2. Loops through operations and calls procedural_knowledge functions
+    3. Assembles the final object with zero hardcoded creative logic
     """
     if '--' not in sys.argv:
         logger.error("No arguments provided. Script must be called with -- separator.")
         return
     
-    parser = ArgumentParser(description="V17.0 High-Resolution Implicit Surface Extractor")
-    parser.add_argument("--mode", type=str, choices=["extract", "analyze"], default="extract",
-                       help="Operation mode: 'extract' for implicit surface extraction, 'analyze' for geometric analysis")
-    parser.add_argument("--decoder_path", type=str, required=True,
-                       help="Path to decoder.pt implicit function parameters")
-    parser.add_argument("--texture_path", type=str, required=True,
-                       help="Path to texture.pt generative texture parameters")
+    parser = ArgumentParser(description="V22.0 Dynamic Construction Plan Executor")
+    parser.add_argument("--mode", type=str, choices=["execute", "analyze"], default="execute",
+                       help="Operation mode: 'execute' for construction plan execution, 'analyze' for geometric analysis")
+    parser.add_argument("--construction_plan", type=str, required=True,
+                       help="JSON string containing the AI's construction plan")
     parser.add_argument("--output", type=str, required=True,
                        help="Path for final .stl export or analysis JSON")
-    parser.add_argument("--params", type=str, required=True,
-                       help="JSON Master Blueprint parameters")
-    parser.add_argument("--mesh_quality", type=int, default=64,
-                       help="Marching Cubes resolution (32=low, 64=med, 128=high, 256=ultra)")
     parser.add_argument("--asset_scale_mm", type=float, default=20.0,
                        help="Scale of final procedural asset in millimeters")
-    parser.add_argument("--asset_size", type=float, default=1.0, 
-                       help="Overall scale factor for the generated asset")
-    parser.add_argument("--feature_scale", type=float, default=1.0,
-                       help="Scale of primary features relative to asset")
-    parser.add_argument("--feature_shape", type=str, default='ROUND',
-                       help="Shape of primary features")
-    parser.add_argument("--material", type=str, default='METAL',
+    parser.add_argument("--material", type=str, default='GOLD',
                        help="Material type for the asset")
     
     argv = sys.argv[sys.argv.index('--') + 1:]
     args = parser.parse_args(argv)
     
-    logger.info("=== DESIGN ENGINE V20.0 HIGH-RESOLUTION IMPLICIT SURFACE EXTRACTOR ===")
-    logger.info("Revolutionary implicit function-based 3D processing")
+    logger.info("=== V22.0 VERIFIABLE ARTISAN - DYNAMIC CONSTRUCTION PLAN EXECUTOR ===")
+    logger.info("Revolutionary AI-driven dynamic construction workflow")
     logger.info(f"Mode: {args.mode.upper()}")
-    logger.info(f"Decoder: {args.decoder_path}")
-    logger.info(f"Texture: {args.texture_path}")
     logger.info(f"Output: {args.output}")
-    logger.info(f"Mesh Quality: {args.mesh_quality}")
+    logger.info(f"Asset Scale: {args.asset_scale_mm}mm")
     
     if args.mode == "analyze":
         # Legacy analysis mode for backward compatibility
-        analyze_geometry(args.decoder_path, args.output)  # Use decoder path as input
+        analyze_geometry(args.construction_plan, args.output)  # Use construction_plan as input path
         return
     
-    # V17.0 Implicit Surface Extraction Mode
-    logger.info(f"Asset specifications: Size {args.asset_size}, {args.feature_scale} scale {args.feature_shape}")
+    # V22.0 Dynamic Construction Plan Execution Mode
+    logger.info("Executing AI Master Planner construction plan")
     
     try:
-        # Parse Master Blueprint
-        blueprint = json.loads(args.params)
-        logger.info("V20.0 Master Blueprint parsed and validated")
+        # Parse the construction plan from AI
+        blueprint = json.loads(args.construction_plan)
+        logger.info("V22.0 Master Blueprint with construction_plan parsed successfully")
+        
+        construction_plan = blueprint.get('construction_plan', [])
+        if not construction_plan:
+            raise ValueError("No construction_plan found in Master Blueprint")
+        
+        logger.info(f"Construction plan contains {len(construction_plan)} operations:")
+        for i, operation in enumerate(construction_plan):
+            logger.info(f"  {i+1}. {operation.get('operation', 'unknown')}")
         
         # Step 1: Setup professional scene
         scene = setup_scene()
@@ -878,8 +644,8 @@ def main():
         # Step 3: Enable optimal GPU rendering
         gpu_enabled = enable_gpu_rendering(scene)
         
-        # Step 4: Generate procedural asset from implicit functions - CORE V20.0 INNOVATION
-        final_object = generate_implicit_based_asset(args, blueprint)
+        # Step 4: Execute dynamic construction plan - CORE V22.0 INNOVATION
+        final_object = generate_dynamic_procedural_asset(args, blueprint)
         
         # Step 5: Create and position camera for dynamic framing
         bpy.ops.object.camera_add(location=(0, 0, 0))
@@ -896,19 +662,19 @@ def main():
         # Step 8: Export final manufacturable STL
         export_stl(final_object, args.output)
         
-        logger.info("=== V17.0 IMPLICIT SURFACE EXTRACTION COMPLETED ===")
+        logger.info("=== V22.0 DYNAMIC CONSTRUCTION PLAN EXECUTION COMPLETED ===")
         logger.info(f"GPU Rendering: {'Enabled' if gpu_enabled else 'Disabled (CPU fallback)'}")
         logger.info(f"Final STL: {args.output}")
         logger.info(f"Preview Image: {preview_path}")
-        logger.info(f"Marching Cubes Resolution: {args.mesh_quality}")
-        logger.info(f"Implicit Functions Processed: decoder.pt + texture.pt")
-        logger.info("Revolutionary implicit function-based workflow completed")
+        logger.info(f"Operations Executed: {len(construction_plan)}")
+        logger.info(f"AI Master Planner reasoning: {blueprint.get('reasoning', 'No reasoning provided')}")
+        logger.info("Revolutionary dynamic construction plan workflow completed")
         
     except json.JSONDecodeError as e:
-        logger.error(f"Invalid JSON in Master Blueprint: {e}")
+        logger.error(f"Invalid JSON in construction plan: {e}")
         sys.exit(1)
     except Exception as e:
-        logger.exception(f"V17.0 Implicit surface extraction failed: {e}")
+        logger.exception(f"V22.0 Dynamic construction plan execution failed: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":

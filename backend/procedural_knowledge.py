@@ -1,11 +1,14 @@
 """
-V14.0 Design Engine - Procedural Knowledge Base
-===============================================
+V22.0 Verifiable Artisan - Procedural Knowledge Base  
+====================================================
 
-Professional jewelry techniques implemented as discrete Python functions.
-Contains master-level knowledge for creating specific, complex jewelry components.
+Professional high-level creation techniques implemented as discrete Python functions.
+Contains master-level knowledge for creating specific, complex components with universal applicability.
 
-Implements Protocol 3: Cognitive Authority - Deep domain knowledge integration.
+This is the "Toolbox" that the AI Master Planner can choose from to build dynamic construction plans.
+
+Implements Protocol 2: Absolute Cognitive Authority - AI chooses from these professional techniques.
+Implements Protocol 8: Semantic Clarity - Universal function naming for any domain.
 """
 
 import bpy
@@ -19,56 +22,357 @@ from typing import Dict, Any
 logger = logging.getLogger(__name__)
 
 
-def execute_technique(base_object: bpy.types.Object, technique: str, parameters: Dict[str, Any], 
-                     artistic_modifiers: Dict[str, Any]) -> bpy.types.Object:
+# =============================================================================
+# V22.0 CORE PROFESSIONAL TECHNIQUES - THE TOOLBOX
+# =============================================================================
+
+def create_shank(base_object: bpy.types.Object, parameters: Dict[str, Any]) -> bpy.types.Object:
     """
-    Master dispatcher for executing professional jewelry techniques.
+    Create a professional shank (band) structure.
+    Universal function for creating circular/ring base geometry.
     
     Args:
-        base_object: The base ring object to modify
-        technique: The technique name ('Pave', 'Bezel', 'Tension', 'ClassicProng')
-        parameters: Technique-specific parameters
-        artistic_modifiers: Global artistic modifications
+        base_object: Base object to modify (can be None to create new)
+        parameters: {
+            "profile_shape": "Round" | "D-Shape" | "Square",
+            "thickness_mm": 1.5-3.0,
+            "diameter_mm": 16.0-22.0,
+            "taper_factor": 0.0-0.3
+        }
+    """
+    logger.info("Creating professional shank structure")
+    
+    profile_shape = parameters.get('profile_shape', 'Round')
+    thickness_mm = parameters.get('thickness_mm', 2.0)
+    diameter_mm = parameters.get('diameter_mm', 18.0)
+    taper_factor = parameters.get('taper_factor', 0.0)
+    
+    # Convert to Blender units
+    thickness = thickness_mm / 1000.0
+    radius = (diameter_mm / 1000.0) / 2
+    
+    if profile_shape == 'Round':
+        bpy.ops.mesh.primitive_torus_add(
+            major_radius=radius,
+            minor_radius=thickness / 2,
+            location=(0, 0, 0)
+        )
+    elif profile_shape == 'D-Shape':
+        # Create torus and flatten bottom
+        bpy.ops.mesh.primitive_torus_add(
+            major_radius=radius,
+            minor_radius=thickness / 2,
+            location=(0, 0, 0)
+        )
+        obj = bpy.context.active_object
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.mesh.bisect(plane_co=(0, 0, 0), plane_no=(0, 0, -1))
+        bpy.ops.object.mode_set(mode='OBJECT')
+    elif profile_shape == 'Square':
+        # Create square profile using array modifier
+        bpy.ops.mesh.primitive_cube_add(size=thickness, location=(radius, 0, 0))
+        obj = bpy.context.active_object
+        # Add array modifier for circular pattern
+        array_mod = obj.modifiers.new(name="Circular_Array", type='ARRAY')
+        array_mod.fit_type = 'FIXED_COUNT'
+        array_mod.count = 16
+        array_mod.use_relative_offset = False
+        array_mod.use_object_offset = True
+        # Create empty for rotation
+        bpy.ops.object.empty_add(location=(0, 0, 0))
+        empty = bpy.context.active_object
+        empty.rotation_euler[2] = math.radians(360 / 16)
+        array_mod.offset_object = empty
+        bpy.context.view_layer.objects.active = obj
+    
+    shank_object = bpy.context.active_object
+    shank_object.name = "Professional_Shank"
+    
+    # Apply taper if specified
+    if taper_factor > 0:
+        taper_mod = shank_object.modifiers.new(name="Taper", type='SIMPLE_DEFORM')
+        taper_mod.deform_method = 'TAPER'
+        taper_mod.factor = taper_factor
+        taper_mod.deform_axis = 'Y'
+    
+    logger.info(f"Shank created: {profile_shape} profile, {thickness_mm}mm thickness")
+    return shank_object
+
+
+def create_bezel_setting(base_object: bpy.types.Object, parameters: Dict[str, Any]) -> bpy.types.Object:
+    """
+    Create a professional bezel setting that surrounds features with material.
+    Universal function for creating enclosing/framing structures.
+    
+    Args:
+        base_object: Object to add bezel to
+        parameters: {
+            "bezel_height_mm": 1.5-4.0,
+            "bezel_thickness_mm": 0.3-0.8,
+            "feature_diameter_mm": 4.0-10.0,
+            "setting_position": [x, y, z] relative position
+        }
+    """
+    logger.info("Creating professional bezel setting")
+    
+    bezel_height_mm = parameters.get('bezel_height_mm', 2.5)
+    bezel_thickness_mm = parameters.get('bezel_thickness_mm', 0.5)
+    feature_diameter_mm = parameters.get('feature_diameter_mm', 6.0)
+    setting_position = parameters.get('setting_position', [0, 0, 0.002])
+    
+    # Convert to Blender units
+    bezel_height = bezel_height_mm / 1000.0
+    bezel_thickness = bezel_thickness_mm / 1000.0
+    feature_radius = (feature_diameter_mm / 1000.0) / 2
+    
+    # Create cylindrical bezel
+    bpy.ops.mesh.primitive_cylinder_add(
+        radius=feature_radius + bezel_thickness,
+        depth=bezel_height,
+        location=setting_position
+    )
+    
+    bezel_object = bpy.context.active_object
+    bezel_object.name = "Professional_Bezel_Setting"
+    
+    # Create inner cavity
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.inset_faces(thickness=bezel_thickness, depth=0)
+    bpy.ops.mesh.extrude_region_move(MESH_OT_extrude_region={"use_normal_flip":False, "use_dissolve_ortho_edges":False, "mirror":False}, 
+                                     TRANSFORM_OT_translate={"value":(0, 0, -bezel_height * 0.8)})
+    bpy.ops.object.mode_set(mode='OBJECT')
+    
+    # Join with base object if provided
+    if base_object:
+        bpy.ops.object.select_all(action='DESELECT')
+        base_object.select_set(True)
+        bezel_object.select_set(True)
+        bpy.context.view_layer.objects.active = base_object
+        bpy.ops.object.join()
+        result_object = base_object
+    else:
+        result_object = bezel_object
+    
+    logger.info(f"Bezel setting created: {bezel_height_mm}mm height, {bezel_thickness_mm}mm thickness")
+    return result_object
+
+
+def create_prong_setting(base_object: bpy.types.Object, parameters: Dict[str, Any]) -> bpy.types.Object:
+    """
+    Create a professional prong setting with individual supports.
+    Universal function for creating discrete holding/support structures.
+    
+    Args:
+        base_object: Object to add prongs to
+        parameters: {
+            "prong_count": 3-6,
+            "prong_thickness_mm": 0.6-1.2,
+            "prong_height_mm": 2.0-5.0,
+            "prong_placement_radius_mm": 2.5-4.0,
+            "prong_taper": 0.0-0.5
+        }
+    """
+    logger.info("Creating professional prong setting")
+    
+    prong_count = parameters.get('prong_count', 4)
+    prong_thickness_mm = parameters.get('prong_thickness_mm', 0.8)
+    prong_height_mm = parameters.get('prong_height_mm', 3.5)
+    placement_radius_mm = parameters.get('prong_placement_radius_mm', 3.0)
+    prong_taper = parameters.get('prong_taper', 0.2)
+    
+    # Convert to Blender units
+    prong_thickness = prong_thickness_mm / 1000.0
+    prong_height = prong_height_mm / 1000.0
+    placement_radius = placement_radius_mm / 1000.0
+    
+    prong_objects = []
+    
+    # Create individual prongs
+    for i in range(prong_count):
+        angle = (2 * math.pi * i) / prong_count
+        prong_x = placement_radius * math.cos(angle)
+        prong_y = placement_radius * math.sin(angle)
+        prong_z = 0.002  # Slightly above base
+        
+        # Create prong as cylinder
+        bpy.ops.mesh.primitive_cylinder_add(
+            radius=prong_thickness / 2,
+            depth=prong_height,
+            location=(prong_x, prong_y, prong_z + prong_height / 2)
+        )
+        
+        prong = bpy.context.active_object
+        prong.name = f"Prong_{i+1}"
+        
+        # Apply taper to prong
+        if prong_taper > 0:
+            taper_mod = prong.modifiers.new(name="Prong_Taper", type='SIMPLE_DEFORM')
+            taper_mod.deform_method = 'TAPER'
+            taper_mod.factor = -prong_taper  # Negative for narrowing at top
+            taper_mod.deform_axis = 'Z'
+        
+        prong_objects.append(prong)
+    
+    # Join all prongs with base object
+    if base_object:
+        bpy.ops.object.select_all(action='DESELECT')
+        base_object.select_set(True)
+        for prong in prong_objects:
+            prong.select_set(True)
+        bpy.context.view_layer.objects.active = base_object
+        bpy.ops.object.join()
+        result_object = base_object
+    else:
+        # Join prongs together
+        bpy.ops.object.select_all(action='DESELECT')
+        for prong in prong_objects:
+            prong.select_set(True)
+        bpy.context.view_layer.objects.active = prong_objects[0]
+        bpy.ops.object.join()
+        result_object = prong_objects[0]
+        result_object.name = "Professional_Prong_Setting"
+    
+    logger.info(f"Prong setting created: {prong_count} prongs, {prong_height_mm}mm height")
+    return result_object
+
+
+def apply_twist_modifier(base_object: bpy.types.Object, parameters: Dict[str, Any]) -> bpy.types.Object:
+    """
+    Apply professional twist deformation to any object.
+    Universal function for adding spiral/helical modifications.
+    
+    Args:
+        base_object: Object to twist
+        parameters: {
+            "twist_angle_degrees": 0-360,
+            "twist_axis": "X" | "Y" | "Z",
+            "twist_limits": [start, end] as factor 0.0-1.0
+        }
+    """
+    logger.info("Applying professional twist modifier")
+    
+    twist_angle_degrees = parameters.get('twist_angle_degrees', 30)
+    twist_axis = parameters.get('twist_axis', 'Z')
+    twist_limits = parameters.get('twist_limits', [0.0, 1.0])
+    
+    # Ensure we're in object mode
+    bpy.context.view_layer.objects.active = base_object
+    bpy.ops.object.mode_set(mode='OBJECT')
+    
+    # Add twist modifier
+    twist_modifier = base_object.modifiers.new(name="Professional_Twist", type='SIMPLE_DEFORM')
+    twist_modifier.deform_method = 'TWIST'
+    twist_modifier.angle = math.radians(twist_angle_degrees)
+    twist_modifier.deform_axis = twist_axis
+    
+    # Set limits if specified
+    if twist_limits != [0.0, 1.0]:
+        twist_modifier.limits[0] = twist_limits[0]
+        twist_modifier.limits[1] = twist_limits[1]
+    
+    logger.info(f"Twist modifier applied: {twist_angle_degrees}° around {twist_axis} axis")
+    return base_object
+
+
+# =============================================================================
+# V22.0 DYNAMIC OPERATION EXECUTOR  
+# =============================================================================
+
+def execute_operation(operation: Dict[str, Any], context_objects: Dict[str, bpy.types.Object]) -> bpy.types.Object:
+    """
+    V22.0 Dynamic Operation Executor - The core of the construction plan system.
+    
+    This function interprets a single operation from the AI's construction_plan and
+    executes the corresponding professional technique.
+    
+    Args:
+        operation: {
+            "operation": "technique_name",
+            "parameters": {...},
+            "target": "object_name" (optional)
+        }
+        context_objects: Dictionary of available objects by name
         
     Returns:
-        Modified object with applied technique
+        The resulting object after operation execution
     """
-    logger.info(f"Executing technique: {technique}")
+    operation_name = operation.get('operation')
+    parameters = operation.get('parameters', {})
+    target_name = operation.get('target', 'base')
     
-    # Ensure we're in edit mode for modifications
-    bpy.context.view_layer.objects.active = base_object
-    bpy.ops.object.mode_set(mode='EDIT')
+    logger.info(f"Executing dynamic operation: {operation_name}")
+    
+    # Get target object
+    target_object = context_objects.get(target_name)
     
     try:
-        if technique == "Pave":
-            result = create_pave_setting(base_object, parameters)
-        elif technique == "Bezel":
-            result = create_bezel_setting(base_object, parameters)
-        elif technique == "Tension":
-            result = create_tension_setting(base_object, parameters)
-        elif technique == "ClassicProng":
-            result = create_classic_prong_setting(base_object, parameters)
+        if operation_name == "create_shank":
+            result = create_shank(target_object, parameters)
+        elif operation_name == "create_bezel_setting":
+            result = create_bezel_setting(target_object, parameters)
+        elif operation_name == "create_prong_setting":
+            result = create_prong_setting(target_object, parameters)
+        elif operation_name == "apply_twist_modifier":
+            result = apply_twist_modifier(target_object, parameters)
+        elif operation_name == "create_pave_setting":
+            result = create_pave_setting(target_object, parameters)
+        elif operation_name == "create_tension_setting":
+            result = create_tension_setting(target_object, parameters)
+        elif operation_name == "create_classic_prong_setting":
+            result = create_classic_prong_setting(target_object, parameters)
         else:
-            logger.warning(f"Unknown technique: {technique}, using ClassicProng")
-            result = create_classic_prong_setting(base_object, {"prong_count": 4, "prong_thickness_mm": 0.8})
+            logger.warning(f"Unknown operation: {operation_name}")
+            result = target_object if target_object else create_fallback_object()
         
-        # Return to object mode
-        bpy.ops.object.mode_set(mode='OBJECT')
+        # Update context objects
+        context_objects[f"result_{operation_name}"] = result
+        if target_name == 'base':
+            context_objects['base'] = result
         
-        # Apply artistic modifiers
-        result = apply_artistic_modifiers(result, artistic_modifiers)
-        
-        logger.info(f"Technique {technique} executed successfully")
+        logger.info(f"Operation {operation_name} completed successfully")
         return result
         
     except Exception as e:
-        # Ensure we return to object mode even if there's an error
-        try:
-            bpy.ops.object.mode_set(mode='OBJECT')
-        except:
-            pass
-        logger.error(f"Error executing technique {technique}: {e}")
-        raise
+        logger.error(f"Operation {operation_name} failed: {e}")
+        return target_object if target_object else create_fallback_object()
+
+
+def create_fallback_object() -> bpy.types.Object:
+    """Create a simple fallback object when operations fail."""
+    bpy.ops.mesh.primitive_torus_add(major_radius=0.009, minor_radius=0.001)
+    fallback = bpy.context.active_object
+    fallback.name = "Fallback_Object"
+    return fallback
+
+
+# =============================================================================
+# LEGACY FUNCTION ALIASES FOR BACKWARD COMPATIBILITY
+# =============================================================================
+
+def execute_technique(base_object: bpy.types.Object, technique: str, parameters: Dict[str, Any], 
+                     artistic_modifiers: Dict[str, Any]) -> bpy.types.Object:
+    """
+    Legacy technique execution function - maintained for V20.0 compatibility.
+    V22.0 systems should use execute_operation() with construction_plan.
+    """
+    logger.info(f"Legacy technique execution: {technique}")
+    
+    # Convert legacy technique call to V22.0 operation format
+    operation = {
+        "operation": technique.lower().replace(" ", "_"),
+        "parameters": parameters
+    }
+    
+    context_objects = {"base": base_object}
+    result = execute_operation(operation, context_objects)
+    
+    # Apply artistic modifiers (legacy behavior)
+    if artistic_modifiers:
+        result = apply_artistic_modifiers(result, artistic_modifiers)
+    
+    return result
 
 
 def create_pave_setting(base_object: bpy.types.Object, parameters: Dict[str, Any]) -> bpy.types.Object:

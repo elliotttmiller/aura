@@ -1,11 +1,13 @@
 """
-V20.0 Design Engine - Native Orchestrator
-=========================================
+V22.0 Verifiable Artisan - Master Planner Orchestrator
+=====================================================
 
-Native Blender orchestrator that manages the AI conversation and 3D processing
-without web server dependencies. Adapted from the V17.0 backend architecture.
+The evolved AI Master Planner that generates dynamic construction plans as sequences of operations.
+The Llama 3.1 LLM generates JSON Master Blueprints with construction_plan lists that are 
+executed dynamically by the Blender Engine.
 
-Implements Protocol 3: Cognitive Authority (The AI-Minded Principle)
+Implements Protocol 2: Absolute Cognitive Authority - AI generates dynamic operation sequences.
+Implements Protocol 1: Sentient Transparency - All processing is verifiable and auditable.
 """
 
 import os
@@ -112,40 +114,67 @@ class Orchestrator:
             }
     
     def _generate_master_blueprint(self, user_prompt: str, user_specs: Dict) -> Dict[str, Any]:
-        """Generate Master Blueprint using Llama 3.1."""
+        """Generate V22.0 Master Blueprint with dynamic construction_plan using Llama 3.1."""
         
-        # V14.0 Updated Master Blueprint Prompt with technique selection
-        master_blueprint_prompt = f"""You are a world-class jewelry CAD designer and system architect. Generate a JSON Master Blueprint for the following request.
+        # V22.0 Revolutionary Master Blueprint Prompt with dynamic construction_plan
+        master_blueprint_prompt = f"""You are a world-class master artisan and system architect. Generate a JSON Master Blueprint with a DYNAMIC CONSTRUCTION PLAN for the following request.
 
-        You must select a specific professional technique for the setting from: ['Pave', 'Bezel', 'Tension', 'ClassicProng'].
+The construction_plan must be a LIST OF OPERATIONS that will be executed sequentially. Each operation calls a function from the procedural knowledge base.
 
-        Required V14.0 JSON Master Blueprint schema:
-        {{
-          "reasoning": "Step-by-step explanation of design choices and technique selection",
-          "shank_parameters": {{
-            "profile_shape": "D-Shape | Round",
-            "thickness_mm": 1.5-2.5
-          }},
-          "setting_parameters": {{
-            "technique": "One of ['Pave', 'Bezel', 'Tension', 'ClassicProng']",
-            "parameters": {{
-              // Technique-specific parameters object
-            }}
-          }},
-          "artistic_modifier_parameters": {{
-            "twist_angle_degrees": 0-180,
-            "organic_displacement_strength": 0.0-0.001
-          }}
-        }}
+Available operations and their parameters:
+- create_shank: profile_shape, thickness_mm, diameter_mm, taper_factor
+- create_bezel_setting: bezel_height_mm, bezel_thickness_mm, feature_diameter_mm, setting_position
+- create_prong_setting: prong_count, prong_thickness_mm, prong_height_mm, prong_placement_radius_mm, prong_taper
+- apply_twist_modifier: twist_angle_degrees, twist_axis, twist_limits
 
-        USER REQUEST: "{user_prompt}"
-        SPECIFICATIONS:
-        - Ring Size: {user_specs['ring_size']}
-        - Metal: {user_specs['metal']}
-        - Stone Shape: {user_specs['stone_shape']}
-        - Stone Carat: {user_specs['stone_carat']}
+Required V22.0 JSON Master Blueprint schema:
+{{
+  "reasoning": "Step-by-step explanation of the design approach and construction sequence",
+  "construction_plan": [
+    {{
+      "operation": "create_shank",
+      "parameters": {{
+        "profile_shape": "Round",
+        "thickness_mm": 2.0,
+        "diameter_mm": 18.0,
+        "taper_factor": 0.0
+      }}
+    }},
+    {{
+      "operation": "create_prong_setting", 
+      "parameters": {{
+        "prong_count": 4,
+        "prong_thickness_mm": 0.8,
+        "prong_height_mm": 3.5,
+        "prong_placement_radius_mm": 3.0,
+        "prong_taper": 0.2
+      }}
+    }},
+    {{
+      "operation": "apply_twist_modifier",
+      "parameters": {{
+        "twist_angle_degrees": 15,
+        "twist_axis": "Z",
+        "twist_limits": [0.0, 1.0]
+      }}
+    }}
+  ],
+  "material_specifications": {{
+    "primary_material": "GOLD" | "SILVER" | "PLATINUM",
+    "finish": "POLISHED" | "MATTE" | "BRUSHED"
+  }}
+}}
 
-        Respond only with valid JSON, no other text."""
+USER REQUEST: "{user_prompt}"
+SPECIFICATIONS:
+- Target Size: {user_specs.get('ring_size', 7.0)}
+- Material: {user_specs.get('metal', 'GOLD')}
+- Feature Shape: {user_specs.get('stone_shape', 'ROUND')}
+- Feature Scale: {user_specs.get('stone_carat', 1.0)}
+
+Generate a construction_plan with 2-4 operations that will create the requested design. 
+Each operation must use the exact function names and parameter structures listed above.
+Respond only with valid JSON, no other text."""
 
         try:
             if self.sandbox_mode:
@@ -211,81 +240,138 @@ class Orchestrator:
         return json.loads(blueprint_text)
     
     def _create_fallback_blueprint(self, user_prompt: str, user_specs: Dict) -> Dict[str, Any]:
-        """Create fallback blueprint when LLM is unavailable."""
+        """Create V22.0 fallback blueprint with construction_plan when LLM is unavailable."""
         
-        # Determine technique based on prompt keywords
+        # Determine operations based on prompt keywords
         prompt_lower = user_prompt.lower()
+        operations = []
+        
+        # Always start with shank creation
+        operations.append({
+            "operation": "create_shank",
+            "parameters": {
+                "profile_shape": "Round",
+                "thickness_mm": 2.0,
+                "diameter_mm": 18.0,
+                "taper_factor": 0.0
+            }
+        })
+        
+        # Add setting based on prompt
         if "tension" in prompt_lower:
-            technique = "Tension"
-            technique_params = {"tension_strength": 0.8}
+            # Tension setting doesn't use traditional prongs/bezels
+            pass  # Shank only for tension
         elif "bezel" in prompt_lower:
-            technique = "Bezel"
-            technique_params = {"bezel_height_mm": 2.0, "bezel_thickness_mm": 0.5}
-        elif "pave" in prompt_lower or "pav" in prompt_lower:
-            technique = "Pave"
-            technique_params = {"stone_count": 12, "stone_size_mm": 1.5}
-        else:
-            technique = "ClassicProng"
-            technique_params = {"prong_count": 4, "prong_thickness_mm": 0.8}
+            operations.append({
+                "operation": "create_bezel_setting",
+                "parameters": {
+                    "bezel_height_mm": 2.0,
+                    "bezel_thickness_mm": 0.5,
+                    "feature_diameter_mm": 6.0,
+                    "setting_position": [0, 0, 0.002]
+                }
+            })
+        else:  # Default to prong setting
+            operations.append({
+                "operation": "create_prong_setting",
+                "parameters": {
+                    "prong_count": 4,
+                    "prong_thickness_mm": 0.8,
+                    "prong_height_mm": 3.5,
+                    "prong_placement_radius_mm": 3.0,
+                    "prong_taper": 0.2
+                }
+            })
+        
+        # Add twist if mentioned
+        if "twist" in prompt_lower:
+            operations.append({
+                "operation": "apply_twist_modifier",
+                "parameters": {
+                    "twist_angle_degrees": 15,
+                    "twist_axis": "Z",
+                    "twist_limits": [0.0, 1.0]
+                }
+            })
         
         return {
-            "reasoning": f"Fallback blueprint for '{user_prompt}'. Selected {technique} technique based on prompt analysis. Using standard parameters for reliable manufacturing.",
-            "shank_parameters": {
-                "profile_shape": "Round",
-                "thickness_mm": 2.0
-            },
-            "setting_parameters": {
-                "technique": technique,
-                "parameters": technique_params
-            },
-            "artistic_modifier_parameters": {
-                "twist_angle_degrees": 15 if "twist" in prompt_lower else 0,
-                "organic_displacement_strength": 0.0005 if "organic" in prompt_lower or "vine" in prompt_lower else 0.0
+            "reasoning": f"V22.0 Fallback construction plan for '{user_prompt}'. Generated {len(operations)} sequential operations based on prompt analysis.",
+            "construction_plan": operations,
+            "material_specifications": {
+                "primary_material": user_specs.get('metal', 'GOLD'),
+                "finish": "POLISHED"
             }
         }
     
     def _execute_native_blender_processing(self, blueprint: Dict[str, Any], user_specs: Dict) -> Dict[str, Any]:
         """
-        Execute V17.0 implicit function-based 3D processing natively within Blender.
+        Execute V22.0 dynamic construction plan processing natively within Blender.
         
-        This is the revolutionary transformation to implicit surface extraction workflow.
+        This is the revolutionary V22.0 transformation where the Blender Engine
+        dynamically executes the AI's construction_plan as a sequence of operations.
         """
         try:
-            logger.info("Starting V17.0 native implicit function processing")
+            logger.info("Starting V22.0 dynamic construction plan execution")
             
-            # Stage 1: Generate implicit functions via AI server
-            implicit_files = self._generate_implicit_functions(blueprint, user_specs)
+            # Stage 1: Initialize procedural knowledge system
+            from .procedural_knowledge import execute_operation
             
-            # Stage 2: Extract mesh using Marching Cubes
-            result_object = self._extract_mesh_from_implicit_functions(
-                implicit_files, blueprint, user_specs
-            )
+            # Stage 2: Execute construction plan dynamically
+            construction_plan = blueprint.get('construction_plan', [])
+            if not construction_plan:
+                logger.warning("No construction_plan found, using fallback")
+                construction_plan = [{"operation": "create_shank", "parameters": {"profile_shape": "Round", "thickness_mm": 2.0}}]
             
-            # Stage 3: Apply procedural knowledge enhancements
-            if blueprint.get('setting_parameters'):
-                result_object = self._apply_procedural_enhancements(
-                    result_object, blueprint
-                )
+            logger.info(f"Executing {len(construction_plan)} operations from construction plan")
             
-            # Stage 4: Create Shape Key for animation
-            if result_object.data.shape_keys is None:
-                result_object.shape_key_add(name="Basis")
+            # Context for tracking objects across operations
+            context_objects = {"base": None}
+            final_object = None
             
-            shape_key = result_object.shape_key_add(name="V17ImplicitModification")
+            # Execute each operation in sequence
+            for i, operation in enumerate(construction_plan):
+                operation_name = operation.get('operation', 'unknown')
+                logger.info(f"Operation {i+1}/{len(construction_plan)}: {operation_name}")
+                
+                try:
+                    result_object = execute_operation(operation, context_objects)
+                    if result_object:
+                        final_object = result_object
+                        context_objects['base'] = result_object
+                        logger.info(f"Operation {operation_name} completed successfully")
+                    else:
+                        logger.warning(f"Operation {operation_name} returned no object")
+                        
+                except Exception as e:
+                    logger.error(f"Operation {operation_name} failed: {e}")
+                    continue
+            
+            if not final_object:
+                logger.warning("No objects created, generating fallback")
+                final_object = self._create_fallback_ring(blueprint, user_specs)
+            
+            # Stage 3: Create Shape Key for animation (V22.0 feature)
+            if final_object.data.shape_keys is None:
+                final_object.shape_key_add(name="Basis")
+            
+            shape_key = final_object.shape_key_add(name="V22_ConstructionPlan_Result")
             shape_key.value = 0.0  # Start at 0 for animation
             
-            # Stage 5: Apply material
-            self._apply_material(result_object, user_specs['metal'])
+            # Stage 4: Apply material
+            material_specs = blueprint.get('material_specifications', {})
+            metal_type = material_specs.get('primary_material', user_specs.get('metal', 'GOLD'))
+            self._apply_material(final_object, metal_type)
             
-            logger.info("V17.0 Native implicit function processing completed successfully")
+            logger.info("V22.0 dynamic construction plan execution completed successfully")
             
             return {
-                'object_name': result_object.name,
-                'shape_key_name': 'V17ImplicitModification'
+                'object_name': final_object.name,
+                'shape_key_name': 'V22_ConstructionPlan_Result',
+                'operations_executed': len(construction_plan)
             }
             
         except Exception as e:
-            logger.error(f"V17.0 Native implicit processing failed: {e}")
+            logger.error(f"V22.0 construction plan execution failed: {e}")
             raise
     
     def _generate_implicit_functions(self, blueprint: Dict, user_specs: Dict) -> Dict[str, str]:
