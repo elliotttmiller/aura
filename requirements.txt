@@ -37,3 +37,11 @@ requests>=2.31.0
 # --- Data Processing ---
 # Essential for JSON processing and file operations
 certifi>=2023.0.0
+
+# --- Environment Configuration ---
+# For loading .env files and environment management
+python-dotenv>=1.0.0
+
+# --- System Monitoring and Diagnostics ---
+# For system resource monitoring and health checks
+psutil>=5.9.0

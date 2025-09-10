@@ -282,10 +282,13 @@ def apply_twist_modifier(base_object: bpy.types.Object, parameters: Dict[str, An
 
 def execute_operation(operation: Dict[str, Any], context_objects: Dict[str, bpy.types.Object]) -> bpy.types.Object:
     """
-    V22.0 Dynamic Operation Executor - The core of the construction plan system.
+    V24 Enhanced Dynamic Operation Executor with robust error handling.
     
     This function interprets a single operation from the AI's construction_plan and
     executes the corresponding professional technique.
+    
+    V24 Enhancement: Robust error handling for unknown operations as mandated by
+    Protocol 10: Holistic Integration & Autonomy.
     
     Args:
         operation: {
@@ -296,17 +299,18 @@ def execute_operation(operation: Dict[str, Any], context_objects: Dict[str, bpy.
         context_objects: Dictionary of available objects by name
         
     Returns:
-        The resulting object after operation execution
+        The resulting object after operation execution, or fallback object for unknown operations
     """
     operation_name = operation.get('operation')
     parameters = operation.get('parameters', {})
     target_name = operation.get('target', 'base')
     
-    logger.info(f"Executing dynamic operation: {operation_name}")
+    logger.info(f"V24: Executing dynamic operation: {operation_name}")
     
     # Get target object
     target_object = context_objects.get(target_name)
     
+    # V24: Enhanced operation dispatcher with comprehensive error handling
     try:
         if operation_name == "create_shank":
             result = create_shank(target_object, parameters)
@@ -323,20 +327,29 @@ def execute_operation(operation: Dict[str, Any], context_objects: Dict[str, bpy.
         elif operation_name == "create_classic_prong_setting":
             result = create_classic_prong_setting(target_object, parameters)
         else:
-            logger.warning(f"Unknown operation: {operation_name}")
+            # V24: Robust handling of unknown operations
+            logger.warning(f"V24: Unknown operation '{operation_name}' - creating fallback object")
             result = target_object if target_object else create_fallback_object()
+            
+            # V24: Log the unknown operation for future development
+            logger.info(f"V24: Unknown operation details - Name: {operation_name}, Parameters: {parameters}")
         
         # Update context objects
-        context_objects[f"result_{operation_name}"] = result
-        if target_name == 'base':
-            context_objects['base'] = result
+        if result:
+            context_objects[f"result_{operation_name}"] = result
+            if target_name == 'base':
+                context_objects['base'] = result
         
-        logger.info(f"Operation {operation_name} completed successfully")
+        logger.info(f"V24: Operation {operation_name} completed successfully")
         return result
         
     except Exception as e:
-        logger.error(f"Operation {operation_name} failed: {e}")
-        return target_object if target_object else create_fallback_object()
+        logger.error(f"V24: Operation {operation_name} failed with exception: {e}")
+        
+        # V24: Graceful degradation - return target object or create fallback
+        fallback_result = target_object if target_object else create_fallback_object()
+        logger.info(f"V24: Returning fallback object for failed operation {operation_name}")
+        return fallback_result
 
 
 def create_fallback_object() -> bpy.types.Object:

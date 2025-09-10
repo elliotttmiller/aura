@@ -75,6 +75,14 @@ models/*.onnx
 models/*.pt
 models/*.pth
 
+# Environment configuration
+.env
+.env.local
+.env.*.local
+
+# System control panel logs
+system_control.log
+
 # Keep folder structure but ignore content
 output/.gitkeep
 models/generated/.gitkeep

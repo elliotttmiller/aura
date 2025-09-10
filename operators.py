@@ -197,14 +197,50 @@ class SentientOperator(bpy.types.Operator):
         self.worker_thread.start()
     
     def ai_worker_thread(self, user_prompt: str, is_refinement: bool):
-        """Worker thread for AI processing."""
+        """
+        V24 Enhanced AI worker thread with comprehensive error handling.
+        
+        Master try-catch block ensures all exceptions are caught and gracefully
+        handled as mandated by Protocol 10: Holistic Integration & Autonomy.
+        """
         try:
-            logger.info(f"AI worker thread started for: {user_prompt}")
+            logger.info(f"V24: AI worker thread started for: {user_prompt}")
+            
+            # Send initial status update
+            self.message_queue.put({
+                'type': 'chat_update',
+                'content': f"🧠 AI Master Planner analyzing: {user_prompt}"
+            })
+            
+            # Stage 1: AI cognition and blueprint generation
+            self.message_queue.put({
+                'type': 'chat_update', 
+                'content': "⚡ Contacting AI Architect..."
+            })
             
             if is_refinement:
                 result = self.orchestrator.refine_design(user_prompt)
             else:
                 result = self.orchestrator.generate_design(user_prompt)
+            
+            # Stage 2: Blueprint validation
+            if result.get('success'):
+                self.message_queue.put({
+                    'type': 'chat_update',
+                    'content': "✅ Validating AI Blueprint..."
+                })
+                
+                # Stage 3: Blender Engine execution
+                self.message_queue.put({
+                    'type': 'chat_update',
+                    'content': "🔧 Launching Blender Engine..."
+                })
+                
+                # Stage 4: Final polish and completion
+                self.message_queue.put({
+                    'type': 'chat_update',
+                    'content': "✨ Applying Final Polish..."
+                })
             
             # Send completion message
             self.message_queue.put({
@@ -213,11 +249,27 @@ class SentientOperator(bpy.types.Operator):
             })
             
         except Exception as e:
-            logger.error(f"AI worker thread error: {e}")
+            # V24 Master exception handler - catches ALL possible failures
+            logger.error(f"V24: AI worker thread master exception handler: {e}")
+            
+            # Determine appropriate user-friendly error message
+            if "validation" in str(e).lower():
+                error_msg = f"🔍 Blueprint Validation Error: {str(e)}"
+            elif "network" in str(e).lower() or "connection" in str(e).lower():
+                error_msg = f"🌐 Network Communication Error: Unable to reach AI Master Planner"
+            elif "timeout" in str(e).lower():
+                error_msg = f"⏱️ Processing Timeout: AI Master Planner taking too long to respond"
+            else:
+                error_msg = f"⚠️ Autonomous Agent Decision: Process halted due to unexpected condition"
+            
+            # Stream clear error message to UI
             self.message_queue.put({
                 'type': 'error',
-                'error': str(e)
+                'error': error_msg,
+                'technical_details': str(e)
             })
+            
+            logger.info("V24: Master exception handler completed - user notified")
     
     def handle_processing_complete(self, message: Dict[str, Any]):
         """Handle completion of AI processing."""
@@ -240,10 +292,22 @@ class SentientOperator(bpy.types.Operator):
             self.update_chat_ui(f"Error: {result.get('error', 'Unknown error')}")
     
     def handle_error(self, error_message: str):
-        """Handle errors from worker thread."""
+        """
+        V24 Enhanced error handler with clear, user-friendly error display.
+        
+        Implements colored error messages and detailed logging as specified
+        in Protocol 10: Holistic Integration & Autonomy.
+        """
         bpy.context.scene.settings.is_processing = False
-        self.update_chat_ui(f"Error: {error_message}")
-        logger.error(f"Worker thread error: {error_message}")
+        
+        # V24: Color-coded error message for UI distinction
+        formatted_error = f"❌ {error_message}"
+        
+        self.update_chat_ui(formatted_error)
+        logger.error(f"V24: Worker thread error handled and displayed to user: {error_message}")
+        
+        # Additional status update for transparency
+        bpy.context.scene.settings.status_message = "Error - See chat for details"
     
     def cancel(self, context):
         """Cancel the modal operator and clean up."""

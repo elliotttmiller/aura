@@ -20,26 +20,42 @@ from typing import Dict, Any, Optional
 
 import bpy
 
+# V24 Enhancement: Load centralized configuration
+try:
+    from config import config, get_lm_studio_url, get_ai_server_config, is_sandbox_mode
+    CONFIG_AVAILABLE = True
+except ImportError:
+    logging.warning("Config module not available, using environment variables")
+    CONFIG_AVAILABLE = False
+
 # Setup logging
 logger = logging.getLogger(__name__)
 
 class Orchestrator:
-    """Native Blender orchestrator for V20.0 Design Engine."""
+    """Native Blender orchestrator for V24 Design Engine."""
     
     def __init__(self):
         self.addon_root = self._get_addon_root()
-        self.output_dir = os.path.join(self.addon_root, "output")
-        os.makedirs(self.output_dir, exist_ok=True)
         
-        # AI Configuration - sandbox mode for initial implementation
-        self.sandbox_mode = True
-        self.lm_studio_url = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B-Instruct"
-        self.huggingface_api_key = os.environ.get("HUGGINGFACE_API_KEY", "")
+        # V24 Enhanced directory setup with configuration
+        if CONFIG_AVAILABLE:
+            self.output_dir = os.path.join(self.addon_root, config.get('OUTPUT_DIR', 'output'))
+            self.sandbox_mode = is_sandbox_mode()
+            self.lm_studio_url = get_lm_studio_url()
+            self.huggingface_api_key = config.get('HUGGINGFACE_API_KEY', '')
+        else:
+            # Fallback configuration
+            self.output_dir = os.path.join(self.addon_root, "output")
+            self.sandbox_mode = True
+            self.lm_studio_url = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B-Instruct"
+            self.huggingface_api_key = os.environ.get("HUGGINGFACE_API_KEY", "")
+        
+        os.makedirs(self.output_dir, exist_ok=True)
         
         # Paths
         self.blender_proc_script = os.path.join(self.addon_root, "blender_proc.py")
         
-        logger.info("Orchestrator initialized in native Blender mode")
+        logger.info(f"V24 Orchestrator initialized - Sandbox: {self.sandbox_mode}")
     
     def _get_addon_root(self) -> str:
         """Get the addon root directory."""
@@ -189,8 +205,67 @@ Respond only with valid JSON, no other text."""
             logger.warning(f"LLM call failed, using fallback blueprint: {e}")
             return self._create_fallback_blueprint(user_prompt, user_specs)
     
+    def _validate_master_blueprint(self, blueprint: Dict[str, Any]) -> None:
+        """
+        V24 Enhancement: Strict Master Blueprint JSON validation.
+        
+        Validates that the AI response contains all required fields and proper structure
+        as mandated by Protocol 10: Holistic Integration & Autonomy.
+        
+        Args:
+            blueprint: The parsed JSON blueprint from AI
+            
+        Raises:
+            ValueError: If blueprint validation fails
+        """
+        logger.info("V24: Validating Master Blueprint JSON schema")
+        
+        # Required top-level fields
+        required_fields = ['reasoning', 'construction_plan', 'material_specifications']
+        for field in required_fields:
+            if field not in blueprint:
+                raise ValueError(f"V24 Validation Failed: Missing required field '{field}' in Master Blueprint")
+        
+        # Validate construction_plan structure
+        construction_plan = blueprint['construction_plan']
+        if not isinstance(construction_plan, list):
+            raise ValueError("V24 Validation Failed: construction_plan must be a list of operations")
+        
+        if len(construction_plan) == 0:
+            raise ValueError("V24 Validation Failed: construction_plan cannot be empty")
+        
+        # Validate each operation in the construction plan
+        valid_operations = [
+            'create_shank', 'create_bezel_setting', 'create_prong_setting', 
+            'apply_twist_modifier', 'create_pave_setting', 'create_tension_setting'
+        ]
+        
+        for i, operation in enumerate(construction_plan):
+            if not isinstance(operation, dict):
+                raise ValueError(f"V24 Validation Failed: Operation {i+1} must be a dictionary")
+            
+            if 'operation' not in operation:
+                raise ValueError(f"V24 Validation Failed: Operation {i+1} missing 'operation' field")
+            
+            if 'parameters' not in operation:
+                raise ValueError(f"V24 Validation Failed: Operation {i+1} missing 'parameters' field")
+            
+            op_name = operation['operation']
+            if op_name not in valid_operations:
+                logger.warning(f"V24 Validation Warning: Unknown operation '{op_name}' in position {i+1}")
+        
+        # Validate material specifications
+        material_specs = blueprint['material_specifications']
+        if not isinstance(material_specs, dict):
+            raise ValueError("V24 Validation Failed: material_specifications must be a dictionary")
+        
+        if 'primary_material' not in material_specs:
+            raise ValueError("V24 Validation Failed: material_specifications missing 'primary_material'")
+        
+        logger.info(f"V24: Master Blueprint validation successful - {len(construction_plan)} operations validated")
+    
     def _call_huggingface_api(self, prompt: str) -> Dict[str, Any]:
-        """Call Hugging Face API for blueprint generation."""
+        """Call Hugging Face API for blueprint generation with V24 JSON validation."""
         
         headers = {
             "Authorization": f"Bearer {self.huggingface_api_key}" if self.huggingface_api_key else "",
@@ -206,19 +281,29 @@ Respond only with valid JSON, no other text."""
             }
         }
         
-        response = requests.post(self.lm_studio_url, headers=headers, json=request_data, timeout=60)
-        response.raise_for_status()
-        
-        response_data = response.json()
-        if isinstance(response_data, list) and len(response_data) > 0:
-            blueprint_text = response_data[0]['generated_text'].strip()
-        else:
-            blueprint_text = str(response_data).strip()
-        
-        return json.loads(blueprint_text)
+        try:
+            response = requests.post(self.lm_studio_url, headers=headers, json=request_data, timeout=60)
+            response.raise_for_status()
+            
+            response_data = response.json()
+            if isinstance(response_data, list) and len(response_data) > 0:
+                blueprint_text = response_data[0]['generated_text'].strip()
+            else:
+                blueprint_text = str(response_data).strip()
+            
+            # V24 Enhancement: Parse and validate JSON structure
+            blueprint = json.loads(blueprint_text)
+            self._validate_master_blueprint(blueprint)
+            
+            logger.info("V24: AI response JSON validation successful")
+            return blueprint
+            
+        except (requests.RequestException, json.JSONDecodeError, KeyError) as e:
+            logger.error(f"V24: AI API call failed with validation error: {e}")
+            raise RuntimeError(f"AI Master Planner communication failed: {e}")
     
     def _call_lm_studio_api(self, prompt: str) -> Dict[str, Any]:
-        """Call LM Studio API for blueprint generation."""
+        """Call LM Studio API for blueprint generation with V24 JSON validation."""
         
         request_data = {
             "model": "llama-3.1-8b-instruct",
@@ -230,14 +315,24 @@ Respond only with valid JSON, no other text."""
             "max_tokens": 1000
         }
         
-        lm_studio_url = "http://localhost:1234/v1/chat/completions"
-        response = requests.post(lm_studio_url, json=request_data, timeout=60)
-        response.raise_for_status()
-        
-        response_data = response.json()
-        blueprint_text = response_data['choices'][0]['message']['content'].strip()
-        
-        return json.loads(blueprint_text)
+        try:
+            lm_studio_url = "http://localhost:1234/v1/chat/completions"
+            response = requests.post(lm_studio_url, json=request_data, timeout=60)
+            response.raise_for_status()
+            
+            response_data = response.json()
+            blueprint_text = response_data['choices'][0]['message']['content'].strip()
+            
+            # V24 Enhancement: Parse and validate JSON structure
+            blueprint = json.loads(blueprint_text)
+            self._validate_master_blueprint(blueprint)
+            
+            logger.info("V24: LM Studio response JSON validation successful")
+            return blueprint
+            
+        except (requests.RequestException, json.JSONDecodeError, KeyError) as e:
+            logger.error(f"V24: LM Studio API call failed with validation error: {e}")
+            raise RuntimeError(f"AI Master Planner communication failed: {e}")
     
     def _create_fallback_blueprint(self, user_prompt: str, user_specs: Dict) -> Dict[str, Any]:
         """Create V22.0 fallback blueprint with construction_plan when LLM is unavailable."""

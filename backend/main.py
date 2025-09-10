@@ -20,27 +20,48 @@ import requests
 import shlex
 import time
 
-app = FastAPI(title="V7.0 Backend Orchestrator", version="7.0")
+# V24 Enhancement: Centralized environment configuration
+try:
+    from config import config, get_lm_studio_url, get_ai_server_config, is_sandbox_mode
+    CONFIG_AVAILABLE = True
+except ImportError:
+    logging.warning("Config module not available, using environment variables")
+    CONFIG_AVAILABLE = False
 
-logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s %(message)s')
+app = FastAPI(title="V24 Backend Orchestrator", version="24.0")
+
+# V24 Enhanced logging configuration
+if CONFIG_AVAILABLE:
+    log_level = getattr(logging, config.get('LOG_LEVEL', 'INFO').upper())
+    logging.basicConfig(level=log_level, format=config.get('LOG_FORMAT', '[%(asctime)s] %(levelname)s %(message)s'))
+else:
+    logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s %(message)s')
+
 logger = logging.getLogger(__name__)
 
-# V6.0/V7.0 Configuration - Sandbox and Production modes
-SANDBOX_MODE = os.environ.get("SANDBOX_MODE", "").lower() == "true"
-BLENDER_PATH = os.environ.get("BLENDER_PATH", r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe")
+# V24 Configuration with centralized config management
+if CONFIG_AVAILABLE:
+    SANDBOX_MODE = is_sandbox_mode()
+    BLENDER_PATH = config.get('BLENDER_PATH', r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe")
+    OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", config.get('OUTPUT_DIR', 'output')))
+    LM_STUDIO_URL = get_lm_studio_url()
+    EXTERNAL_AI_URL = get_ai_server_config()['url']
+    HUGGINGFACE_API_KEY = config.get('HUGGINGFACE_API_KEY', '')
+else:
+    # Fallback to environment variables
+    SANDBOX_MODE = os.environ.get("SANDBOX_MODE", "").lower() == "true"
+    BLENDER_PATH = os.environ.get("BLENDER_PATH", r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe")
+    OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "output"))
+    if SANDBOX_MODE:
+        LM_STUDIO_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B-Instruct"
+        HUGGINGFACE_API_KEY = os.environ.get("HUGGINGFACE_API_KEY", "")
+    else:
+        LM_STUDIO_URL = os.environ.get("LM_STUDIO_URL", "http://localhost:1234/v1/chat/completions")
+    EXTERNAL_AI_URL = os.environ.get("EXTERNAL_AI_URL", "http://localhost:8002")
+
+# V24 Enhanced script paths
 BLENDER_PROC_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "blender_proc.py"))
 BLENDER_SIM_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "blender_sim.py"))
-OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "output"))
-
-# LLM Configuration - Sandbox vs Production
-if SANDBOX_MODE:
-    LM_STUDIO_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B-Instruct"
-    HUGGINGFACE_API_KEY = os.environ.get("HUGGINGFACE_API_KEY", "")  # Free tier available
-else:
-    LM_STUDIO_URL = os.environ.get("LM_STUDIO_URL", "http://localhost:1234/v1/chat/completions")
-
-# V7.0: External AI Environment (User-Managed Shap-E Installation)  
-EXTERNAL_AI_URL = os.environ.get("EXTERNAL_AI_URL", "http://localhost:8002")
 
 # Ensure output directory exists
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -821,6 +842,35 @@ async def health_check():
             "mode": "production",
             "architecture": "Two-Stage Professional AI Pipeline"
         }
+
+# V24 Enhancement: Add health check endpoint
+@app.get("/health")
+async def health_check():
+    """V24 Enhanced health check endpoint."""
+    import time
+    
+    health_status = {
+        "status": "healthy",
+        "timestamp": time.time(),
+        "service": "V24 Backend Orchestrator",
+        "version": "24.0",
+        "mode": "sandbox" if SANDBOX_MODE else "production",
+        "lm_studio_configured": bool(LM_STUDIO_URL),
+        "external_ai_configured": bool(EXTERNAL_AI_URL),
+        "blender_path_configured": bool(BLENDER_PATH),
+        "output_directory": OUTPUT_DIR
+    }
+    
+    # Test LM Studio connectivity if not in sandbox mode
+    if not SANDBOX_MODE and LM_STUDIO_URL:
+        try:
+            test_response = requests.get(LM_STUDIO_URL.replace('/chat/completions', '/models'), timeout=5)
+            health_status["lm_studio_reachable"] = test_response.status_code == 200
+        except:
+            health_status["lm_studio_reachable"] = False
+            health_status["status"] = "degraded"
+    
+    return health_status
 
 @app.get("/")
 async def root():
