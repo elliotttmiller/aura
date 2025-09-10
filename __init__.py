@@ -1,10 +1,10 @@
 bl_info = {
-    "name": "Aura V24 Autonomous Design Engine",
+    "name": "Aura V22 Verifiable Artisan",
     "author": "Aura Development Team",
-    "version": (24, 0, 0),
+    "version": (22, 0, 0),
     "blender": (3, 0, 0),
     "location": "View3D > Sidebar > Aura",
-    "description": "V24 Autonomous & Holistic Design Engine - State-of-the-art AI-driven 3D creation with sentient transparency, autonomous cognitive authority, and flawless end-to-end integration",
+    "description": "V22 Verifiable Artisan - State-of-the-art AI-driven 3D creation with live cognitive streaming, real-time Shape Key animations, and complete sentient transparency",
     "category": "3D View",
 }
 
