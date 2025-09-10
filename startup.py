@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """
-Aura V24 System Startup Script
-==============================
+Aura V25 Hyperrealistic System Startup Script
+==============================================
 
-This script provides a unified entry point for starting the entire Aura V24 system
-with proper dependency management and interactive control capabilities.
+Enhanced startup script for V25 Hyperrealistic AI Jewelry Design System.
+Provides unified entry point with proper dependency management for all
+hyperrealistic components and professional-grade operation.
 
 Usage:
-    python startup.py              # Interactive menu mode
-    python startup.py --full       # Full system startup
-    python startup.py --clean      # Clean restart
-    python startup.py --web        # Start and open web control panel
+    python startup.py                    # Interactive menu mode
+    python startup.py --full             # Full hyperrealistic system startup
+    python startup.py --clean            # Clean restart with process cleanup
+    python startup.py --web              # Start and open web control panel
+    python startup.py --hyperrealistic   # Start hyperrealistic services only
 """
 
 import os
@@ -22,7 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Aura V24 System Startup Script',
+        description='Aura V25 Hyperrealistic System Startup Script',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
