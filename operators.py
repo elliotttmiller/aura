@@ -1,6 +1,6 @@
 """
-Aura V17.0 Sentient Symbiote Environment - Master Modal Operator
-==============================================================
+Universal Design Engine V20.0 - Master Modal Operator
+=====================================================
 
 The core asynchronous modal operator that manages the AI conversation 
 and real-time 3D implicit surface updates with smooth Shape Key transitions.
@@ -17,18 +17,18 @@ import json
 import logging
 from typing import Dict, Any, Optional
 
-from .backend.orchestrator import AuraOrchestrator
+from .backend.universal_orchestrator import UniversalOrchestrator
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class AuraSentientOperator(bpy.types.Operator):
-    """Master Modal Operator for V17.0 Sentient Symbiote Environment."""
+class UniversalSentientOperator(bpy.types.Operator):
+    """Master Modal Operator for V20.0 Universal Design Engine."""
     
-    bl_idname = "aura.sentient_operator"
-    bl_label = "Aura V17.0 Sentient Symbiote Operator"
+    bl_idname = "tool.universal_operator"
+    bl_label = "Universal Design Engine V20.0 Operator"
     bl_description = "Master asynchronous operator for implicit function-based AI design"
     
     def __init__(self):
@@ -40,11 +40,11 @@ class AuraSentientOperator(bpy.types.Operator):
         self.current_shape_key_animation = None
         
     def execute(self, context):
-        """Start the sentient operator in modal mode."""
-        logger.info("Starting Aura V17.0 Sentient Symbiote Environment")
+        """Start the universal operator in modal mode."""
+        logger.info("Starting Universal Design Engine V20.0")
         
         # Initialize the orchestrator
-        self.orchestrator = AuraOrchestrator()
+        self.orchestrator = UniversalOrchestrator()
         
         # Start modal operation
         context.window_manager.modal_handler_add(self)
@@ -58,9 +58,9 @@ class AuraSentientOperator(bpy.types.Operator):
         )
         
         # Update UI to show we're active
-        context.scene.aura_settings.is_processing = False
-        context.scene.aura_settings.chat_messages = json.dumps([
-            {"role": "system", "content": "Aura V17.0 Sentient Symbiote Environment activated. Revolutionary implicit function-based AI collaboration ready."}
+        context.scene.universal_settings.is_processing = False
+        context.scene.universal_settings.chat_messages = json.dumps([
+            {"role": "system", "content": "Universal Design Engine V20.0 activated. Revolutionary implicit function-based AI collaboration ready."}
         ])
         
         return {'RUNNING_MODAL'}
@@ -106,13 +106,13 @@ class AuraSentientOperator(bpy.types.Operator):
         """Update the chat UI with new content."""
         try:
             scene = bpy.context.scene
-            current_messages = json.loads(scene.aura_settings.chat_messages or "[]")
+            current_messages = json.loads(scene.universal_settings.chat_messages or "[]")
             current_messages.append({
                 "role": "assistant", 
                 "content": content, 
                 "timestamp": time.time()
             })
-            scene.aura_settings.chat_messages = json.dumps(current_messages)
+            scene.universal_settings.chat_messages = json.dumps(current_messages)
             
             # Force UI redraw
             for area in bpy.context.screen.areas:
@@ -132,7 +132,7 @@ class AuraSentientOperator(bpy.types.Operator):
             if not shape_key:
                 return
             
-            logger.info(f"Starting V17.0 Implicit Shape Key animation for {shape_key_name}")
+            logger.info(f"Starting V20.0 Implicit Shape Key animation for {shape_key_name}")
             
             # Start animation from 0 to 1 over 2 seconds
             self.current_shape_key_animation = {
@@ -172,7 +172,7 @@ class AuraSentientOperator(bpy.types.Operator):
         
         # Continue animation or finish
         if progress >= 1.0:
-            logger.info("V17.0 Implicit Surface Shape Key animation completed")
+            logger.info("V20.0 Implicit Surface Shape Key animation completed")
             self.current_shape_key_animation = None
             return None
         else:
@@ -185,7 +185,7 @@ class AuraSentientOperator(bpy.types.Operator):
             return
         
         # Update UI to show processing state
-        bpy.context.scene.aura_settings.is_processing = True
+        bpy.context.scene.universal_settings.is_processing = True
         self.update_chat_ui(f"Processing: {user_prompt}")
         
         # Start worker thread
@@ -224,7 +224,7 @@ class AuraSentientOperator(bpy.types.Operator):
         result = message['result']
         
         # Update UI
-        bpy.context.scene.aura_settings.is_processing = False
+        bpy.context.scene.universal_settings.is_processing = False
         
         if result.get('success'):
             self.update_chat_ui("Design completed successfully!")
@@ -234,20 +234,20 @@ class AuraSentientOperator(bpy.types.Operator):
                 self.message_queue.put({
                     'type': 'shape_key_created',
                     'object_name': result['object_name'],
-                    'shape_key_name': result.get('shape_key_name', 'AuraModification')
+                    'shape_key_name': result.get('shape_key_name', 'UniversalModification')
                 })
         else:
             self.update_chat_ui(f"Error: {result.get('error', 'Unknown error')}")
     
     def handle_error(self, error_message: str):
         """Handle errors from worker thread."""
-        bpy.context.scene.aura_settings.is_processing = False
+        bpy.context.scene.universal_settings.is_processing = False
         self.update_chat_ui(f"Error: {error_message}")
         logger.error(f"Worker thread error: {error_message}")
     
     def cancel(self, context):
         """Cancel the modal operator and clean up."""
-        logger.info("Cancelling Aura Sentient Operator")
+        logger.info("Cancelling Universal Design Engine Operator")
         
         self.is_running = False
         
@@ -266,14 +266,14 @@ class AuraSentientOperator(bpy.types.Operator):
             pass
         
         # Clean up UI
-        context.scene.aura_settings.is_processing = False
+        context.scene.universal_settings.is_processing = False
         
         return {'CANCELLED'}
 
 
-# Properties for the Aura system
-class AuraSettings(bpy.types.PropertyGroup):
-    """Settings for the Aura V14.0 system."""
+# Properties for the Universal Design Engine system
+class UniversalEngineBaseSettings(bpy.types.PropertyGroup):
+    """Settings for the Universal Design Engine V20.0 system."""
     
     is_processing: bpy.props.BoolProperty(
         name="Is Processing",
@@ -295,11 +295,11 @@ class AuraSettings(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.utils.register_class(AuraSettings)
-    bpy.types.Scene.aura_settings = bpy.props.PointerProperty(type=AuraSettings)
+    bpy.utils.register_class(UniversalEngineBaseSettings)
+    bpy.types.Scene.universal_settings_base = bpy.props.PointerProperty(type=UniversalEngineBaseSettings)
 
 
 def unregister():
-    if hasattr(bpy.types.Scene, 'aura_settings'):
-        del bpy.types.Scene.aura_settings
-    bpy.utils.unregister_class(AuraSettings)
+    if hasattr(bpy.types.Scene, 'universal_settings_base'):
+        del bpy.types.Scene.universal_settings_base
+    bpy.utils.unregister_class(UniversalEngineBaseSettings)

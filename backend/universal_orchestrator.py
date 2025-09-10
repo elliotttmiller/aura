@@ -1,9 +1,9 @@
 """
-Aura V14.0 Sentient Artisan Environment - Native Orchestrator
-==========================================================
+Universal Design Engine V20.0 - Native Orchestrator
+===================================================
 
 Native Blender orchestrator that manages the AI conversation and 3D processing
-without web server dependencies. Adapted from the V7.0 backend architecture.
+without web server dependencies. Adapted from the V17.0 backend architecture.
 
 Implements Protocol 3: Cognitive Authority (The AI-Minded Principle)
 """
@@ -21,8 +21,8 @@ import bpy
 # Setup logging
 logger = logging.getLogger(__name__)
 
-class AuraOrchestrator:
-    """Native Blender orchestrator for V14.0 Sentient Artisan Environment."""
+class UniversalOrchestrator:
+    """Native Blender orchestrator for V20.0 Universal Design Engine."""
     
     def __init__(self):
         self.addon_root = self._get_addon_root()
@@ -37,7 +37,7 @@ class AuraOrchestrator:
         # Paths
         self.blender_proc_script = os.path.join(self.addon_root, "blender_proc.py")
         
-        logger.info("AuraOrchestrator initialized in native Blender mode")
+        logger.info("UniversalOrchestrator initialized in native Blender mode")
     
     def _get_addon_root(self) -> str:
         """Get the addon root directory."""
