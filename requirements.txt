@@ -1,35 +1,26 @@
 # ===================================================================
-# Requirements for Aura V5.0 Autonomous Cognitive Architecture
+# Requirements for Aura V7.0 Professional Integration 
 # ===================================================================
 #
-# Use this file to set up a dedicated virtual environment:
-# > python -m venv .venv
-# > source .venv/bin/activate
-# > pip install -r requirements.txt
+# Lean, optimized dependencies for the local application only.
+# PyTorch, diffusers, and AI models are now managed externally
+# via LM Studio and dedicated Python environments.
 #
-# IMPORTANT: After installation, these libraries must be manually
-# copied from your venv's 'site-packages' into the 'aura/vendor/'
-# directory to be packaged with the final add-on.
+# Setup Instructions:
+# > python -m venv venv
+# > source venv/bin/activate  # Linux/Mac
+# > pip install -r requirements.txt
 # -------------------------------------------------------------------
 
-# --- Core AI Engine ---
-# Install BOTH. Our code will intelligently select the correct one at runtime
-# based on user preference and hardware availability.
-onnxruntime
-onnxruntime-gpu
+# --- Core Web Framework ---
+# FastAPI for backend orchestrator and frontend server
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
 
-# --- V5.0 AI Models ---
-# For OpenAI Shap-E 3D generation model
-torch
-transformers
-openai
+# --- HTTP Client ---
+# For communication with external LM Studio and AI services
+requests>=2.31.0
 
-# --- Data & Numerics ---
-# Essential for handling mesh data and arrays.
-numpy
-
-# --- Web & Networking ---
-fastapi
-uvicorn
-requests
-certifi
+# --- Data Processing ---
+# Essential for JSON processing and file operations
+certifi>=2023.0.0
