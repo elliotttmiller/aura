@@ -1,28 +1,28 @@
 import bpy
 
-class SceneSettings(bpy.types.PropertyGroup):
-    """Stores all session settings for the add-on. Accessed via 'context.scene.aura_settings'."""
+class UniversalSceneSettings(bpy.types.PropertyGroup):
+    """Stores all session settings for the add-on. Accessed via 'context.scene.universal_settings'."""
     
     prompt_text = bpy.props.StringProperty(
         name="Prompt",
-        description="Describe the detail you want to add or the object to create",
-        default="Swirling floral patterns"
+        description="Describe the procedural asset you want to create or modify",
+        default="Organic flowing patterns with geometric features"
     )
     
     analysis_report = bpy.props.StringProperty(
         name="Analysis Report",
-        description="Results from the manufacturing quality check",
-        default="Select an object and run a check."
+        description="Results from the procedural quality analysis",
+        default="Select an object and run analysis."
     )
     
-    # V17.0 Mesh Quality Control for Marching Cubes
+    # V20.0 Mesh Quality Control for Marching Cubes - 8GB VRAM optimized
     mesh_quality = bpy.props.IntProperty(
         name="Mesh Quality",
         description="Resolution for Marching Cubes algorithm (32=low, 64=med, 128=high, 256=ultra)",
         default=64,
         min=16,
-        max=512,
-        step=1
+        max=256,  # Reduced max for 8GB VRAM optimization
+        step=16   # Stepped intervals for better performance
     )
     
     # --- For async operations ---
@@ -31,9 +31,9 @@ class SceneSettings(bpy.types.PropertyGroup):
     status_message = bpy.props.StringProperty(default="Ready")
 
 def install_settings():
-    bpy.utils.register_class(SceneSettings)
-    bpy.types.Scene.aura_settings = bpy.props.PointerProperty(type=SceneSettings)
+    bpy.utils.register_class(UniversalSceneSettings)
+    bpy.types.Scene.universal_settings = bpy.props.PointerProperty(type=UniversalSceneSettings)
 
 def uninstall_settings():
-    del bpy.types.Scene.aura_settings
-    bpy.utils.unregister_class(SceneSettings)
+    del bpy.types.Scene.universal_settings
+    bpy.utils.unregister_class(UniversalSceneSettings)

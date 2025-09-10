@@ -1,16 +1,16 @@
 """
-Aura V17.0 Sentient Symbiote Environment - High-Resolution Implicit Surface Extractor
-===================================================================================
+Universal Design Engine V20.0 - High-Resolution Implicit Surface Extractor
+===========================================================================
 
 A revolutionary rewrite for implicit function-based 3D generation featuring:
 - Native implicit function parameter loading (decoder.pt, texture.pt)
-- High-resolution Marching Cubes algorithm implementation
+- High-resolution Marching Cubes algorithm implementation with 8GB VRAM optimization
 - User-configurable mesh quality control
 - Real-time vertex color application from generative textures
 - Professional scene setup and dynamic camera framing
 
 Implements Pillar 2: Engineering the High-Resolution Blender Engine
-Part of the V17.0 Sentient Symbiote Environment.
+Part of the V20.0 Universal Design Engine.
 """
 
 import os
@@ -41,7 +41,7 @@ logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s %(m
 logger = logging.getLogger(__name__)
 
 # =============================================================================
-# V17.0 IMPLICIT FUNCTION PROCESSING - CORE INNOVATION
+# V20.0 IMPLICIT FUNCTION PROCESSING - CORE INNOVATION
 # =============================================================================
 
 class ImplicitFunctionDecoder:
@@ -568,18 +568,18 @@ def apply_vertex_colors_from_texture(obj: bpy.types.Object, texture_path: str, v
     
     logger.info("Vertex colors applied successfully")
 
-def generate_implicit_based_jewelry(args, params: Dict) -> bpy.types.Object:
+def generate_implicit_based_asset(args, params: Dict) -> bpy.types.Object:
     """
-    Core V17.0 jewelry generation - loads implicit functions and creates mesh.
+    Core V20.0 procedural asset generation - loads implicit functions and creates mesh.
     
     Args:
         args: Command line arguments with decoder/texture paths
         params: Master Blueprint parameters
         
     Returns:
-        Final assembled jewelry object with implicit surface and vertex colors
+        Final assembled procedural asset object with implicit surface and vertex colors
     """
-    logger.info("=== V17.0 IMPLICIT SURFACE EXTRACTION ===")
+    logger.info("=== V20.0 IMPLICIT SURFACE EXTRACTION ===")
     logger.info(f"Loading implicit functions: {args.decoder_path}, {args.texture_path}")
     
     # Validate input files
@@ -594,11 +594,11 @@ def generate_implicit_based_jewelry(args, params: Dict) -> bpy.types.Object:
         decoder_path=args.decoder_path,
         texture_path=args.texture_path,
         mesh_quality=args.mesh_quality,
-        object_name="Aura_V17_Implicit_Creation"
+        object_name="Universal_V20_Implicit_Asset"
     )
     
     # Apply procedural knowledge enhancements if specified
-    if params.get('setting_parameters'):
+    if params.get('procedural_parameters'):
         logger.info("Applying procedural knowledge enhancements...")
         
         # Import procedural knowledge
@@ -834,17 +834,21 @@ def main():
                        help="JSON Master Blueprint parameters")
     parser.add_argument("--mesh_quality", type=int, default=64,
                        help="Marching Cubes resolution (32=low, 64=med, 128=high, 256=ultra)")
-    parser.add_argument("--jewelry_scale_mm", type=float, default=20.0,
-                       help="Scale of final jewelry in millimeters")
-    parser.add_argument("--ring_size", type=float, default=7.0)
-    parser.add_argument("--stone_carat", type=float, default=1.0)
-    parser.add_argument("--stone_shape", type=str, default='ROUND')
-    parser.add_argument("--metal", type=str, default='GOLD')
+    parser.add_argument("--asset_scale_mm", type=float, default=20.0,
+                       help="Scale of final procedural asset in millimeters")
+    parser.add_argument("--asset_size", type=float, default=1.0, 
+                       help="Overall scale factor for the generated asset")
+    parser.add_argument("--feature_scale", type=float, default=1.0,
+                       help="Scale of primary features relative to asset")
+    parser.add_argument("--feature_shape", type=str, default='ROUND',
+                       help="Shape of primary features")
+    parser.add_argument("--material", type=str, default='METAL',
+                       help="Material type for the asset")
     
     argv = sys.argv[sys.argv.index('--') + 1:]
     args = parser.parse_args(argv)
     
-    logger.info("=== AURA V17.0 HIGH-RESOLUTION IMPLICIT SURFACE EXTRACTOR ===")
+    logger.info("=== UNIVERSAL DESIGN ENGINE V20.0 HIGH-RESOLUTION IMPLICIT SURFACE EXTRACTOR ===")
     logger.info("Revolutionary implicit function-based 3D processing")
     logger.info(f"Mode: {args.mode.upper()}")
     logger.info(f"Decoder: {args.decoder_path}")
@@ -858,12 +862,12 @@ def main():
         return
     
     # V17.0 Implicit Surface Extraction Mode
-    logger.info(f"Jewelry specifications: Size {args.ring_size}, {args.stone_carat}ct {args.stone_shape}")
+    logger.info(f"Asset specifications: Size {args.asset_size}, {args.feature_scale} scale {args.feature_shape}")
     
     try:
         # Parse Master Blueprint
         blueprint = json.loads(args.params)
-        logger.info("V17.0 Master Blueprint parsed and validated")
+        logger.info("V20.0 Master Blueprint parsed and validated")
         
         # Step 1: Setup professional scene
         scene = setup_scene()
@@ -874,8 +878,8 @@ def main():
         # Step 3: Enable optimal GPU rendering
         gpu_enabled = enable_gpu_rendering(scene)
         
-        # Step 4: Generate jewelry from implicit functions - CORE V17.0 INNOVATION
-        final_object = generate_implicit_based_jewelry(args, blueprint)
+        # Step 4: Generate procedural asset from implicit functions - CORE V20.0 INNOVATION
+        final_object = generate_implicit_based_asset(args, blueprint)
         
         # Step 5: Create and position camera for dynamic framing
         bpy.ops.object.camera_add(location=(0, 0, 0))
