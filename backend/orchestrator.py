@@ -334,6 +334,150 @@ Respond only with valid JSON, no other text."""
             logger.error(f"V24: LM Studio API call failed with validation error: {e}")
             raise RuntimeError(f"AI Master Planner communication failed: {e}")
     
+    def _generate_dynamic_bmesh_code(self, user_request_for_component: str, component_parameters: Dict[str, Any]) -> str:
+        """
+        V23 Generative Artisan: Generate custom bmesh Python code for novel geometry.
+        
+        This is the revolutionary V23 "Text-to-bmesh" capability that allows the AI to
+        create new procedural techniques on the fly when existing knowledge base is insufficient.
+        
+        Args:
+            user_request_for_component: Description of the custom component needed
+            component_parameters: Dictionary of parameters to work with
+            
+        Returns:
+            String containing the complete Python function code
+        """
+        logger.info(f"V23: Generating dynamic bmesh code for: {user_request_for_component}")
+        
+        # V23 State-of-the-Art "Text-to-bmesh" Prompt Template
+        text_to_bmesh_prompt = f"""You are a world-class, expert Blender Python programmer specializing in the `bmesh` API. Your sole mission is to write a clean, efficient, and secure Python function that generates a specific 3D geometry using `bmesh`.
+
+You must adhere to these strict rules:
+1. The function must be named `create_custom_component`.
+2. It must accept two arguments: `bm` (the bmesh object to add geometry to) and `params` (a dictionary of parameters).
+3. You are ONLY allowed to use the `bmesh` API and the standard Python `math` library.
+4. You are FORBIDDEN from using any other imports (like `os` or `sys`).
+5. The function must not create new objects or modify the scene; it must only add geometry to the provided `bm`.
+6. You must return the `geom` created by the final `bmesh.ops` call.
+
+Here is the user's request for the custom component:
+"{user_request_for_component}"
+
+Here are the parameters you have to work with:
+{component_parameters}
+
+Now, write only the Python code for the `create_custom_component` function. Do not include any other text, explanations, or markdown formatting."""
+
+        try:
+            # Use the same LLM endpoint as blueprint generation
+            if self.sandbox_mode:
+                code_response = self._call_huggingface_api_for_code(text_to_bmesh_prompt)
+            else:
+                code_response = self._call_lm_studio_api_for_code(text_to_bmesh_prompt)
+            
+            logger.info("V23: Dynamic bmesh code generated successfully")
+            return code_response
+            
+        except Exception as e:
+            logger.error(f"V23: Dynamic code generation failed: {e}")
+            # Return a safe fallback function
+            return self._create_fallback_bmesh_function(user_request_for_component)
+    
+    def _call_huggingface_api_for_code(self, prompt: str) -> str:
+        """Call Hugging Face API specifically for code generation."""
+        request_data = {
+            "inputs": prompt,
+            "parameters": {
+                "max_new_tokens": 500,
+                "temperature": 0.3,  # Lower temperature for more deterministic code
+                "return_full_text": False
+            }
+        }
+        
+        headers = {"Authorization": f"Bearer {self.huggingface_api_key}"}
+        response = requests.post(self.lm_studio_url, json=request_data, headers=headers, timeout=60)
+        response.raise_for_status()
+        
+        response_data = response.json()
+        if isinstance(response_data, list) and len(response_data) > 0:
+            return response_data[0].get('generated_text', '').strip()
+        else:
+            raise RuntimeError("Invalid response format from Hugging Face API")
+    
+    def _call_lm_studio_api_for_code(self, prompt: str) -> str:
+        """Call LM Studio API specifically for code generation."""
+        request_data = {
+            "model": "llama-3.1-8b-instruct",
+            "messages": [
+                {"role": "system", "content": "You are an expert Blender bmesh programmer. Respond only with Python code, no explanations."},
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.3,  # Lower temperature for more deterministic code
+            "max_tokens": 500
+        }
+        
+        lm_studio_url = "http://localhost:1234/v1/chat/completions"
+        response = requests.post(lm_studio_url, json=request_data, timeout=60)
+        response.raise_for_status()
+        
+        response_data = response.json()
+        return response_data['choices'][0]['message']['content'].strip()
+    
+    def _create_fallback_bmesh_function(self, user_request: str) -> str:
+        """Create a safe fallback bmesh function when dynamic generation fails."""
+        logger.warning(f"V23: Creating fallback bmesh function for: {user_request}")
+        
+        # Simple star-shaped geometry as fallback for star bezel request
+        if "star" in user_request.lower():
+            return """def create_custom_component(bm, params):
+    import bmesh
+    import math
+    
+    # Create a star-shaped bezel
+    radius_outer = params.get('radius_outer', 0.006)  # 6mm outer radius
+    radius_inner = params.get('radius_inner', 0.004)  # 4mm inner radius
+    height = params.get('height', 0.002)  # 2mm height
+    points = 5  # 5-pointed star
+    
+    # Create star profile vertices
+    verts = []
+    for i in range(points * 2):  # Outer and inner points
+        angle = (i * math.pi) / points
+        if i % 2 == 0:  # Outer points
+            radius = radius_outer
+        else:  # Inner points
+            radius = radius_inner
+        x = radius * math.cos(angle)
+        y = radius * math.sin(angle)
+        verts.extend([
+            bm.verts.new((x, y, 0)),  # Bottom
+            bm.verts.new((x, y, height))  # Top
+        ])
+    
+    # Create faces to form the star bezel
+    faces = []
+    for i in range(0, len(verts), 2):
+        next_i = (i + 2) % len(verts)
+        # Side face
+        face_verts = [verts[i], verts[i+1], verts[next_i+1], verts[next_i]]
+        faces.append(bm.faces.new(face_verts))
+    
+    bm.faces.ensure_lookup_table()
+    return faces"""
+        
+        # Generic fallback
+        return """def create_custom_component(bm, params):
+    import bmesh
+    import math
+    
+    # Generic cylindrical component
+    radius = params.get('radius', 0.005)
+    height = params.get('height', 0.002)
+    
+    geom = bmesh.ops.create_cylinder(bm, cap_ends=True, radius=radius, depth=height)
+    return geom['verts']"""
+    
     def _create_fallback_blueprint(self, user_prompt: str, user_specs: Dict) -> Dict[str, Any]:
         """Create V22.0 fallback blueprint with construction_plan when LLM is unavailable."""
         
@@ -398,6 +542,31 @@ Respond only with valid JSON, no other text."""
             }
         }
     
+    def _technique_exists(self, operation_name: str) -> bool:
+        """
+        V23 Generative Artisan: Check if a technique exists in the procedural knowledge base.
+        
+        Args:
+            operation_name: The name of the operation to check
+            
+        Returns:
+            True if the technique exists, False if it needs to be dynamically generated
+        """
+        # List of all known techniques in the V24 knowledge base
+        known_techniques = {
+            'create_shank',
+            'create_bezel_setting', 
+            'create_prong_setting',
+            'apply_twist_modifier',
+            'create_pave_setting',
+            'create_tension_setting', 
+            'create_classic_prong_setting'
+        }
+        
+        exists = operation_name in known_techniques
+        logger.info(f"V23: Technique validation for '{operation_name}': {'EXISTS' if exists else 'REQUIRES GENERATION'}")
+        return exists
+    
     def _execute_native_blender_processing(self, blueprint: Dict[str, Any], user_specs: Dict) -> Dict[str, Any]:
         """
         Execute V22.0 dynamic construction plan processing natively within Blender.
@@ -427,6 +596,26 @@ Respond only with valid JSON, no other text."""
             for i, operation in enumerate(construction_plan):
                 operation_name = operation.get('operation', 'unknown')
                 logger.info(f"Operation {i+1}/{len(construction_plan)}: {operation_name}")
+                
+                # V23 Generative Artisan: Check if technique exists in knowledge base
+                if not self._technique_exists(operation_name):
+                    logger.info(f"V23: Technique '{operation_name}' not found in knowledge base")
+                    logger.info("V23: 🧠 Inventing new technique...")
+                    
+                    # Generate dynamic bmesh code for the unknown technique
+                    try:
+                        user_request = f"Create a {operation_name.replace('_', ' ')} component for jewelry design"
+                        component_params = operation.get('parameters', {})
+                        
+                        dynamic_code = self._generate_dynamic_bmesh_code(user_request, component_params)
+                        
+                        # Pass dynamic code to the operation for execution
+                        operation['_v23_dynamic_code'] = dynamic_code
+                        logger.info(f"V23: ✨ Dynamic technique code generated for '{operation_name}'")
+                        
+                    except Exception as e:
+                        logger.error(f"V23: Dynamic code generation failed for '{operation_name}': {e}")
+                        # Continue with standard execution (will use fallback)
                 
                 try:
                     result_object = execute_operation(operation, context_objects)
