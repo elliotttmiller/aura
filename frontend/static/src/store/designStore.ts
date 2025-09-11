@@ -26,6 +26,10 @@ export interface SceneObject {
     roughness: number
     metallic: number
   }
+  // New properties for GLB layers
+  isLayer?: boolean
+  parentModelId?: string
+  meshData?: any // THREE.Mesh reference for GLB layers
 }
 
 export interface DesignSession {
@@ -68,6 +72,11 @@ interface DesignStoreState {
     updateObject: (objectId: string, updates: Partial<SceneObject>) => Promise<void>
     selectObject: (objectId: string | null) => void
     toggleObjectVisibility: (objectId: string) => void
+    
+    // GLB Model management
+    loadGLBModel: (modelPath: string, modelName: string) => void
+    addGLBLayers: (modelId: string, layers: Array<{id: string, name: string, mesh: any}>) => void
+    selectLayer: (layerId: string | null) => void
     
     // AI integration
     executeAIPrompt: (prompt: string) => Promise<void>
@@ -241,6 +250,87 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
       const obj = session.objects.find(o => o.id === objectId)
       if (obj) {
         actions.updateObject(objectId, { visible: !obj.visible })
+      }
+    },
+
+    // Load GLB Model - create a parent model object
+    loadGLBModel: (_modelPath: string, modelName: string) => {
+      const modelId = `model_${Date.now()}`
+      const modelObject: SceneObject = {
+        id: modelId,
+        name: modelName,
+        type: 'glb_model',
+        visible: true,
+        transform: {
+          position: [0, 0, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1]
+        },
+        material: {
+          color: '#ffffff',
+          roughness: 0.5,
+          metallic: 0.5
+        }
+      }
+      
+      set((state) => ({
+        session: {
+          ...state.session,
+          objects: [...state.session.objects, modelObject],
+          lastModified: Date.now()
+        }
+      }))
+      
+      console.log('✅ GLB Model loaded:', modelName)
+    },
+
+    // Add GLB Layers as individual objects
+    addGLBLayers: (modelId: string, layers: Array<{id: string, name: string, mesh: any}>) => {
+      const layerObjects: SceneObject[] = layers.map(layer => ({
+        id: layer.id,
+        name: layer.name,
+        type: 'glb_layer',
+        visible: true,
+        isLayer: true,
+        parentModelId: modelId,
+        meshData: layer.mesh,
+        transform: {
+          position: [0, 0, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1]
+        },
+        material: {
+          color: '#ffffff',
+          roughness: 0.5,
+          metallic: 0.5
+        }
+      }))
+      
+      set((state) => ({
+        session: {
+          ...state.session,
+          objects: [...state.session.objects, ...layerObjects],
+          lastModified: Date.now()
+        }
+      }))
+      
+      console.log('✅ GLB Layers added to scene:', layers.map(l => l.name))
+    },
+
+    // Select layer (same as selectObject but with additional logging for layers)
+    selectLayer: (layerId: string | null) => {
+      const { session } = get()
+      const layer = session.objects.find(obj => obj.id === layerId)
+      
+      set((state) => ({
+        session: {
+          ...state.session,
+          selectedObjectId: layerId
+        }
+      }))
+      
+      if (layer && layer.isLayer) {
+        console.log('🎯 Layer selected in store:', layer.name)
       }
     },
 

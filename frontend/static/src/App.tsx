@@ -20,14 +20,26 @@ function App() {
   useEffect(() => {
     const initialize = async () => {
       try {
-        // Check system health first
-        const healthStatus = await checkSystemHealth()
-        actions.setSystemStatus(healthStatus)
+        // Try to check system health first
+        try {
+          const healthStatus = await checkSystemHealth()
+          actions.setSystemStatus(healthStatus)
+        } catch (error) {
+          console.log('Backend unavailable, running in demo mode')
+          actions.setSystemStatus('error')
+        }
         
-        // Initialize design session
-        await actions.initializeSession()
+        // Try to initialize design session
+        try {
+          await actions.initializeSession()
+        } catch (error) {
+          console.log('Session initialization failed, running in demo mode')
+        }
         
-        console.log('✅ Aura Sentient Design Studio initialized')
+        // Load the diamond ring example model for demonstration (works without backend)
+        actions.loadGLBModel('/3d_models/diamond_ring_example.glb', 'Diamond Ring Example')
+        
+        console.log('✅ Aura Sentient Design Studio initialized (demo mode)')
       } catch (error) {
         console.error('Failed to initialize application:', error)
         actions.setSystemStatus('error')
@@ -88,6 +100,8 @@ function App() {
         objects={session.objects}
         selectedObjectId={session.selectedObjectId}
         onObjectSelect={actions.selectObject}
+        onLayerSelect={actions.selectLayer}
+        onGLBLayersDetected={actions.addGLBLayers}
         isGenerating={system.isGenerating}
       />
 
