@@ -5,7 +5,7 @@ from backend.backend import check_dependencies
 from .settings import install_settings, uninstall_settings
 from .backend.preferences import AddonPreferences, install_preferences, uninstall_preferences
 from .frontend.tool_panel import ChatPanel, GenerateOperator, ModalOperator, ToggleSidebarOperator, SwitchParadigmOperator
-from .backend.operators import SentientOperator
+from .backend.ui_operators import AURA_OT_ai_jewelry_designer
 
 
 ALL_CLASSES = [
@@ -15,19 +15,19 @@ ALL_CLASSES = [
     ModalOperator,
     ToggleSidebarOperator,
     SwitchParadigmOperator,
-    SentientOperator,
+    AURA_OT_ai_jewelry_designer,
 ]
 
 def create_design_workspace():
     """
-    V32 Pillar 1: Forging the "Unified Studio" Multi-Paradigm Experience
+    V36 Universal Artisan: Create the "AI Jewelry Designer" workspace
     
-    Create the dedicated "Aura" workspace optimized for multi-paradigm design.
-    - Clean, focused UI with tabbed paradigm switching
-    - Leave only 3D Viewport and unified Design sidebar  
-    - Optimized for seamless NURBS/Mesh paradigm transitions
+    Create the dedicated professional workspace optimized for AI jewelry design.
+    - Clean, focused UI with professional jewelry design tools
+    - Leave only 3D Viewport and AI Jewelry Designer sidebar  
+    - Optimized for seamless AI-driven jewelry creation workflow
     """
-    print("V32: Creating Unified Studio multi-paradigm workspace...")
+    print("V36: Creating AI Jewelry Designer professional workspace...")
     
     # Create new workspace named "Aura" as specified
     workspace_name = "Aura"
@@ -37,7 +37,7 @@ def create_design_workspace():
         # Get the first screen from the workspace
         screen = workspace.screens[0]
         
-        # V32 Enhancement: Create clean, multi-paradigm focused layout
+        # V36 Enhancement: Create clean, professional jewelry design layout
         # Clear all existing areas and create single 3D viewport
         for area in screen.areas:
             area.type = 'VIEW_3D'
@@ -45,25 +45,25 @@ def create_design_workspace():
         # Set workspace as active to configure
         bpy.context.window.workspace = workspace
         
-        # V32 Multi-Paradigm Mode: Configure 3D viewport for optimal design experience
+        # V36 Professional Mode: Configure 3D viewport for optimal jewelry design
         for area in bpy.context.screen.areas:
             if area.type == 'VIEW_3D':
                 for space in area.spaces:
                     if space.type == 'VIEW_3D':
-                        # Show the "Design" sidebar (region_ui) 
+                        # Show the professional AI Jewelry Designer sidebar
                         space.show_region_ui = True
                         
-                        # V32 Enhancement: Optimal shading for multi-paradigm work
+                        # V36 Enhancement: Optimal shading for jewelry visualization
                         space.shading.type = 'MATERIAL' 
                         space.shading.use_scene_lights_render = True
                         space.shading.use_scene_world_render = True
                         
-                        # V32 Enhancement: Hide non-essential UI elements for paradigm focus
+                        # V36 Enhancement: Hide non-essential UI for professional focus
                         space.show_region_header = True  # Keep header for essential controls
                         space.show_region_toolbar = False  # Hide tool toolbar for clean experience
-                        space.show_region_hud = False  # Hide HUD for minimalism
+                        space.show_region_hud = False  # Hide HUD for professional minimalism
                         
-                        # V32 Enhancement: Ensure Aura sidebar is visible and selected
+                        # V36 Enhancement: Ensure Aura sidebar is visible and selected
                         for region in area.regions:
                             if region.type == 'UI':
                                 # The sidebar will default to the Aura category due to bl_category = 'Aura'
@@ -73,14 +73,14 @@ def create_design_workspace():
     
     # Set Aura workspace as active (this becomes the default)
     bpy.context.window.workspace = bpy.data.workspaces[workspace_name]
-    print("V32: Unified Studio workspace created and activated - Multi-paradigm design experience ready")
+    print("V36: AI Jewelry Designer workspace created and activated - Professional jewelry design experience ready")
 
 def install():
-    print("Installing Aura V22 Verifiable Artisan...")
+    print("Installing V36 Universal Artisan...")
     
     # Perform dependency check
     if not check_dependencies(report_error=False):
-        print("Aura V22 Warning: Critical dependencies not found. Some AI features may be disabled.")
+        print("V36 Universal Artisan Warning: Critical dependencies not found. Some AI features may be disabled.")
 
     install_settings()
     install_preferences()
@@ -89,13 +89,13 @@ def install():
     for cls in ALL_CLASSES:
         bpy.utils.register_class(cls)
     
-    # V22 Pillar 1: Create the "Aura Mode" immersive workspace
+    # V36: Create the professional AI Jewelry Designer workspace
     bpy.app.timers.register(create_design_workspace, first_interval=0.1)
     
-    print("Aura V22 Verifiable Artisan installed successfully")
+    print("V36 Universal Artisan installed successfully")
 
 def uninstall():
-    print("Uninstalling Aura V22 Verifiable Artisan...")
+    print("Uninstalling V36 Universal Artisan...")
     
     # Unregister classes in reverse order
     for cls in reversed(ALL_CLASSES):
@@ -109,4 +109,4 @@ def uninstall():
     if workspace_name in bpy.data.workspaces:
         bpy.data.workspaces.remove(bpy.data.workspaces[workspace_name])
     
-    print("Aura V22 Verifiable Artisan uninstalled successfully")
+    print("V36 Universal Artisan uninstalled successfully")

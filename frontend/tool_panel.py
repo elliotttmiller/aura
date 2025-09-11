@@ -1,11 +1,12 @@
 """
-V22 Verifiable Artisan - Native Chat Interface
-===========================================
+V36 Universal Artisan - Professional AI Jewelry Designer Interface
+================================================================
 
-Modern AI chat sidebar interface for real-time cognitive streaming.
-This provides a native Blender experience with live AI thought process visualization.
+Professional AI-powered jewelry design interface with real-time cognitive streaming.
+This provides a native Blender experience with live AI art director visualization
+and complete professional jewelry creation workflow.
 
-Implements Protocol 3: Architectural Purity (The Native Imperative)
+Implements Protocol 16: The Universal Architecture Mandate (Professional domain naming)
 Implements Protocol 1: Sentient Transparency (Live cognitive streaming)
 """
 
@@ -20,23 +21,23 @@ logger = logging.getLogger(__name__)
 
 class ChatPanel(bpy.types.Panel):
     """
-    V32 Unified Design Studio - Master Control Room
+    V36 Universal Artisan - AI Jewelry Designer Interface
     
-    Multi-paradigm interface supporting both NURBS precision and Mesh artistry.
-    Features tabbed interface switching between Rhino (NURBS) and Blender (Mesh)
-    paradigms, with unified AI chat and collapsible sidebar functionality.
+    Professional AI jewelry design interface providing complete workflow from
+    natural language description to manufacturing-ready deliverables.
+    Features unified AI art director with presentation planning and professional
+    export package generation.
     
-    Implements Protocol 13: The Unified Studio Doctrine (Master Control Room)
-    Implements Protocol 14: AI as Multi-Paradigm Architect (Strategic Delegation)
+    Implements Protocol 16: The Universal Architecture Mandate (Professional domain interface)
     """
     
-    bl_label = "🔮 Aura V32 Unified Design Studio"
-    bl_idname = "DESIGN_PT_ChatPanel"
+    bl_label = "🎨 AI Jewelry Designer"
+    bl_idname = "DESIGN_PT_ai_jewelry_designer"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'Aura'
     bl_order = 0
-    bl_description = "V32 Unified Design Studio - Multi-paradigm Master Control Room with NURBS precision and Mesh artistry"
+    bl_description = "V36 Universal Artisan - Professional AI Jewelry Designer with complete workflow automation"
     
     def draw(self, context):
         layout = self.layout
@@ -57,13 +58,13 @@ class ChatPanel(bpy.types.Panel):
             collapse_op.action = 'COLLAPSE'
             header_row.label(text="🔮 Aura V32 Unified Design Studio", icon='TOOL_SETTINGS')
         
-        # V32 Enhanced status with multi-paradigm awareness
+        # V36 Enhanced status with AI art director awareness
         if settings.is_processing:
-            status_text = f"🧠 Processing ({settings.active_paradigm_tab} Engine)..."
+            status_text = f"🧠 AI Art Director Working..."
             status_icon = 'TIME'
             header_box.alert = True
         else:
-            status_text = "✅ Ready for Multi-Paradigm Design"
+            status_text = "✅ Ready for AI Jewelry Design"
             status_icon = 'CHECKMARK'
             header_box.alert = False
         
@@ -72,10 +73,10 @@ class ChatPanel(bpy.types.Panel):
         
         # Start/Stop Design Operator check
         if not self._is_design_operator_running(context):
-            activate_op = layout.operator("design.sentient_operator", text="🔮 Activate V32 Multi-Paradigm Studio", icon='PLAY')
-            activate_op.bl_description = "Start the V32 Unified Design Studio for multi-paradigm collaboration"
+            activate_op = layout.operator("aura.ai_jewelry_designer", text="🎨 Activate AI Jewelry Designer", icon='PLAY')
+            activate_op.bl_description = "Start the V36 Universal Artisan for professional jewelry design"
             layout.separator()
-            layout.label(text="💡 Activate to begin multi-paradigm design collaboration", icon='INFO')
+            layout.label(text="💎 Activate to begin AI-powered jewelry creation", icon='INFO')
             return
 
         # V32 TABBED INTERFACE - The Core Innovation
