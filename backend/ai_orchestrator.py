@@ -1,22 +1,25 @@
 """
-V25.0 Hyperrealistic AI Jewelry Design Master Orchestrator
-==========================================================
+V36 Universal Artisan - AI Orchestrator
+=======================================
 
-Revolutionary upgrade to V24 autonomous system, now featuring state-of-the-art
-hyperrealistic AI jewelry generation with industry-leading quality and fine
-detail capability including engravings, filigree, and complex patterns.
+The definitive AI orchestration system that serves as the "Sentient Art Director"
+for the V36 Universal Artisan. This module coordinates all AI decision-making,
+construction planning, and presentation planning with state-of-the-art intelligence.
 
-V25.0 Hyperrealistic Achievements:
-- Advanced AI generation pipeline replacing basic Shap-E with cutting-edge techniques
-- Hyperrealistic detail generation (engravings, filigree, complex surface patterns)
-- Professional material systems with PBR workflows for jewelry-grade rendering
-- Manufacturing validation and quality control for production-ready output
-- Complete autonomous integration maintaining all V24 capabilities
+V36 Universal Artisan Capabilities:
+- Advanced JSON Master Blueprint generation with presentation planning
+- Intelligent construction sequence orchestration
+- Hyper-realistic presentation planning and material specification
+- Autonomous error handling and graceful degradation
+- Professional domain terminology with universal internal architecture
 
-The system now operates as a world-class jewelry design AI that rivals
-professional jewelry designers while maintaining complete autonomous operation.
+The AI orchestrator operates as a world-class jewelry design intelligence that
+rivals professional designers while maintaining complete transparency and
+professional terminology standards.
 
-Implements all 11 Core Protocols with hyperrealistic focus.
+Implements Protocol 16: The Universal Architecture Mandate
+- Universal engineering role naming for modules
+- Professional domain-specific naming for user-facing functions
 """
 
 import os
@@ -40,13 +43,13 @@ except ImportError:
 # Setup logging
 logger = logging.getLogger(__name__)
 
-class HyperrealisticOrchestrator:
-    """V25 Hyperrealistic AI Jewelry Design Master Orchestrator."""
+class AiOrchestrator:
+    """V36 Universal Artisan AI Orchestrator - The Sentient Art Director."""
     
     def __init__(self):
         self.addon_root = self._get_addon_root()
         
-        # V25 Enhanced directory setup with hyperrealistic capabilities
+        # V36 Enhanced directory setup with universal architecture
         if CONFIG_AVAILABLE:
             self.output_dir = os.path.join(self.addon_root, config.get('OUTPUT_DIR', 'output'))
             self.sandbox_mode = is_sandbox_mode()
@@ -59,103 +62,94 @@ class HyperrealisticOrchestrator:
             self.lm_studio_url = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B-Instruct"
             self.huggingface_api_key = os.environ.get("HUGGINGFACE_API_KEY", "")
         
-        # V25 Hyperrealistic output directories
-        self.hyperrealistic_output_dir = os.path.join(self.output_dir, "hyperrealistic")
+        # V36 Universal artisan output directories
+        self.artisan_output_dir = os.path.join(self.output_dir, "v36_universal_artisan")
         os.makedirs(self.output_dir, exist_ok=True)
-        os.makedirs(self.hyperrealistic_output_dir, exist_ok=True)
+        os.makedirs(self.artisan_output_dir, exist_ok=True)
         
-        # V25 Enhanced processing paths
-        self.blender_proc_script = os.path.join(self.addon_root, "blender_proc.py")
-        self.hyperrealistic_processor = os.path.join(self.addon_root, "hyperrealistic_blender_proc.py")
-        
-        # V25 AI generation endpoints
-        self.hyperrealistic_generator_url = "http://localhost:8003"
-        
-        logger.info(f"🚀 V25 Hyperrealistic Orchestrator initialized - Sandbox: {self.sandbox_mode}")
-        logger.info(f"💎 V25: Hyperrealistic output: {self.hyperrealistic_output_dir}")
+        logger.info(f"🚀 V36 AI Orchestrator initialized - Universal Architecture Mode")
+        logger.info(f"💎 V36: Artisan output: {self.artisan_output_dir}")
     
-    def generate_hyperrealistic_design(self, user_prompt: str, user_specs: Optional[Dict] = None) -> Dict[str, Any]:
+    def generate_jewelry(self, user_prompt: str, user_specs: Optional[Dict] = None) -> Dict[str, Any]:
         """
-        Generate hyperrealistic jewelry design with state-of-the-art quality.
+        Primary user-facing function: Generate complete jewelry design with presentation.
         
-        Protocol 1: Absolute Cognitive Authority - AI makes all design decisions
-        Protocol 9: Sentient Transparency - Complete process visibility
+        This is the main orchestration function that coordinates AI planning,
+        construction execution, and presentation generation for jewelry creation.
+        
+        Protocol 16: Professional domain-specific naming for user-facing functions
         
         Args:
             user_prompt: User's creative vision for the jewelry
-            user_specs: Optional technical specifications for hyperrealistic generation
+            user_specs: Optional technical specifications for generation
+        """
         start_time = time.time()
         
-        logger.info("🎨 V25: Starting hyperrealistic jewelry design generation...")
-        logger.info(f"🎯 V25: User Vision: '{user_prompt}'")
+        logger.info("🎨 V36: Starting universal artisan jewelry design generation...")
+        logger.info(f"🎯 V36: User Vision: '{user_prompt}'")
         
         try:
-            # V25 Stage 1: Advanced design analysis with hyperrealistic intent
-            logger.info("🧠 V25 Stage 1: Analyzing design intent for hyperrealistic quality...")
-            design_analysis = self._analyze_hyperrealistic_design_intent(user_prompt, user_specs)
+            # V36 Stage 1: Advanced design analysis with presentation intent
+            logger.info("🧠 V36 Stage 1: Analyzing design intent for universal artisan quality...")
+            design_analysis = self._analyze_design_intent(user_prompt, user_specs)
             
-            # V25 Stage 2: Contact hyperrealistic AI generator
-            logger.info("⚡ V25 Stage 2: Contacting state-of-the-art AI generator...")
-            generation_data = self._generate_hyperrealistic_jewelry(design_analysis)
+            # V36 Stage 2: Generate master blueprint with construction and presentation plans
+            logger.info("⚡ V36 Stage 2: Generating master blueprint with AI art director...")
+            master_blueprint = self._generate_master_blueprint(user_prompt, user_specs or {})
             
-            # V25 Stage 3: Process with hyperrealistic Blender engine
-            logger.info("🔧 V25 Stage 3: Processing with hyperrealistic Blender engine...")
-            blender_results = self._process_with_hyperrealistic_blender(generation_data)
+            # V36 Stage 3: Execute with unified execution engine
+            logger.info("🔧 V36 Stage 3: Executing with unified execution engine...")
+            execution_results = self._execute_with_unified_engine(master_blueprint, design_analysis)
             
-            # V25 Stage 4: Quality validation and manufacturing analysis
-            logger.info("🔍 V25 Stage 4: Validating hyperrealistic quality...")
-            quality_report = self._validate_hyperrealistic_quality(blender_results)
-            
-            # V25 Stage 5: Final assembly and documentation
-            logger.info("📦 V25 Stage 5: Assembling hyperrealistic output...")
-            final_results = self._assemble_hyperrealistic_output(
-                design_analysis, generation_data, blender_results, quality_report
+            # V36 Stage 4: Final assembly and professional packaging
+            logger.info("📦 V36 Stage 4: Assembling universal artisan output...")
+            final_results = self._assemble_artisan_output(
+                design_analysis, master_blueprint, execution_results
             )
             
             processing_time = time.time() - start_time
             
-            logger.info(f"✅ V25: Hyperrealistic design completed in {processing_time:.2f}s")
-            logger.info(f"🎯 V25: Quality Score: {quality_report.get('overall_score', 0.0):.2f}")
+            logger.info(f"✅ V36: Universal artisan design completed in {processing_time:.2f}s")
+            logger.info(f"🎯 V36: Professional package: {final_results.get('package_path', 'N/A')}")
             
             return {
                 "success": True,
-                "version": "V25.0_Hyperrealistic",
+                "version": "V36.0_Universal_Artisan",
                 "processing_time": processing_time,
                 "user_prompt": user_prompt,
                 "design_analysis": design_analysis,
-                "generation_data": generation_data,
-                "blender_results": blender_results,
-                "quality_report": quality_report,
+                "master_blueprint": master_blueprint,
+                "execution_results": execution_results,
                 "final_results": final_results
             }
             
         except Exception as e:
             processing_time = time.time() - start_time
-            logger.error(f"❌ V25: Hyperrealistic generation failed: {e}")
+            logger.error(f"❌ V36: Universal artisan generation failed: {e}")
             
-            # Protocol 1: Autonomous error handling with detailed feedback
+            # Protocol 16: Autonomous error handling with professional feedback
             return {
                 "success": False,
-                "version": "V25.0_Hyperrealistic",
+                "version": "V36.0_Universal_Artisan",
                 "processing_time": processing_time,
                 "user_prompt": user_prompt,
-                "error": f"V25 Autonomous Decision: Hyperrealistic generation encountered: {str(e)}",
+                "error": f"V36 Autonomous Decision: Universal artisan generation encountered: {str(e)}",
                 "recommendations": [
-                    "Try simplifying the design request",
-                    "Ensure all services are running",
-                    "Check manufacturing constraints"
+                    "Simplify the design request for better processing",
+                    "Verify all system services are operational", 
+                    "Check professional manufacturing constraints"
                 ]
             }
     
-    def _analyze_hyperrealistic_design_intent(self, user_prompt: str, user_specs: Optional[Dict] = None) -> Dict[str, Any]:
+    def _analyze_design_intent(self, user_prompt: str, user_specs: Optional[Dict] = None) -> Dict[str, Any]:
         """
-        Advanced analysis of design intent for hyperrealistic generation.
+        Advanced analysis of design intent for universal artisan generation.
         
-        Protocol 10: Dynamic analysis tool creation based on prompt complexity
+        Protocol 16: Universal terminology for internal logic processing
         """
-        logger.info("🧠 V25: Performing advanced hyperrealistic design analysis...")
+        logger.info("🧠 V36: Performing advanced design analysis...")
         
-        # Parse user specifications with hyperrealistic defaults
+        # Parse user specifications with professional defaults
         specs = user_specs or {}
         
         design_analysis = {
@@ -164,20 +158,139 @@ class HyperrealisticOrchestrator:
             "material_type": specs.get("material", self._detect_material_type(user_prompt)),
             "detail_level": specs.get("detail_level", self._determine_detail_level(user_prompt)),
             "style_classification": self._classify_design_style(user_prompt),
-            "hyperrealistic_requirements": {
+            "design_requirements": {
                 "engravings": self._detect_engraving_requirements(user_prompt),
-                "filigree": self._detect_filigree_requirements(user_prompt),
+                "surface_treatments": self._detect_surface_treatments(user_prompt),
                 "gemstone_settings": self._detect_gemstone_requirements(user_prompt),
-                "surface_textures": self._detect_surface_texture_requirements(user_prompt)
+                "geometric_features": self._detect_geometric_features(user_prompt)
             },
             "manufacturing_constraints": specs.get("manufacturing", {}),
-            "quality_target": "hyperrealistic_professional"
+            "quality_target": "universal_artisan_professional"
         }
         
-        logger.info(f"📋 V25: Design analysis completed - {design_analysis['jewelry_type']} in {design_analysis['material_type']}")
-        logger.info(f"🎯 V25: Detail level: {design_analysis['detail_level']}, Style: {design_analysis['style_classification']}")
+        logger.info(f"📋 V36: Design analysis completed - {design_analysis['jewelry_type']} in {design_analysis['material_type']}")
+        logger.info(f"🎯 V36: Detail level: {design_analysis['detail_level']}, Style: {design_analysis['style_classification']}")
         
         return design_analysis
+    
+    def _execute_with_unified_engine(self, master_blueprint: Dict, design_analysis: Dict) -> Dict[str, Any]:
+        """
+        Execute jewelry creation with the unified execution engine.
+        
+        Protocol 16: Universal architecture with professional domain integration
+        """
+        logger.info("🔧 V36: Executing with unified execution engine...")
+        
+        try:
+            # Import the unified execution engine
+            from .execution_engine import UnifiedExecutionEngine
+            
+            # Initialize the execution engine
+            execution_engine = UnifiedExecutionEngine()
+            
+            # Extract plans from blueprint
+            construction_plan = master_blueprint.get('construction_plan', [])
+            presentation_plan = master_blueprint.get('presentation_plan', {})
+            
+            # Generate output path
+            timestamp = int(time.time())
+            output_path = os.path.join(
+                self.artisan_output_dir, 
+                f"v36_universal_artisan_{timestamp}.zip"
+            )
+            
+            # Execute jewelry generation
+            execution_results = execution_engine.generate_jewelry(
+                construction_plan, presentation_plan, output_path
+            )
+            
+            logger.info("✅ V36: Unified execution engine completed successfully")
+            return execution_results
+            
+        except Exception as e:
+            logger.error(f"❌ V36: Unified execution engine failed: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'fallback_mode': True
+            }
+    
+    def _assemble_artisan_output(self, design_analysis: Dict, master_blueprint: Dict, 
+                                execution_results: Dict) -> Dict[str, Any]:
+        """
+        Assemble final universal artisan output with professional documentation.
+        
+        Protocol 16: Professional domain-specific result compilation
+        """
+        logger.info("📦 V36: Assembling universal artisan output...")
+        
+        # Compile comprehensive results
+        final_results = {
+            "artisan_version": "V36.0_Universal_Artisan",
+            "design_analysis": design_analysis,
+            "master_blueprint": master_blueprint,
+            "execution_results": execution_results,
+            "professional_documentation": self._generate_artisan_documentation(
+                design_analysis, master_blueprint, execution_results
+            ),
+            "quality_metrics": self._calculate_quality_metrics(execution_results),
+            "package_path": execution_results.get('package_path'),
+            "manufacturing_ready": execution_results.get('success', False)
+        }
+        
+        logger.info(f"✅ V36: Universal artisan output assembled successfully")
+        return final_results
+    
+    def _generate_artisan_documentation(self, design_analysis: Dict, master_blueprint: Dict, 
+                                       execution_results: Dict) -> Dict[str, Any]:
+        """Generate comprehensive professional documentation."""
+        
+        return {
+            "project_summary": {
+                "user_request": design_analysis["user_prompt"],
+                "jewelry_type": design_analysis["jewelry_type"],
+                "material": design_analysis["material_type"],
+                "style": design_analysis["style_classification"]
+            },
+            "construction_summary": {
+                "total_operations": len(master_blueprint.get('construction_plan', [])),
+                "ai_reasoning": master_blueprint.get('reasoning', 'No reasoning provided'),
+                "execution_time": execution_results.get('execution_time', 0)
+            },
+            "presentation_summary": {
+                "render_environment": master_blueprint.get('presentation_plan', {}).get('render_environment', 'Standard'),
+                "material_style": master_blueprint.get('presentation_plan', {}).get('material_style', 'Professional'),
+                "camera_effects": master_blueprint.get('presentation_plan', {}).get('camera_effects', {})
+            },
+            "deliverables": {
+                "renders": execution_results.get('renders', {}),
+                "animation": execution_results.get('animation'),
+                "manufacturing_files": execution_results.get('manufacturing_files', {})
+            }
+        }
+    
+    def _calculate_quality_metrics(self, execution_results: Dict) -> Dict[str, Any]:
+        """Calculate comprehensive quality metrics for the generated design."""
+        
+        base_score = 0.9 if execution_results.get('success', False) else 0.3
+        
+        # Adjust based on deliverables
+        render_count = len(execution_results.get('renders', {}))
+        if render_count >= 4:
+            base_score += 0.05
+        
+        if execution_results.get('animation'):
+            base_score += 0.03
+        
+        if execution_results.get('manufacturing_files'):
+            base_score += 0.02
+        
+        return {
+            "overall_score": min(base_score, 1.0),
+            "render_quality": "4K Professional" if render_count >= 3 else "Standard",
+            "animation_quality": "Turntable Available" if execution_results.get('animation') else "Not Generated",
+            "manufacturing_readiness": "Production Ready" if execution_results.get('manufacturing_files') else "Requires Processing"
+        }
     
     def _detect_jewelry_type(self, prompt: str) -> str:
         """Detect jewelry type from prompt with advanced classification."""
@@ -271,6 +384,10 @@ class HyperrealisticOrchestrator:
         
         return engravings
     
+    def _get_addon_root(self) -> str:
+        """Get the root directory of the addon."""
+        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    
     def _detect_filigree_requirements(self, prompt: str) -> bool:
         """Detect if filigree work is required."""
         prompt_lower = prompt.lower()
@@ -315,23 +432,42 @@ class HyperrealisticOrchestrator:
         
         return gemstone_info
     
-    def _detect_surface_texture_requirements(self, prompt: str) -> List[str]:
-        """Detect surface texture requirements."""
+    def _detect_surface_treatments(self, prompt: str) -> List[str]:
+        """Detect surface treatment requirements."""
         prompt_lower = prompt.lower()
-        textures = []
+        treatments = []
         
-        texture_keywords = {
+        treatment_keywords = {
             "brushed": ["brushed", "matte"],
             "hammered": ["hammered", "textured"],
             "polished": ["polished", "mirror", "shiny"],
-            "sandblasted": ["sandblasted", "frosted"]
+            "sandblasted": ["sandblasted", "frosted"],
+            "organic_displacement": ["organic", "vine", "floral", "natural"]
         }
         
-        for texture, keywords in texture_keywords.items():
+        for treatment, keywords in treatment_keywords.items():
             if any(keyword in prompt_lower for keyword in keywords):
-                textures.append(texture)
+                treatments.append(treatment)
         
-        return textures
+        return treatments
+    
+    def _detect_geometric_features(self, prompt: str) -> List[str]:
+        """Detect geometric feature requirements."""
+        prompt_lower = prompt.lower()
+        features = []
+        
+        feature_keywords = {
+            "twist": ["twist", "spiral", "helix"],
+            "taper": ["taper", "graduating"],
+            "split_shank": ["split", "divided"],
+            "bypass": ["bypass", "wrap"]
+        }
+        
+        for feature, keywords in feature_keywords.items():
+            if any(keyword in prompt_lower for keyword in keywords):
+                features.append(feature)
+        
+        return features
     
     def _generate_hyperrealistic_jewelry(self, design_analysis: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -371,42 +507,6 @@ class HyperrealisticOrchestrator:
         except requests.exceptions.RequestException as e:
             logger.warning(f"⚠️ V25: Generator service unavailable: {e}")
             return self._fallback_hyperrealistic_generation(design_analysis)
-            
-        Returns:
-            Result dictionary with success status and details
-        """
-        try:
-            logger.info(f"Starting design generation for: {user_prompt}")
-            
-            # Use default specs if none provided
-            if user_specs is None:
-                user_specs = {
-                    'ring_size': 7.0,
-                    'stone_carat': 1.0,
-                    'stone_shape': 'ROUND',
-                    'metal': 'GOLD'
-                }
-            
-            # Stage 1: Generate Master Blueprint
-            blueprint = self._generate_master_blueprint(user_prompt, user_specs)
-            
-            # Stage 2: Execute in Blender directly (native mode)
-            result = self._execute_native_blender_processing(blueprint, user_specs)
-            
-            return {
-                'success': True,
-                'blueprint': blueprint,
-                'object_name': result.get('object_name'),
-                'shape_key_name': result.get('shape_key_name'),
-                'message': 'Design generated successfully'
-            }
-            
-        except Exception as e:
-            logger.error(f"Design generation failed: {e}")
-            return {
-                'success': False,
-                'error': str(e)
-            }
     
     def refine_design(self, refinement_prompt: str) -> Dict[str, Any]:
         """
@@ -423,7 +523,7 @@ class HyperrealisticOrchestrator:
             
             # For now, treat refinement as a new design with the prompt
             # In full implementation, this would analyze existing geometry
-            return self.generate_design(f"Refined design: {refinement_prompt}")
+            return self.generate_jewelry(f"Refined design: {refinement_prompt}")
             
         except Exception as e:
             logger.error(f"Design refinement failed: {e}")
@@ -433,22 +533,25 @@ class HyperrealisticOrchestrator:
             }
     
     def _generate_master_blueprint(self, user_prompt: str, user_specs: Dict) -> Dict[str, Any]:
-        """Generate V22.0 Master Blueprint with dynamic construction_plan using Llama 3.1."""
+        """Generate V36 Master Blueprint with dynamic construction_plan and presentation_plan using AI."""
         
-        # V22.0 Revolutionary Master Blueprint Prompt with dynamic construction_plan
-        master_blueprint_prompt = f"""You are a world-class master artisan and system architect. Generate a JSON Master Blueprint with a DYNAMIC CONSTRUCTION PLAN for the following request.
+        # V36 Revolutionary Master Blueprint Prompt with presentation planning
+        master_blueprint_prompt = f"""You are a world-class master artisan, AI art director, and system architect. Generate a JSON Master Blueprint with BOTH a construction plan AND a presentation plan for the following jewelry design request.
 
-The construction_plan must be a LIST OF OPERATIONS that will be executed sequentially. Each operation calls a function from the procedural knowledge base.
+The blueprint must include:
+1. A CONSTRUCTION PLAN - sequential operations for creating the jewelry
+2. A PRESENTATION PLAN - comprehensive visual presentation specifications
 
-Available operations and their parameters:
+Available construction operations:
 - create_shank: profile_shape, thickness_mm, diameter_mm, taper_factor
 - create_bezel_setting: bezel_height_mm, bezel_thickness_mm, feature_diameter_mm, setting_position
 - create_prong_setting: prong_count, prong_thickness_mm, prong_height_mm, prong_placement_radius_mm, prong_taper
 - apply_twist_modifier: twist_angle_degrees, twist_axis, twist_limits
+- apply_procedural_displacement: pattern_type, displacement_strength, detail_scale
 
-Required V22.0 JSON Master Blueprint schema:
+Required V36 JSON Master Blueprint schema:
 {{
-  "reasoning": "Step-by-step explanation of the design approach and construction sequence",
+  "reasoning": "My strategic plan for both construction and final presentation.",
   "construction_plan": [
     {{
       "operation": "create_shank",
@@ -468,16 +571,17 @@ Required V22.0 JSON Master Blueprint schema:
         "prong_placement_radius_mm": 3.0,
         "prong_taper": 0.2
       }}
-    }},
-    {{
-      "operation": "apply_twist_modifier",
-      "parameters": {{
-        "twist_angle_degrees": 15,
-        "twist_axis": "Z",
-        "twist_limits": [0.0, 1.0]
-      }}
     }}
   ],
+  "presentation_plan": {{
+    "material_style": "Pristine Studio Polish",
+    "metal_type": "gold",
+    "render_environment": "Minimalist Black Pedestal",
+    "camera_effects": {{
+      "use_depth_of_field": true,
+      "focus_point": "the center stone"
+    }}
+  }},
   "material_specifications": {{
     "primary_material": "GOLD" | "SILVER" | "PLATINUM",
     "finish": "POLISHED" | "MATTE" | "BRUSHED"
@@ -491,8 +595,7 @@ SPECIFICATIONS:
 - Feature Shape: {user_specs.get('stone_shape', 'ROUND')}
 - Feature Scale: {user_specs.get('stone_carat', 1.0)}
 
-Generate a construction_plan with 2-4 operations that will create the requested design. 
-Each operation must use the exact function names and parameter structures listed above.
+Generate a complete blueprint with both construction_plan (2-4 operations) and presentation_plan for professional jewelry creation and visualization.
 Respond only with valid JSON, no other text."""
 
         try:
@@ -1138,4 +1241,5 @@ def _fallback_hyperrealistic_generation(self, design_analysis: Dict[str, Any]) -
 HyperrealisticOrchestrator._fallback_hyperrealistic_generation = _fallback_hyperrealistic_generation
 
 # For backward compatibility, alias the new class
-Orchestrator = HyperrealisticOrchestrator
+Orchestrator = AiOrchestrator
+HyperrealisticOrchestrator = AiOrchestrator

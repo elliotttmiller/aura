@@ -1,19 +1,23 @@
 """
-V22 Verifiable Artisan - Master Modal Operator
-===========================================
+V36 Universal Artisan - UI Operators
+====================================
+
+Professional UI operators for the V36 Universal Artisan system following
+the definitive naming doctrine with clean, domain-specific terminology.
 
 Pillar 2: Architecting the Live Cognitive & Animation Engine
-
 The core asynchronous modal operator that manages the AI conversation 
 and real-time 3D updates with smooth Shape Key transitions.
 
-Key V22 Features:
+Key V36 Features:
 - Real-Time Cognitive Streaming: Live updates of AI's multi-step thought process  
 - State-of-the-Art Shape Key Transitions: Smooth animations from 0 to 1
 - Asynchronous Supremacy: Non-blocking responsive interface
+- Professional Domain Terminology: "AI Jewelry Designer" interface naming
 
-Implements Protocol 4: Asynchronous Supremacy (The Non-Blocking Mandate)
-Implements Protocol 1: Sentient Transparency (Complete process visibility)
+Implements Protocol 16: The Universal Architecture Mandate
+- Universal engineering role naming for modules (ui_operators.py)
+- Professional domain-specific naming for UI elements ("AI Jewelry Designer")
 """
 
 import bpy
@@ -24,22 +28,23 @@ import json
 import logging
 from typing import Dict, Any, Optional
 
-from .backend.orchestrator import Orchestrator
+from .ai_orchestrator import AiOrchestrator
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class SentientOperator(bpy.types.Operator):
-    """V32 Master Modal Operator for Multi-Paradigm Design Studio."""
+class AURA_OT_ai_jewelry_designer(bpy.types.Operator):
+    """V36 Universal Artisan AI Jewelry Designer Operator."""
     
-    bl_idname = "design.sentient_operator"
-    bl_label = "V32 Multi-Paradigm Studio Operator"
-    bl_description = "Master asynchronous operator for multi-paradigm NURBS and Mesh collaboration"
+    bl_idname = "aura.ai_jewelry_designer"
+    bl_label = "AI Jewelry Designer"
+    bl_description = "Professional AI-powered jewelry design with universal artisan quality"
+    bl_category = "Aura"
     
     def __init__(self):
-        self.orchestrator = None
+        self.ai_orchestrator = None
         self.worker_thread = None
         self.message_queue = queue.Queue()
         self.is_running = False
@@ -47,43 +52,39 @@ class SentientOperator(bpy.types.Operator):
         self.current_shape_key_animation = None
         
     def execute(self, context):
-        """Start the V32 Multi-Paradigm Studio in modal mode."""
-        logger.info("🔮 V32 Multi-Paradigm Studio: Starting modal operation")
+        """Start the V36 AI Jewelry Designer in modal mode."""
+        logger.info("=== V36 AI JEWELRY DESIGNER ACTIVATED ===")
         
-        # Initialize orchestrator
+        # Initialize V36 AI Orchestrator
         try:
-            from .orchestrator import HyperrealisticOrchestrator
-            from .v31_symbiotic_orchestrator import create_v32_orchestrator
-            
-            # Try V32 orchestrator first, fallback to legacy
-            try:
-                self.orchestrator = create_v32_orchestrator()
-                logger.info("✅ V32 Multi-Paradigm Orchestrator initialized")
-            except:
-                self.orchestrator = HyperrealisticOrchestrator()
-                logger.info("⚠️ Using legacy orchestrator as fallback")
+            if not self.ai_orchestrator:
+                self.ai_orchestrator = AiOrchestrator()
+                logger.info("✅ V36 AI Orchestrator initialized - Universal Artisan ready")
                 
         except ImportError as e:
-            logger.error(f"Failed to initialize orchestrator: {e}")
-            # Create a basic orchestrator fallback
-            self.orchestrator = None
+            logger.error(f"Failed to initialize AI Orchestrator: {e}")
+            self.report({'ERROR'}, f"AI Jewelry Designer initialization failed: {e}")
+            return {'CANCELLED'}
         
         # Start modal operation
         context.window_manager.modal_handler_add(self)
         self.is_running = True
         
-        # V22 Pillar 2: Register timer for real-time cognitive streaming
+        # V36: Register timer for real-time cognitive streaming
         self.timer_handle = bpy.app.timers.register(
             self.process_messages, 
             first_interval=0.1, 
             persistent=True
         )
         
-        # Update UI to show V32 is active
-        context.scene.settings.is_processing = False
-        context.scene.settings.chat_messages = json.dumps([
-            {"role": "system", "content": "🔮 V32 Multi-Paradigm Studio activated. NURBS precision and Mesh artistry ready for unified collaboration."}
-        ])
+        # Update UI to show V36 is active
+        if hasattr(context.scene, 'settings'):
+            context.scene.settings.is_processing = False
+            context.scene.settings.chat_messages = json.dumps([
+                {"role": "system", "content": "🎨 V36 AI Jewelry Designer activated. Universal artisan capabilities ready for professional jewelry creation."}
+            ])
+        
+        return {'RUNNING_MODAL'}
         
         return {'RUNNING_MODAL'}
     
@@ -299,16 +300,8 @@ class SentientOperator(bpy.types.Operator):
             })
             time.sleep(0.5)
             
-            # Execute the actual V32 multi-paradigm AI processing
-            if hasattr(self.orchestrator, 'create_multi_paradigm_design'):
-                result = self.orchestrator.create_multi_paradigm_design(user_prompt, current_paradigm)
-            elif hasattr(self.orchestrator, 'create_symbiotic_design'):
-                # Fallback to V31 method
-                result = self.orchestrator.create_symbiotic_design(user_prompt)
-            elif is_refinement:
-                result = self.orchestrator.refine_design(user_prompt)
-            else:
-                result = self.orchestrator.generate_design(user_prompt)
+            # Execute the V36 Universal Artisan jewelry generation
+            result = self.ai_orchestrator.generate_jewelry(user_prompt)
             
             # Phase 5: Blueprint Validation
             if result.get('success'):
