@@ -1,42 +1,28 @@
 # ===================================================================
-# Requirements for Universal Design Engine V20.0
+# Requirements for Aura Sentient Interactive Studio
 # ===================================================================
 #
-# State-of-the-art dependencies for low-level implicit function-based
-# AI pipeline with native shap_e integration and Marching Cubes algorithm.
-# Optimized for 8GB VRAM consumer hardware (NVIDIA 1070).
+# Minimal, clean dependencies for the final purified architecture.
+# Professional web-based CAD studio with AI-driven collaboration.
 #
 # Setup Instructions:
 # > python -m venv venv
-# > source venv/bin/activate  # Linux/Mac
+# > source venv/bin/activate  # Linux/Mac  
 # > pip install -r requirements.txt
 # -------------------------------------------------------------------
 
 # --- Core Web Framework ---
-# FastAPI for AI server endpoints
+# FastAPI for professional API endpoints
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 
-# --- AI and Machine Learning ---
-# OpenAI Shap-E for implicit 3D generation
-shap-e>=1.0.0
-torch>=1.13.0
-torchvision>=0.14.0
-transformers>=4.21.0
-
-# --- 3D Processing ---
-# For Marching Cubes algorithm and implicit surface extraction
-scikit-image>=0.19.0
-numpy>=1.21.0
-trimesh>=3.15.0
-
 # --- HTTP Client ---
-# For communication with external LM Studio and AI services
+# For communication with AI services
 requests>=2.31.0
 
 # --- Data Processing ---
 # Essential for JSON processing and file operations
-certifi>=2023.0.0
+numpy>=1.21.0
 
 # --- Environment Configuration ---
 # For loading .env files and environment management

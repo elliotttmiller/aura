@@ -13,6 +13,7 @@ Part of the Professional Integration.
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi import WebSocket
+from fastapi.middleware.cors import CORSMiddleware
 import subprocess
 import os
 import logging
@@ -32,6 +33,19 @@ except ImportError:
     CONFIG_AVAILABLE = False
 
 app = FastAPI(title="Aura Backend Orchestrator", version="24.0")
+
+# Add CORS middleware for frontend communication
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "*"],  # Vite dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Add API router with /api prefix for frontend compatibility
+from fastapi import APIRouter
+api_router = APIRouter(prefix="/api")
 
 # Enhanced logging configuration
 if CONFIG_AVAILABLE:
@@ -280,7 +294,7 @@ def get_output_path(prompt: str) -> str:
 # Granular API Endpoints - Professional CAD Studio Interface  
 # ============================================================================
 
-@app.post("/session/new")
+@api_router.post("/session/new")
 async def create_new_session():
     """Create a new design session."""
     session = DesignSession()
@@ -294,7 +308,7 @@ async def create_new_session():
         "message": "New design session created successfully"
     })
 
-@app.get("/session/{session_id}")
+@api_router.get("/session/{session_id}")
 async def get_session(session_id: str):
     """Get session information."""
     session = active_sessions.get(session_id)
@@ -309,7 +323,7 @@ async def get_session(session_id: str):
         "session": session.to_dict()
     })
 
-@app.post("/session/{session_id}/execute_prompt")
+@api_router.post("/session/{session_id}/execute_prompt")
 async def execute_ai_prompt(session_id: str, request: Request):
     """Execute AI prompt with enhanced scene context awareness."""
     session = active_sessions.get(session_id)
@@ -352,7 +366,7 @@ async def execute_ai_prompt(session_id: str, request: Request):
             "message": "AI prompt execution failed"
         })
 
-@app.get("/scene/{session_id}")
+@api_router.get("/scene/{session_id}")
 async def get_scene_state(session_id: str):
     """Get the current scene state."""
     session = active_sessions.get(session_id)
@@ -371,7 +385,7 @@ async def get_scene_state(session_id: str):
         }
     })
 
-@app.put("/object/{session_id}/{object_id}/transform")
+@api_router.put("/object/{session_id}/{object_id}/transform")
 async def update_object_transform(session_id: str, object_id: str, request: Request):
     """Update object transformation (position, rotation, scale)."""
     session = active_sessions.get(session_id)
@@ -418,7 +432,7 @@ async def update_object_transform(session_id: str, object_id: str, request: Requ
             "error": str(e)
         })
 
-@app.put("/object/{session_id}/{object_id}/material")
+@api_router.put("/object/{session_id}/{object_id}/material")
 async def update_object_material(session_id: str, object_id: str, request: Request):
     """Update object material properties."""
     session = active_sessions.get(session_id)
@@ -465,7 +479,7 @@ async def update_object_material(session_id: str, object_id: str, request: Reque
             "error": str(e)
         })
 
-@app.delete("/object/{session_id}/{object_id}")
+@api_router.delete("/object/{session_id}/{object_id}")
 async def delete_object(session_id: str, object_id: str):
     """Delete an object from the scene."""
     session = active_sessions.get(session_id)
@@ -491,7 +505,7 @@ async def delete_object(session_id: str, object_id: str):
 # Legacy Endpoints (for backward compatibility)
 # ============================================================================
 
-@app.post("/generate")
+@api_router.post("/generate")
 async def generate_design(request: Request):
     """
     Legacy endpoint for professional design generation.
@@ -528,7 +542,7 @@ async def generate_design(request: Request):
             "message": "Legacy generation failed"
         })
 
-@app.get("/output/{filename}")
+@api_router.get("/output/{filename}")
 async def serve_stl(filename: str):
     """Serve generated STL files."""
     logger.debug('Received STL file request: %s', filename)
@@ -548,7 +562,7 @@ async def serve_stl(filename: str):
         logger.exception('Exception serving STL file')
         return Response(content=str(e), status_code=500)
 
-@app.get("/health")
+@api_router.get("/health")
 async def health_check():
     """Enhanced health check endpoint."""
     health_status = {
@@ -607,6 +621,9 @@ async def serve_design_studio():
         return HTMLResponse(content=html_content)
     except FileNotFoundError:
         return HTMLResponse(content="<h1>Design Studio Not Found</h1><p>The AI Design Studio interface could not be found.</p>", status_code=404)
+
+# Include the API router
+app.include_router(api_router)
 
 if __name__ == "__main__":
     import uvicorn
