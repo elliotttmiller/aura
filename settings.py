@@ -93,6 +93,57 @@ class SceneSettings(bpy.types.PropertyGroup):
         ],
         default='IMPLICIT'
     )
+    
+    # V32 Multi-Paradigm Properties
+    active_paradigm_tab = bpy.props.EnumProperty(
+        name="Active Paradigm",
+        description="Currently active design paradigm tab",
+        items=[
+            ('NURBS', 'Rhino (NURBS)', 'NURBS precision modeling with Rhino engine'),
+            ('MESH', 'Blender (Mesh)', 'Mesh-based artistic modeling with Blender engine'),
+        ],
+        default='NURBS'
+    )
+    
+    sidebar_collapsed = bpy.props.BoolProperty(
+        name="Sidebar Collapsed",
+        description="Whether the sidebar is collapsed for full-screen viewport",
+        default=False
+    )
+    
+    # NURBS-specific properties
+    nurbs_fillet_radius = bpy.props.FloatProperty(
+        name="Fillet Radius",
+        description="Radius for NURBS filleting operations",
+        default=0.5,
+        min=0.1,
+        max=5.0
+    )
+    
+    nurbs_curve_degree = bpy.props.IntProperty(
+        name="Curve Degree",
+        description="Degree for NURBS curves (1=linear, 2=quadratic, 3=cubic)",
+        default=3,
+        min=1,
+        max=5
+    )
+    
+    # Mesh-specific properties  
+    mesh_subdivision_levels = bpy.props.IntProperty(
+        name="Subdivision Levels",
+        description="Number of subdivision levels for mesh operations",
+        default=2,
+        min=0,
+        max=4
+    )
+    
+    mesh_remesh_resolution = bpy.props.IntProperty(
+        name="Remesh Resolution",
+        description="Resolution for remesh operations",
+        default=64,
+        min=16,
+        max=256
+    )
 
 def install_settings():
     bpy.utils.register_class(SceneSettings)

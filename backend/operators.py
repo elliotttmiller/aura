@@ -32,11 +32,11 @@ logger = logging.getLogger(__name__)
 
 
 class SentientOperator(bpy.types.Operator):
-    """V22 Master Modal Operator for Verifiable Artisan with Live Cognitive Streaming."""
+    """V32 Master Modal Operator for Multi-Paradigm Design Studio."""
     
     bl_idname = "design.sentient_operator"
-    bl_label = "V22 Verifiable Artisan Operator"
-    bl_description = "Master asynchronous operator for live AI cognitive streaming and Shape Key animations"
+    bl_label = "V32 Multi-Paradigm Studio Operator"
+    bl_description = "Master asynchronous operator for multi-paradigm NURBS and Mesh collaboration"
     
     def __init__(self):
         self.orchestrator = None
@@ -47,11 +47,26 @@ class SentientOperator(bpy.types.Operator):
         self.current_shape_key_animation = None
         
     def execute(self, context):
-        """Start the V22 Verifiable Artisan in modal mode."""
-        logger.info("Starting V22 Verifiable Artisan - Live Cognitive Streaming Engine")
+        """Start the V32 Multi-Paradigm Studio in modal mode."""
+        logger.info("🔮 V32 Multi-Paradigm Studio: Starting modal operation")
         
-        # Initialize the orchestrator
-        self.orchestrator = Orchestrator()
+        # Initialize orchestrator
+        try:
+            from .orchestrator import HyperrealisticOrchestrator
+            from .v31_symbiotic_orchestrator import create_v32_orchestrator
+            
+            # Try V32 orchestrator first, fallback to legacy
+            try:
+                self.orchestrator = create_v32_orchestrator()
+                logger.info("✅ V32 Multi-Paradigm Orchestrator initialized")
+            except:
+                self.orchestrator = HyperrealisticOrchestrator()
+                logger.info("⚠️ Using legacy orchestrator as fallback")
+                
+        except ImportError as e:
+            logger.error(f"Failed to initialize orchestrator: {e}")
+            # Create a basic orchestrator fallback
+            self.orchestrator = None
         
         # Start modal operation
         context.window_manager.modal_handler_add(self)
@@ -64,10 +79,10 @@ class SentientOperator(bpy.types.Operator):
             persistent=True
         )
         
-        # Update UI to show V22 is active
+        # Update UI to show V32 is active
         context.scene.settings.is_processing = False
         context.scene.settings.chat_messages = json.dumps([
-            {"role": "system", "content": "🔮 V22 Verifiable Artisan activated. Live cognitive streaming and real-time Shape Key animations ready."}
+            {"role": "system", "content": "🔮 V32 Multi-Paradigm Studio activated. NURBS precision and Mesh artistry ready for unified collaboration."}
         ])
         
         return {'RUNNING_MODAL'}
@@ -227,25 +242,37 @@ class SentientOperator(bpy.types.Operator):
     
     def ai_worker_thread(self, user_prompt: str, is_refinement: bool):
         """
-        V22 Pillar 2: Live Cognitive & Animation Engine Worker Thread
+        V32 Multi-Paradigm AI Architect Worker Thread
         
-        Enhanced AI worker thread with detailed cognitive streaming.
-        Provides step-by-step visibility into AI's multi-step thought process
-        as mandated by Sentient Transparency protocol.
+        Enhanced AI worker thread with multi-paradigm strategic delegation.
+        Provides step-by-step visibility into AI's strategic decision making
+        for NURBS precision vs Mesh artistry operations.
         """
         try:
-            logger.info(f"V22: AI cognitive streaming started for: {user_prompt}")
+            logger.info(f"V32: Multi-Paradigm AI Architect started for: {user_prompt}")
             
-            # V22 Enhancement: Detailed cognitive streaming phases
+            # Get current paradigm context from UI
+            current_paradigm = bpy.context.scene.settings.active_paradigm_tab
             
-            # Phase 1: Initial Analysis
+            # Phase 1: Multi-Paradigm Analysis
             self.message_queue.put({
                 'type': 'chat_update',
-                'content': f"🧠 AI Master Planner analyzing: {user_prompt}"
+                'content': f"🧠 Multi-Paradigm Architect analyzing: {user_prompt}"
             })
-            time.sleep(0.5)  # Brief pause for visual separation
+            time.sleep(0.5)
             
-            # Phase 2: Cognitive Processing
+            self.message_queue.put({
+                'type': 'chat_update',
+                'content': f"🎛️ Active paradigm context: {current_paradigm} ({'NURBS precision' if current_paradigm == 'NURBS' else 'Mesh artistry'})"
+            })
+            time.sleep(0.3)
+            
+            # Phase 2: Strategic Paradigm Planning
+            self.message_queue.put({
+                'type': 'chat_update',
+                'content': "🧠 Strategic planning: Analyzing optimal engine delegation..."
+            })
+            time.sleep(0.5)
             self.message_queue.put({
                 'type': 'chat_update', 
                 'content': "🔍 Analyzing design requirements and constraints..."
@@ -265,8 +292,20 @@ class SentientOperator(bpy.types.Operator):
                 'content': "📐 Generating dynamic construction blueprint..."
             })
             
-            # Execute the actual AI processing
-            if is_refinement:
+            # Phase 3: Execute Multi-Paradigm Design Generation
+            self.message_queue.put({
+                'type': 'chat_update',
+                'content': "🎛️ Master Dispatcher: Routing to optimal engines..."
+            })
+            time.sleep(0.5)
+            
+            # Execute the actual V32 multi-paradigm AI processing
+            if hasattr(self.orchestrator, 'create_multi_paradigm_design'):
+                result = self.orchestrator.create_multi_paradigm_design(user_prompt, current_paradigm)
+            elif hasattr(self.orchestrator, 'create_symbiotic_design'):
+                # Fallback to V31 method
+                result = self.orchestrator.create_symbiotic_design(user_prompt)
+            elif is_refinement:
                 result = self.orchestrator.refine_design(user_prompt)
             else:
                 result = self.orchestrator.generate_design(user_prompt)
@@ -332,22 +371,33 @@ class SentientOperator(bpy.types.Operator):
             logger.info("V22: Enhanced exception handler completed - user notified")
     
     def handle_processing_complete(self, message: Dict[str, Any]):
-        """Handle completion of AI processing."""
+        """Handle completion of V32 multi-paradigm AI processing."""
         result = message['result']
         
         # Update UI
         bpy.context.scene.settings.is_processing = False
         
-        if result.get('success'):
-            self.update_chat_ui("Design completed successfully!")
+        if result.get('success') or result.get('status') == 'MULTI_PARADIGM_SUCCESS':
+            # V32 multi-paradigm success message
+            paradigm_distribution = result.get('paradigm_execution', {}).get('paradigm_distribution', {})
+            nurbs_count = paradigm_distribution.get('NURBS', 0)
+            mesh_count = paradigm_distribution.get('MESH', 0)
             
-            # If a 3D model was created, trigger shape key animation
-            if result.get('object_name'):
-                self.message_queue.put({
-                    'type': 'shape_key_created',
-                    'object_name': result['object_name'],
-                    'shape_key_name': result.get('shape_key_name', 'Modification')
-                })
+            success_msg = f"✅ V32 Multi-Paradigm Success! Created {nurbs_count} NURBS + {mesh_count} MESH operations"
+            self.update_chat_ui(success_msg)
+            
+            # Show architecture information
+            if result.get('architecture'):
+                self.update_chat_ui(f"🏗️ Architecture: {result['architecture']}")
+                
+            # Show execution time
+            if result.get('execution_time_seconds'):
+                self.update_chat_ui(f"⚡ Completed in {result['execution_time_seconds']}s")
+            
+        elif result.get('status') == 'SYMBIOTIC_SUCCESS':
+            # V31 fallback success
+            self.update_chat_ui("✅ V31 Symbiotic Success - NURBS precision achieved!")
+            
         else:
             self.update_chat_ui(f"Error: {result.get('error', 'Unknown error')}")
     
