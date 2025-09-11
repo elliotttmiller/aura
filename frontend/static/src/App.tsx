@@ -48,8 +48,24 @@ function App() {
 
   const initializeSession = async () => {
     try {
-      // TODO: Call backend to create new session
-      console.log('Initializing new design session...')
+      console.log('Creating new design session...')
+      const response = await fetch('/api/session/new', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Session created:', data.session_id)
+        setSession(prev => ({
+          ...prev,
+          id: data.session_id
+        }))
+      } else {
+        console.error('Failed to create session')
+      }
     } catch (error) {
       console.error('Failed to initialize session:', error)
     }
@@ -60,9 +76,25 @@ function App() {
       const response = await fetch('/api/health')
       const health = await response.json()
       setSystemStatus(health.status === 'healthy' ? 'online' : 'error')
+      console.log('System health:', health)
     } catch (error) {
       console.error('Health check failed:', error)
       setSystemStatus('error')
+    }
+  }
+
+  const loadSceneFromBackend = async () => {
+    try {
+      const response = await fetch(`/api/scene/${session.id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setSession(prev => ({
+          ...prev,
+          objects: data.scene.objects
+        }))
+      }
+    } catch (error) {
+      console.error('Failed to load scene:', error)
     }
   }
 
@@ -73,47 +105,75 @@ function App() {
     }))
   }
 
-  const handleObjectUpdate = (objectId: string, updates: Partial<SceneObject>) => {
+  const handleObjectUpdate = async (objectId: string, updates: Partial<SceneObject>) => {
+    // Optimistically update UI first
     setSession(prev => ({
       ...prev,
       objects: prev.objects.map(obj => 
         obj.id === objectId ? { ...obj, ...updates } : obj
       )
     }))
+
+    // Then sync with backend
+    try {
+      if (updates.transform) {
+        await fetch(`/api/object/${session.id}/${objectId}/transform`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updates.transform)
+        })
+      }
+      
+      if (updates.material) {
+        await fetch(`/api/object/${session.id}/${objectId}/material`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updates.material)
+        })
+      }
+      
+      console.log('✅ Object updated on backend')
+    } catch (error) {
+      console.error('Failed to update object on backend:', error)
+      // Could revert optimistic update here
+    }
   }
 
   const handleAIPrompt = async (prompt: string) => {
     setIsGenerating(true)
     try {
-      // TODO: Call backend AI endpoint
-      console.log('Processing AI prompt:', prompt)
+      console.log('🤖 Processing AI prompt:', prompt)
       
-      // Simulate AI response with mock object creation
-      const newObject: SceneObject = {
-        id: `obj-${Date.now()}`,
-        name: 'AI Generated Design',
-        type: 'mesh',
-        visible: true,
-        transform: {
-          position: [0, 0, 0],
-          rotation: [0, 0, 0],
-          scale: [1, 1, 1]
+      const response = await fetch(`/api/session/${session.id}/execute_prompt`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        material: {
-          color: '#FFD700',
-          roughness: 0.2,
-          metallic: 0.8
-        }
-      }
+        body: JSON.stringify({ prompt })
+      })
       
-      setSession(prev => ({
-        ...prev,
-        objects: [...prev.objects, newObject],
-        selectedObjectId: newObject.id
-      }))
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ AI prompt executed:', data)
+        
+        // Add the new object to our scene
+        const newObject = data.object
+        setSession(prev => ({
+          ...prev,
+          objects: [...prev.objects, newObject],
+          selectedObjectId: newObject.id
+        }))
+      } else {
+        throw new Error('AI prompt failed')
+      }
       
     } catch (error) {
       console.error('AI prompt failed:', error)
+      throw error // Re-throw for chat component to handle
     } finally {
       setIsGenerating(false)
     }

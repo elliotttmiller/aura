@@ -22,7 +22,7 @@ interface SceneOutlinerProps {
   objects: SceneObject[]
   selectedObjectId: string | null
   onObjectSelect: (objectId: string | null) => void
-  onObjectUpdate: (objectId: string, updates: Partial&lt;SceneObject&gt;) => void
+  onObjectUpdate: (objectId: string, updates: Partial<SceneObject>) => void
 }
 
 export default function SceneOutliner({ 
@@ -41,79 +41,79 @@ export default function SceneOutliner({
   }
 
   return (
-    &lt;div className="sidebar"&gt;
-      &lt;div className="panel-title"&gt;Scene Outliner&lt;/div&gt;
+    <div className="sidebar">
+      <div className="panel-title">Scene Outliner</div>
       
       {/* Scene hierarchy tree */}
-      &lt;div className="scene-tree"&gt;
+      <div className="scene-tree">
         {objects.length === 0 ? (
-          &lt;div className="empty-scene"&gt;
-            &lt;p&gt;No objects in scene&lt;/p&gt;
-            &lt;span&gt;Create objects using AI chat&lt;/span&gt;
-          &lt;/div&gt;
+          <div className="empty-scene">
+            <p>No objects in scene</p>
+            <span>Create objects using AI chat</span>
+          </div>
         ) : (
-          objects.map(object =&gt; (
-            &lt;div 
+          objects.map(object => (
+            <div 
               key={object.id}
               className={`scene-object ${object.id === selectedObjectId ? 'selected' : ''}`}
-              onClick={() =&gt; onObjectSelect(object.id)}
-            &gt;
-              &lt;div className="object-info"&gt;
-                &lt;span className="object-icon"&gt;
+              onClick={() => onObjectSelect(object.id)}
+            >
+              <div className="object-info">
+                <span className="object-icon">
                   {object.type === 'mesh' ? '🔷' : '📦'}
-                &lt;/span&gt;
-                &lt;span className="object-name"&gt;{object.name}&lt;/span&gt;
-              &lt;/div&gt;
+                </span>
+                <span className="object-name">{object.name}</span>
+              </div>
               
-              &lt;div className="object-controls"&gt;
-                &lt;button
+              <div className="object-controls">
+                <button
                   className={`visibility-btn ${object.visible ? 'visible' : 'hidden'}`}
-                  onClick={(e) =&gt; {
+                  onClick={(e) => {
                     e.stopPropagation()
                     handleVisibilityToggle(object.id, object.visible)
                   }}
                   title={object.visible ? 'Hide object' : 'Show object'}
-                &gt;
+                >
                   {object.visible ? '👁️' : '🙈'}
-                &lt;/button&gt;
-              &lt;/div&gt;
-            &lt;/div&gt;
+                </button>
+              </div>
+            </div>
           ))
         )}
-      &lt;/div&gt;
+      </div>
 
       {/* Scene statistics */}
-      &lt;div className="scene-stats"&gt;
-        &lt;div className="panel-title"&gt;Scene Statistics&lt;/div&gt;
-        &lt;div className="stats-grid"&gt;
-          &lt;div className="stat-item"&gt;
-            &lt;span className="stat-label"&gt;Objects:&lt;/span&gt;
-            &lt;span className="stat-value"&gt;{objects.length}&lt;/span&gt;
-          &lt;/div&gt;
-          &lt;div className="stat-item"&gt;
-            &lt;span className="stat-label"&gt;Visible:&lt;/span&gt;
-            &lt;span className="stat-value"&gt;{objects.filter(obj =&gt; obj.visible).length}&lt;/span&gt;
-          &lt;/div&gt;
-          &lt;div className="stat-item"&gt;
-            &lt;span className="stat-label"&gt;Selected:&lt;/span&gt;
-            &lt;span className="stat-value"&gt;{selectedObjectId ? '1' : '0'}&lt;/span&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
+      <div className="scene-stats">
+        <div className="panel-title">Scene Statistics</div>
+        <div className="stats-grid">
+          <div className="stat-item">
+            <span className="stat-label">Objects:</span>
+            <span className="stat-value">{objects.length}</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">Visible:</span>
+            <span className="stat-value">{objects.filter(obj => obj.visible).length}</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">Selected:</span>
+            <span className="stat-value">{selectedObjectId ? '1' : '0'}</span>
+          </div>
+        </div>
+      </div>
 
       {/* Quick actions */}
-      &lt;div className="quick-actions"&gt;
-        &lt;div className="panel-title"&gt;Quick Actions&lt;/div&gt;
-        &lt;button className="btn btn-secondary" onClick={() =&gt; onObjectSelect(null)}&gt;
+      <div className="quick-actions">
+        <div className="panel-title">Quick Actions</div>
+        <button className="btn btn-secondary" onClick={() => onObjectSelect(null)}>
           Clear Selection
-        &lt;/button&gt;
-        &lt;button className="btn btn-secondary"&gt;
+        </button>
+        <button className="btn btn-secondary">
           Focus Selected
-        &lt;/button&gt;
-        &lt;button className="btn btn-secondary"&gt;
+        </button>
+        <button className="btn btn-secondary">
           Frame All
-        &lt;/button&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
+        </button>
+      </div>
+    </div>
   )
 }

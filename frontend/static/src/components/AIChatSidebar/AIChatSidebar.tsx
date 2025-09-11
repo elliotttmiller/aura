@@ -9,12 +9,12 @@ interface ChatMessage {
 }
 
 interface AIChatSidebarProps {
-  onPromptSubmit: (prompt: string) => Promise&lt;void&gt;
+  onPromptSubmit: (prompt: string) => Promise<void>
   isGenerating: boolean
 }
 
 export default function AIChatSidebar({ onPromptSubmit, isGenerating }: AIChatSidebarProps) {
-  const [messages, setMessages] = useState&lt;ChatMessage[]&gt;([
+  const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
       type: 'ai',
@@ -23,7 +23,7 @@ export default function AIChatSidebar({ onPromptSubmit, isGenerating }: AIChatSi
     }
   ])
   const [currentPrompt, setCurrentPrompt] = useState('')
-  const messagesEndRef = useRef&lt;HTMLDivElement&gt;(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -44,7 +44,7 @@ export default function AIChatSidebar({ onPromptSubmit, isGenerating }: AIChatSi
       timestamp: new Date()
     }
 
-    setMessages(prev =&gt; [...prev, userMessage])
+    setMessages(prev => [...prev, userMessage])
     setCurrentPrompt('')
 
     // Show AI thinking message
@@ -54,14 +54,14 @@ export default function AIChatSidebar({ onPromptSubmit, isGenerating }: AIChatSi
       content: '🧠 Analyzing your design request...',
       timestamp: new Date()
     }
-    setMessages(prev =&gt; [...prev, thinkingMessage])
+    setMessages(prev => [...prev, thinkingMessage])
 
     try {
       await onPromptSubmit(userMessage.content)
       
       // Remove thinking message and add success message
-      setMessages(prev =&gt; {
-        const withoutThinking = prev.filter(msg =&gt; msg.id !== thinkingMessage.id)
+      setMessages(prev => {
+        const withoutThinking = prev.filter(msg => msg.id !== thinkingMessage.id)
         return [...withoutThinking, {
           id: `ai-success-${Date.now()}`,
           type: 'ai',
@@ -71,8 +71,8 @@ export default function AIChatSidebar({ onPromptSubmit, isGenerating }: AIChatSi
       })
     } catch (error) {
       // Remove thinking message and add error message
-      setMessages(prev =&gt; {
-        const withoutThinking = prev.filter(msg =&gt; msg.id !== thinkingMessage.id)
+      setMessages(prev => {
+        const withoutThinking = prev.filter(msg => msg.id !== thinkingMessage.id)
         return [...withoutThinking, {
           id: `ai-error-${Date.now()}`,
           type: 'ai',
@@ -92,76 +92,76 @@ export default function AIChatSidebar({ onPromptSubmit, isGenerating }: AIChatSi
   }
 
   return (
-    &lt;div className="chat"&gt;
-      &lt;div className="panel-title"&gt;AI Design Collaborator&lt;/div&gt;
+    <div className="chat">
+      <div className="panel-title">AI Design Collaborator</div>
       
       {/* Chat messages */}
-      &lt;div className="chat-messages"&gt;
-        {messages.map(message =&gt; (
-          &lt;div key={message.id} className={`message ${message.type}`}&gt;
-            &lt;div className="message-content"&gt;
+      <div className="chat-messages">
+        {messages.map(message => (
+          <div key={message.id} className={`message ${message.type}`}>
+            <div className="message-content">
               {message.content}
-            &lt;/div&gt;
-            &lt;div className="message-time"&gt;
+            </div>
+            <div className="message-time">
               {formatTime(message.timestamp)}
-            &lt;/div&gt;
-          &lt;/div&gt;
+            </div>
+          </div>
         ))}
-        &lt;div ref={messagesEndRef} /&gt;
-      &lt;/div&gt;
+        <div ref={messagesEndRef} />
+      </div>
 
       {/* Quick prompt suggestions */}
-      &lt;div className="quick-prompts"&gt;
-        &lt;div className="quick-prompts-label"&gt;Quick Ideas:&lt;/div&gt;
-        &lt;button 
+      <div className="quick-prompts">
+        <div className="quick-prompts-label">Quick Ideas:</div>
+        <button 
           className="quick-prompt-btn"
-          onClick={() =&gt; handleQuickPrompt('Create an elegant engagement ring with a 1.5 carat diamond')}
-        &gt;
+          onClick={() => handleQuickPrompt('Create an elegant engagement ring with a 1.5 carat diamond')}
+        >
           💍 Engagement Ring
-        &lt;/button&gt;
-        &lt;button 
+        </button>
+        <button 
           className="quick-prompt-btn"
-          onClick={() =&gt; handleQuickPrompt('Design a vintage-style gold necklace with Art Deco patterns')}
-        &gt;
+          onClick={() => handleQuickPrompt('Design a vintage-style gold necklace with Art Deco patterns')}
+        >
           📿 Vintage Necklace
-        &lt;/button&gt;
-        &lt;button 
+        </button>
+        <button 
           className="quick-prompt-btn"
-          onClick={() =&gt; handleQuickPrompt('Make a modern minimalist silver bracelet with geometric elements')}
-        &gt;
+          onClick={() => handleQuickPrompt('Make a modern minimalist silver bracelet with geometric elements')}
+        >
           ⚡ Modern Bracelet
-        &lt;/button&gt;
-      &lt;/div&gt;
+        </button>
+      </div>
 
       {/* Chat input */}
-      &lt;form className="chat-input-form" onSubmit={handleSubmit}&gt;
-        &lt;div className="input-container"&gt;
-          &lt;textarea
+      <form className="chat-input-form" onSubmit={handleSubmit}>
+        <div className="input-container">
+          <textarea
             value={currentPrompt}
-            onChange={(e) =&gt; setCurrentPrompt(e.target.value)}
+            onChange={(e) => setCurrentPrompt(e.target.value)}
             placeholder="Describe your jewelry design vision..."
             className="chat-input"
             disabled={isGenerating}
             rows={3}
-            onKeyDown={(e) =&gt; {
+            onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
                 handleSubmit(e)
               }
             }}
-          /&gt;
-          &lt;button 
+          />
+          <button 
             type="submit" 
             className={`send-btn ${isGenerating ? 'generating' : ''}`}
             disabled={!currentPrompt.trim() || isGenerating}
-          &gt;
+          >
             {isGenerating ? '🔄' : '🚀'}
-          &lt;/button&gt;
-        &lt;/div&gt;
-        &lt;div className="input-hint"&gt;
+          </button>
+        </div>
+        <div className="input-hint">
           {isGenerating ? 'AI is creating your design...' : 'Press Enter to send, Shift+Enter for new line'}
-        &lt;/div&gt;
-      &lt;/form&gt;
-    &lt;/div&gt;
+        </div>
+      </form>
+    </div>
   )
 }

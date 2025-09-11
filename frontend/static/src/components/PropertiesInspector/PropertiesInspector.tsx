@@ -20,20 +20,20 @@ interface SceneObject {
 
 interface PropertiesInspectorProps {
   selectedObject: SceneObject | undefined
-  onObjectUpdate: (objectId: string, updates: Partial&lt;SceneObject&gt;) => void
+  onObjectUpdate: (objectId: string, updates: Partial<SceneObject>) => void
 }
 
 export default function PropertiesInspector({ selectedObject, onObjectUpdate }: PropertiesInspectorProps) {
   
   if (!selectedObject) {
     return (
-      &lt;div className="properties"&gt;
-        &lt;div className="panel-title"&gt;Properties Inspector&lt;/div&gt;
-        &lt;div className="no-selection"&gt;
-          &lt;p&gt;No object selected&lt;/p&gt;
-          &lt;span&gt;Select an object to view and edit its properties&lt;/span&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
+      <div className="properties">
+        <div className="panel-title">Properties Inspector</div>
+        <div className="no-selection">
+          <p>No object selected</p>
+          <span>Select an object to view and edit its properties</span>
+        </div>
+      </div>
     )
   }
 
@@ -62,208 +62,208 @@ export default function PropertiesInspector({ selectedObject, onObjectUpdate }: 
   }
 
   return (
-    &lt;div className="properties"&gt;
-      &lt;div className="panel-title"&gt;Properties Inspector&lt;/div&gt;
+    <div className="properties">
+      <div className="panel-title">Properties Inspector</div>
       
       {/* Object Info */}
-      &lt;div className="property-section"&gt;
-        &lt;div className="section-title"&gt;Object Information&lt;/div&gt;
+      <div className="property-section">
+        <div className="section-title">Object Information</div>
         
-        &lt;div className="control-group"&gt;
-          &lt;label className="control-label"&gt;Name&lt;/label&gt;
-          &lt;input
+        <div className="control-group">
+          <label className="control-label">Name</label>
+          <input
             type="text"
             className="control-input"
             value={selectedObject.name}
-            onChange={(e) =&gt; handleNameChange(e.target.value)}
-          /&gt;
-        &lt;/div&gt;
+            onChange={(e) => handleNameChange(e.target.value)}
+          />
+        </div>
 
-        &lt;div className="control-group"&gt;
-          &lt;label className="control-label"&gt;Type&lt;/label&gt;
-          &lt;input
+        <div className="control-group">
+          <label className="control-label">Type</label>
+          <input
             type="text"
             className="control-input"
             value={selectedObject.type}
             disabled
-          /&gt;
-        &lt;/div&gt;
+          />
+        </div>
 
-        &lt;div className="control-group"&gt;
-          &lt;label className="control-label"&gt;ID&lt;/label&gt;
-          &lt;input
+        <div className="control-group">
+          <label className="control-label">ID</label>
+          <input
             type="text"
             className="control-input"
             value={selectedObject.id}
             disabled
-          /&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
+          />
+        </div>
+      </div>
 
       {/* Transform Properties */}
-      &lt;div className="property-section"&gt;
-        &lt;div className="section-title"&gt;Transform&lt;/div&gt;
+      <div className="property-section">
+        <div className="section-title">Transform</div>
         
         {/* Position */}
-        &lt;div className="transform-group"&gt;
-          &lt;div className="transform-label"&gt;Position&lt;/div&gt;
-          &lt;div className="vector-input"&gt;
-            &lt;input
+        <div className="transform-group">
+          <div className="transform-label">Position</div>
+          <div className="vector-input">
+            <input
               type="number"
               step="0.1"
               value={selectedObject.transform.position[0]}
-              onChange={(e) =&gt; handleTransformChange('position', 0, parseFloat(e.target.value))}
+              onChange={(e) => handleTransformChange('position', 0, parseFloat(e.target.value))}
               className="vector-component"
               placeholder="X"
-            /&gt;
-            &lt;input
+            />
+            <input
               type="number"
               step="0.1"
               value={selectedObject.transform.position[1]}
-              onChange={(e) =&gt; handleTransformChange('position', 1, parseFloat(e.target.value))}
+              onChange={(e) => handleTransformChange('position', 1, parseFloat(e.target.value))}
               className="vector-component"
               placeholder="Y"
-            /&gt;
-            &lt;input
+            />
+            <input
               type="number"
               step="0.1"
               value={selectedObject.transform.position[2]}
-              onChange={(e) =&gt; handleTransformChange('position', 2, parseFloat(e.target.value))}
+              onChange={(e) => handleTransformChange('position', 2, parseFloat(e.target.value))}
               className="vector-component"
               placeholder="Z"
-            /&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
+            />
+          </div>
+        </div>
 
         {/* Rotation */}
-        &lt;div className="transform-group"&gt;
-          &lt;div className="transform-label"&gt;Rotation&lt;/div&gt;
-          &lt;div className="vector-input"&gt;
-            &lt;input
+        <div className="transform-group">
+          <div className="transform-label">Rotation</div>
+          <div className="vector-input">
+            <input
               type="number"
               step="1"
               value={(selectedObject.transform.rotation[0] * 180 / Math.PI).toFixed(1)}
-              onChange={(e) =&gt; handleTransformChange('rotation', 0, parseFloat(e.target.value) * Math.PI / 180)}
+              onChange={(e) => handleTransformChange('rotation', 0, parseFloat(e.target.value) * Math.PI / 180)}
               className="vector-component"
               placeholder="X°"
-            /&gt;
-            &lt;input
+            />
+            <input
               type="number"
               step="1"
               value={(selectedObject.transform.rotation[1] * 180 / Math.PI).toFixed(1)}
-              onChange={(e) =&gt; handleTransformChange('rotation', 1, parseFloat(e.target.value) * Math.PI / 180)}
+              onChange={(e) => handleTransformChange('rotation', 1, parseFloat(e.target.value) * Math.PI / 180)}
               className="vector-component"
               placeholder="Y°"
-            /&gt;
-            &lt;input
+            />
+            <input
               type="number"
               step="1"
               value={(selectedObject.transform.rotation[2] * 180 / Math.PI).toFixed(1)}
-              onChange={(e) =&gt; handleTransformChange('rotation', 2, parseFloat(e.target.value) * Math.PI / 180)}
+              onChange={(e) => handleTransformChange('rotation', 2, parseFloat(e.target.value) * Math.PI / 180)}
               className="vector-component"
               placeholder="Z°"
-            /&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
+            />
+          </div>
+        </div>
 
         {/* Scale */}
-        &lt;div className="transform-group"&gt;
-          &lt;div className="transform-label"&gt;Scale&lt;/div&gt;
-          &lt;div className="vector-input"&gt;
-            &lt;input
+        <div className="transform-group">
+          <div className="transform-label">Scale</div>
+          <div className="vector-input">
+            <input
               type="number"
               step="0.1"
               min="0.1"
               value={selectedObject.transform.scale[0]}
-              onChange={(e) =&gt; handleTransformChange('scale', 0, parseFloat(e.target.value))}
+              onChange={(e) => handleTransformChange('scale', 0, parseFloat(e.target.value))}
               className="vector-component"
               placeholder="X"
-            /&gt;
-            &lt;input
+            />
+            <input
               type="number"
               step="0.1"
               min="0.1"
               value={selectedObject.transform.scale[1]}
-              onChange={(e) =&gt; handleTransformChange('scale', 1, parseFloat(e.target.value))}
+              onChange={(e) => handleTransformChange('scale', 1, parseFloat(e.target.value))}
               className="vector-component"
               placeholder="Y"
-            /&gt;
-            &lt;input
+            />
+            <input
               type="number"
               step="0.1"
               min="0.1"
               value={selectedObject.transform.scale[2]}
-              onChange={(e) =&gt; handleTransformChange('scale', 2, parseFloat(e.target.value))}
+              onChange={(e) => handleTransformChange('scale', 2, parseFloat(e.target.value))}
               className="vector-component"
               placeholder="Z"
-            /&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Material Properties */}
-      &lt;div className="property-section"&gt;
-        &lt;div className="section-title"&gt;Material&lt;/div&gt;
+      <div className="property-section">
+        <div className="section-title">Material</div>
         
-        &lt;div className="control-group"&gt;
-          &lt;label className="control-label"&gt;Color&lt;/label&gt;
-          &lt;div className="color-input-group"&gt;
-            &lt;input
+        <div className="control-group">
+          <label className="control-label">Color</label>
+          <div className="color-input-group">
+            <input
               type="color"
               value={selectedObject.material.color}
-              onChange={(e) =&gt; handleMaterialChange('color', e.target.value)}
+              onChange={(e) => handleMaterialChange('color', e.target.value)}
               className="color-picker"
-            /&gt;
-            &lt;input
+            />
+            <input
               type="text"
               value={selectedObject.material.color}
-              onChange={(e) =&gt; handleMaterialChange('color', e.target.value)}
+              onChange={(e) => handleMaterialChange('color', e.target.value)}
               className="color-text"
               placeholder="#FFD700"
-            /&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
+            />
+          </div>
+        </div>
 
-        &lt;div className="control-group"&gt;
-          &lt;label className="control-label"&gt;Roughness&lt;/label&gt;
-          &lt;div className="slider-group"&gt;
-            &lt;input
+        <div className="control-group">
+          <label className="control-label">Roughness</label>
+          <div className="slider-group">
+            <input
               type="range"
               min="0"
               max="1"
               step="0.01"
               value={selectedObject.material.roughness}
-              onChange={(e) =&gt; handleMaterialChange('roughness', parseFloat(e.target.value))}
+              onChange={(e) => handleMaterialChange('roughness', parseFloat(e.target.value))}
               className="slider"
-            /&gt;
-            &lt;span className="slider-value"&gt;{selectedObject.material.roughness.toFixed(2)}&lt;/span&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
+            />
+            <span className="slider-value">{selectedObject.material.roughness.toFixed(2)}</span>
+          </div>
+        </div>
 
-        &lt;div className="control-group"&gt;
-          &lt;label className="control-label"&gt;Metallic&lt;/label&gt;
-          &lt;div className="slider-group"&gt;
-            &lt;input
+        <div className="control-group">
+          <label className="control-label">Metallic</label>
+          <div className="slider-group">
+            <input
               type="range"
               min="0"
               max="1"
               step="0.01"
               value={selectedObject.material.metallic}
-              onChange={(e) =&gt; handleMaterialChange('metallic', parseFloat(e.target.value))}
+              onChange={(e) => handleMaterialChange('metallic', parseFloat(e.target.value))}
               className="slider"
-            /&gt;
-            &lt;span className="slider-value"&gt;{selectedObject.material.metallic.toFixed(2)}&lt;/span&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
+            />
+            <span className="slider-value">{selectedObject.material.metallic.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
 
       {/* Actions */}
-      &lt;div className="property-section"&gt;
-        &lt;div className="section-title"&gt;Actions&lt;/div&gt;
-        &lt;button className="btn btn-secondary"&gt;Reset Transform&lt;/button&gt;
-        &lt;button className="btn btn-secondary"&gt;Duplicate Object&lt;/button&gt;
-        &lt;button className="btn" style={{background: '#f56565'}}&gt;Delete Object&lt;/button&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
+      <div className="property-section">
+        <div className="section-title">Actions</div>
+        <button className="btn btn-secondary">Reset Transform</button>
+        <button className="btn btn-secondary">Duplicate Object</button>
+        <button className="btn" style={{background: '#f56565'}}>Delete Object</button>
+      </div>
+    </div>
   )
 }

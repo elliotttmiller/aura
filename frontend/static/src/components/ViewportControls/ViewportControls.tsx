@@ -19,20 +19,20 @@ export default function ViewportControls() {
   }
 
   return (
-    &lt;div className="viewport-controls-header"&gt;
-      &lt;button className="control-btn" onClick={handleUndo} title="Undo"&gt;
+    <div className="viewport-controls-header">
+      <button className="control-btn" onClick={handleUndo} title="Undo">
         ↶
-      &lt;/button&gt;
-      &lt;button className="control-btn" onClick={handleRedo} title="Redo"&gt;
+      </button>
+      <button className="control-btn" onClick={handleRedo} title="Redo">
         ↷
-      &lt;/button&gt;
-      &lt;div className="control-divider" /&gt;
-      &lt;button className="control-btn" onClick={handleSave} title="Save Project"&gt;
+      </button>
+      <div className="control-divider" />
+      <button className="control-btn" onClick={handleSave} title="Save Project">
         💾
-      &lt;/button&gt;
-      &lt;button className="control-btn" onClick={handleExport} title="Export STL"&gt;
+      </button>
+      <button className="control-btn" onClick={handleExport} title="Export STL">
         📁
-      &lt;/button&gt;
-    &lt;/div&gt;
+      </button>
+    </div>
   )
 }
