@@ -27,7 +27,7 @@ from pydantic import BaseModel
 # V25 Hyperrealistic imports
 try:
     from .hyperrealistic_ai_generator import HyperrealisticGenerator, HyperrealisticGenerationRequest
-    from .orchestrator import HyperrealisticOrchestrator
+    from .ai_orchestrator import AiOrchestrator
     HYPERREALISTIC_AVAILABLE = True
 except ImportError:
     HYPERREALISTIC_AVAILABLE = False
@@ -40,7 +40,7 @@ app = FastAPI(title="V25 Hyperrealistic AI Jewelry Backend", version="25.0")
 
 # Global instances
 hyperrealistic_generator = None
-hyperrealistic_orchestrator = None
+ai_orchestrator = None
 
 class HyperrealisticDesignRequest(BaseModel):
     """Request model for hyperrealistic jewelry design."""
@@ -66,14 +66,14 @@ class HyperrealisticDesignResponse(BaseModel):
 @app.on_event("startup")
 async def initialize_hyperrealistic_systems():
     """Initialize V25 hyperrealistic systems."""
-    global hyperrealistic_generator, hyperrealistic_orchestrator
+    global hyperrealistic_generator, ai_orchestrator
     
     logger.info("🚀 V25: Initializing hyperrealistic AI jewelry systems...")
     
     try:
         if HYPERREALISTIC_AVAILABLE:
             hyperrealistic_generator = HyperrealisticGenerator()
-            hyperrealistic_orchestrator = HyperrealisticOrchestrator()
+            ai_orchestrator = AiOrchestrator()
             logger.info("✅ V25: Hyperrealistic systems initialized successfully")
         else:
             logger.warning("⚠️ V25: Hyperrealistic systems not available - using fallback mode")
@@ -96,8 +96,8 @@ async def create_hyperrealistic_design(request: HyperrealisticDesignRequest) -> 
     
     try:
         # Use hyperrealistic orchestrator if available
-        if hyperrealistic_orchestrator:
-            result = hyperrealistic_orchestrator.generate_hyperrealistic_design(
+        if ai_orchestrator:
+            result = ai_orchestrator.generate_jewelry(
                 user_prompt=request.prompt,
                 user_specs={
                     "jewelry_type": request.jewelry_type,
@@ -186,7 +186,7 @@ async def hyperrealistic_health_check():
         "timestamp": time.time(),
         "systems": {
             "hyperrealistic_generator": hyperrealistic_generator is not None,
-            "hyperrealistic_orchestrator": hyperrealistic_orchestrator is not None,
+            "ai_orchestrator": ai_orchestrator is not None,
             "components_available": HYPERREALISTIC_AVAILABLE
         },
         "capabilities": [
