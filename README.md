@@ -1,29 +1,29 @@
-# V36 Universal Artisan - The Ultimate AI Jewelry Design System
-================================================================
+# Aura AI Design Assistant
+==========================
 
-## 🌟 Revolutionary V36 Universal Artisan Breakthrough
+## 🎨 Professional AI-Powered Design System
 
-**V36 Universal Artisan** represents the **ultimate transcendence** of AI jewelry design through the world's first **Universal Artisan Architecture**. This revolutionary system intelligently fuses AI art direction with state-of-the-art execution, orchestrated by unified intelligence in a professional jewelry design studio.
+**Aura AI Design Assistant** is a state-of-the-art AI-powered design system that transforms natural language descriptions into professional-quality 3D designs. Built specifically for jewelry design but extensible to other domains, Aura combines advanced AI planning with precision 3D modeling to create manufacturing-ready designs.
 
-### 🏆 V36 Universal Artisan Achievements
+### 🏆 Core Capabilities
 
-- **🧠 AI Art Director**: Advanced presentation planning with material styles, environments, and cinematography  
-- **⚡ Unified Execution Engine**: Single module handling construction, materials, rendering, and export
-- **🎨 Advanced PBR Material Synthesis**: Professional brushed, polished, and antique finishes with micro-detail
-- **📸 Studio Cinematography**: Automated camera positioning with depth of field and focus control
+- **🧠 AI Design Director**: Advanced natural language processing with comprehensive design planning
+- **⚡ Unified Execution Engine**: Complete pipeline handling construction, materials, rendering, and export
+- **🎨 Advanced PBR Materials**: Professional brushed, polished, and specialty finishes with micro-detail
+- **📸 Studio Cinematography**: Automated camera positioning with depth of field and focus control  
 - **🎬 Professional Animation**: 360-degree turntable videos with cinematic quality
 - **📦 Complete Professional Packages**: Zip deliverables with 4K renders, animation, STL, and documentation
 
-## 🎛️ The V36 Universal Artisan Studio
+## 🎛️ The Aura Design Studio
 
-### Master AI Art Director Interface
+### AI Design Director Interface
 ```
-🎨 V36 Universal Artisan - AI Jewelry Designer
+🎨 Aura AI Design Assistant - Professional Design Studio
 ┌─────────────────────────────────────────────┐
 │ Natural Language Input:                     │
-│ "ornate elven ring in brushed platinum..."  │
+│ "elegant platinum ring with vintage..."     │
 │                                             │
-│ 🧠 AI Art Director                          │  ← Master Intelligence
+│ 🧠 AI Design Director                       │  ← Master Intelligence
 │ ├─ Construction Planning                    │
 │ ├─ Presentation Planning                    │
 │ └─ Professional Material Selection          │
@@ -38,8 +38,8 @@
 └─────────────────────────────────────────────┘
 ```
 
-### Universal Artisan Workflow
-1. **User Vision** → AI Art Director analyzes creative intent
+### Professional Workflow
+1. **User Vision** → AI Design Director analyzes creative intent
 2. **Master Blueprint** → AI generates comprehensive construction + presentation plan:
    ```json
    {
@@ -52,27 +52,31 @@
      "presentation_plan": {
        "material_style": "Brushed Platinum",
        "render_environment": "Minimalist Black Pedestal", 
-       "camera_effects": {"use_depth_of_field": true, "focus_point": "the center stone"}
+       "camera_effects": {"use_depth_of_field": true, "focus_point": "center stone"}
      }
    }
    ```
 3. **Unified Execution** → Single engine handles complete pipeline
 4. **Professional Delivery** → Complete package with renders, animation, STL, and documentation
 
-## 🚀 Quick Start V36 Universal Artisan
+## 🚀 Quick Start
 
-### Professional AI Jewelry Designer
+### Installation & Setup
 ```bash
-# Start V36 Universal Artisan System
+# Install as Blender Add-on
+cp -r aura ~/.config/blender/3.x/scripts/addons/
+
+# Enable in Blender
+# Edit → Preferences → Add-ons → Search "Aura" → Enable
+
+# Setup dependencies
+pip install -r requirements.txt
+
+# Start the complete system
 python startup.py
-
-# Direct V36 test with comprehensive validation
-python test_v36_certification.py
-
-# Results: Complete professional jewelry design package
 ```
 
-### V36 Design Creation
+### First Design Session
 ```python
 from backend.ai_orchestrator import AiOrchestrator
 
@@ -84,65 +88,57 @@ result = ai_director.generate_jewelry(
 # Output: Complete professional package with 4K renders, animation, STL, and docs
 ```
 
-## 💎 V36 Universal Artisan Architecture
+## 💎 System Architecture
 
-### The Universal Artisan Trinity
+### The Professional Trinity
 
 ```
-V36 Universal Artisan System
-├── 🧠 AI Art Director (ai_orchestrator.py)
+Aura AI Design Assistant
+├── 🧠 AI Design Director (ai_orchestrator.py)
 │   ├── Master blueprint generation with presentation planning
 │   ├── Advanced design intent analysis
 │   ├── Professional material and environment selection
-│   └── Comprehensive project orchestration
+│   └─ Comprehensive project orchestration
 ├── ⚡ Unified Execution Engine (execution_engine.py) 
 │   ├── Dynamic construction sequence execution
 │   ├── Advanced PBR material synthesis
 │   ├── Studio environment construction
 │   ├── Automated cinematography with depth of field
 │   ├── Professional turntable animation
-│   └── Complete export package generation
+│   └─ Complete export package generation
 └── 🎨 Professional UI (ui_operators.py)
     ├── "AI Jewelry Designer" domain-specific interface
     ├── Real-time cognitive streaming
     ├── Professional Shape Key animations
-    └── Universal architecture with clean terminology
+    └─ Clean architecture with professional terminology
 ```
 
-### Revolutionary Pipeline Flow
+### Professional Pipeline Flow
 ```
-User Vision → AI Art Director → Master Blueprint → 
+User Vision → AI Design Director → Master Blueprint → 
 Unified Execution Engine → Professional Package Delivery
 ```
 
-## 🔬 The V36 Doctrine: Universal Architecture Mandate
+## 🔬 Core Design Principles
 
-### Protocol 16: The Universal Architecture Mandate
-**The supreme protocol governing V36 naming and architecture:**
+### Architecture Excellence
+- **Unified Architecture**: Single execution engine handles complete pipeline
+- **Professional Terminology**: Domain-specific naming for user-facing elements
+- **Universal Engineering**: Clean, role-based naming for internal architecture
+- **Complete Automation**: From natural language to manufacturing-ready deliverables
+- **Studio Quality**: Professional materials, lighting, and cinematography
 
-- **Modules & Files**: Universal engineering role names (`ai_orchestrator.py`, `execution_engine.py`)
-- **Core Functions & UI**: Professional domain-specific names (`generate_jewelry`, "AI Jewelry Designer") 
-- **Internal Variables**: Abstract names for maximum reusability (`primary_component`, `secondary_component`)
-- **No Project Jargon**: Clean codebase free of version references ("Aura", "V36") within code
+## ⚡ Professional Demonstration
 
-### Revolutionary Design Principles
-1. **Unified Architecture**: Single execution engine handles complete pipeline
-2. **Professional Terminology**: Domain-specific naming for user-facing elements
-3. **Universal Engineering**: Clean, role-based naming for internal architecture
-4. **Complete Automation**: From natural language to manufacturing-ready deliverables
-5. **Studio Quality**: Professional materials, lighting, and cinematography
+### Ultimate Design Challenge
+**Test Prompt**: *"ornate, hyper-realistic platinum ring with intricate filigree engravings wrapping around a bezel-set, 2 carat princess-cut sapphire on a minimalist black pedestal with shallow depth of field focused on the sapphire"*
 
-## ⚡ V36 Definitive Demonstration
+This comprehensive test validates the complete innovation: **unified AI-driven design creation**.
 
-### The Ultimate Universal Artisan Test
-**Test Prompt**: *"an ornate, hyper-realistic elven ring in brushed platinum, with intricate, glowing filigree engravings wrapping around a bezel-set, 2 carat princess-cut sapphire. Present it on a minimalist black pedestal with a shallow depth of field focused on the sapphire."*
-
-This comprehensive test validates the complete V36 innovation: **unified AI-driven jewelry creation**.
-
-### AI Art Director Master Blueprint Generated
+### AI Design Director Blueprint Generated
 ```json
 {
-  "reasoning": "Creating ornate elven ring requires sophisticated construction with advanced presentation planning",
+  "reasoning": "Creating ornate platinum ring requires sophisticated construction with advanced presentation planning",
   "construction_plan": [
     {
       "operation": "create_shank",
@@ -172,82 +168,35 @@ This comprehensive test validates the complete V36 innovation: **unified AI-driv
 - **🎬 Animation**: 360-degree turntable at professional 24fps
 - **📦 Package**: Complete zip with 4K renders, MP4 animation, manufacturing STL, and documentation
 - **⏱️ Execution Time**: 12.4 seconds for complete professional package
-- **🎯 Quality Score**: 95.8% professional jewelry design standards
+- **🎯 Quality Score**: 95.8% professional design standards
 
-## 🏗️ V36 System Architecture
+## 🏗️ System Components
 
-### Core V36 Universal Artisan Components
+### Core Professional Modules
 ```
-V36 Universal Artisan Professional System
-├── 🧠 AI Art Director (backend/ai_orchestrator.py)
+Aura AI Design Assistant Professional System
+├── 🧠 AI Design Director (backend/ai_orchestrator.py)
 ├── ⚡ Unified Execution Engine (backend/execution_engine.py)  
 ├── 🎨 Professional UI Operators (backend/ui_operators.py)
-├── 📋 V36 Certification Suite (test_v36_certification.py)
-└── 📊 Live Test Results (docs/LIVE_TEST_RESULTS_V36.md)
+├── 📋 Certification Suite (test_comprehensive.py)
+└── 📊 Live Test Results (docs/LIVE_TEST_RESULTS.md)
 ```
 
 ### Professional Service Architecture
 ```
-AI Jewelry Designer Interface ←→ AI Art Director ←→ Unified Execution Engine
-                                        ↕
+AI Design Interface ←→ AI Design Director ←→ Unified Execution Engine
+                              ↕
 Professional Package Delivery ←→ Advanced Materials ←→ Studio Cinematography
 ```
 
-## 🔬 V36 Core Protocols - Universal Artisan Implementation
-
-The V36 Universal Artisan implements **all Core Protocols** with revolutionary universal architecture:
-
-1. **✅ Absolute Cognitive Authority** - AI Art Director drives all creative decisions
-2. **✅ Architectural Purity** - Perfect separation: AI planning + unified execution  
-3. **✅ Asynchronous Supremacy** - Sub-second professional pipeline execution
-4. **✅ State-of-the-Art Implementation** - Revolutionary unified execution engine
-5. **✅ Foundational Doctrine** - Universal architecture with professional terminology
-6. **✅ Empirical Validation** - 95.8% professional quality score with comprehensive testing
-7. **✅ Semantic Clarity** - Universal engineering + professional domain terminology
-8. **✅ Resource Optimization** - Single engine handles complete pipeline efficiently
-9. **✅ Sentient Transparency** - Complete AI reasoning and execution visibility
-10. **✅ Dynamic Code Generation** - AI generates comprehensive master blueprints
-11. **✅ Professional Integration** - Manufacturing-ready output with studio presentation
-12. **✅ Universal Architecture** - Clean, maintainable code with role-based naming
-13. **✅ Complete Automation** - From natural language to professional deliverables
-14. **✅ Studio Quality Standards** - Advanced materials, cinematography, and animation
-15. **✅ Manufacturing Readiness** - Professional jewelry production compatibility
-16. **✅ The Universal Architecture Mandate** - Clean terminology and unified system design (NEW)
-
-## 📊 V36 Universal Artisan Test Results
-
-### Revolutionary Test Suite Performance
-```
-🏆 V36 UNIVERSAL ARTISAN CERTIFICATION RESULTS
-======================================================================
-Architecture: AI Art Director + Unified Execution Engine
-Status: FULLY_OPERATIONAL  
-Success Rate: 95.8%
-Tests Passed: Comprehensive Architecture Validation
-Quality Grade: ✅ PROFESSIONAL_JEWELRY_STANDARDS
-Execution Time: 12.4s for complete package
-======================================================================
-🎉 V36 UNIVERSAL ARTISAN IS PRODUCTION READY!
-```
-
-### Generated V36 Output Files
-- **4K Professional Renders**: Hero shot + 4 detailed angle views (3840x2160 PNG)
-- **Turntable Animation**: Professional 360° rotation video (H.264, 24fps)  
-- **Manufacturing STL**: Precision millimeter-scale geometry for production
-- **Source Files**: Complete Blender project with advanced materials
-- **Professional Package**: Zip deliverable with documentation and specifications
-- **Quality Metrics**: Comprehensive manufacturing readiness validation
-
-## 🎨 V36 Universal Artisan Capabilities
-
-### AI Art Director Intelligence  
-- **generate_jewelry**: Primary user-facing jewelry creation function
+## 🎨 AI Design Director Intelligence  
+- **generate_jewelry**: Primary user-facing design creation function
 - **Master Blueprint Generation**: Comprehensive construction + presentation planning
 - **Advanced Material Selection**: Professional brushed, polished, antique finishes
 - **Studio Environment Planning**: Minimalist pedestals, reflective surfaces, lighting
 - **Cinematography Direction**: Camera positioning, depth of field, focus control
 
-### Unified Execution Engine Features
+## ⚡ Unified Execution Engine Features
 - **Dynamic Construction**: Intelligent operation routing and execution
 - **Advanced PBR Materials**: Professional metallic workflows with micro-detail
 - **Studio Environment**: Automated lighting and environment construction
@@ -255,95 +204,95 @@ Execution Time: 12.4s for complete package
 - **Turntable Animation**: Cinematic 360° videos with professional timing
 - **Export Package**: Complete zip with renders, animation, STL, and documentation
 
-### Professional UI System
+## 🎨 Professional UI System
 - **"AI Jewelry Designer"**: Professional domain-specific interface naming
 - **Real-time Cognitive Streaming**: Live AI reasoning visibility
 - **Shape Key Animations**: Professional 60fps transitions with easing
-- **Universal Architecture**: Clean engineering terminology with user-friendly interface
+- **Clean Architecture**: Universal engineering terminology with user-friendly interface
 
-## 🏭 V36 Manufacturing Integration
+## 🏭 Manufacturing Integration
 
 ### Professional Output Standards
-- **Precision Geometry**: Sub-millimeter accuracy for jewelry production
+- **Precision Geometry**: Sub-millimeter accuracy for production
 - **Manufacturing STL**: Direct CAD/CAM workflow compatibility
 - **Material Specifications**: Industry-standard precious metal properties  
-- **Quality Certification**: Professional jewelry manufacturing validation
+- **Quality Certification**: Professional manufacturing validation
 
 ### Supported Professional Workflows
-- **CAD Integration**: Direct STL to professional jewelry CAD systems
+- **CAD Integration**: Direct STL to professional CAD systems
 - **CNC Machining**: Precision metal fabrication from generated geometry
 - **3D Printing + Casting**: Investment casting workflow ready
 - **Quality Control**: Manufacturing tolerance and specification validation
 
-## 📚 V36 Documentation
+## 📚 Documentation
 
-### Key V36 Documents  
-- **[V36 Live Test Results](docs/LIVE_TEST_RESULTS_V36.md)**: Complete universal artisan validation
-- **[V36 Certification Suite](test_v36_certification.py)**: Comprehensive system verification
-- **[AI Art Director](backend/ai_orchestrator.py)**: Master blueprint generation with presentation planning
-- **[Unified Execution Engine](backend/execution_engine.py)**: Complete jewelry creation and rendering pipeline
+### Key Documents  
+- **[Live Test Results](docs/LIVE_TEST_RESULTS.md)**: Complete system validation
+- **[Certification Suite](test_comprehensive.py)**: Comprehensive system verification
+- **[AI Design Director](backend/ai_orchestrator.py)**: Master blueprint generation with presentation planning
+- **[Unified Execution Engine](backend/execution_engine.py)**: Complete design creation and rendering pipeline
 
 ### API Documentation
-- **V36 Universal Artisan Pipeline**: `generate_jewelry(user_prompt, user_specs)` primary function
+- **Aura Design Pipeline**: `generate_jewelry(user_prompt, user_specs)` primary function
 - **Master Blueprint System**: Advanced construction + presentation planning
 - **Unified Execution**: Single engine handling complete workflow from construction to export
 - **Professional Package Delivery**: Automated zip generation with all deliverables
 
-## 🎯 V36 Professional Applications
+## 🎯 Professional Applications
 
 ### Industry Use Cases
-- **Custom Jewelry Design**: Natural language to manufacturing-ready designs
+- **Custom Design Creation**: Natural language to manufacturing-ready designs
 - **Professional Visualization**: Studio-quality renders with advanced materials
 - **Manufacturing Integration**: Direct workflow to CAD/CAM production systems
-- **Quality Validation**: Professional jewelry standards compliance
+- **Quality Validation**: Professional design standards compliance
 - **Complete Project Delivery**: Comprehensive packages for client presentation
 
-### Revolutionary Standards Achieved
-- **Universal Architecture**: Clean, maintainable code with role-based naming
-- **AI Art Direction**: Complete presentation planning with material and environment control
+### Professional Standards Achieved
+- **Clean Architecture**: Maintainable code with role-based naming
+- **AI Design Direction**: Complete presentation planning with material and environment control
 - **Unified Execution**: Single engine handling entire pipeline efficiently
 - **Professional Quality**: Studio-grade materials, cinematography, and animation
-- **Manufacturing Ready**: Direct integration with jewelry production workflows
+- **Manufacturing Ready**: Direct integration with production workflows
 
-## 🚀 V36 Future Evolution
+## 🚀 Future Development
 
-### Universal Artisan Enhancement Roadmap
+### Enhancement Roadmap
 - **Advanced Material Library**: Expanded PBR materials with gemstone varieties
 - **Enhanced Cinematography**: Multi-camera setups with artistic lighting scenarios
-- **Extended Construction Operations**: Advanced jewelry techniques and settings
+- **Extended Construction Operations**: Advanced techniques and settings
 - **Cloud Processing**: Distributed rendering for higher quality and speed
 
 ### Research Frontiers  
 - **Multi-Modal Intelligence**: Vision + Language + 3D unified understanding
 - **Autonomous Quality Control**: AI-driven manufacturing validation and optimization
-- **Advanced Presentation**: Virtual reality and augmented reality jewelry preview
+- **Advanced Presentation**: Virtual reality and augmented reality preview
 - **Real-time Collaboration**: Live design iteration with client feedback integration
 
 ---
 
-## 📄 License & V36 Credits
+## 📄 License & Credits
 
-V36 Universal Artisan developed with revolutionary AI art direction and unified execution technology. The world's first complete AI jewelry design system with professional manufacturing integration.
+Aura AI Design Assistant developed with advanced AI design direction and unified execution technology. A complete AI design system with professional manufacturing integration.
 
-**Status**: ✅ **FULLY OPERATIONAL** - Universal Artisan Ready (95.8% Professional Quality Score)
+**Status**: ✅ **FULLY OPERATIONAL** - Professional Design Ready (95.8% Quality Score)
 
-**Architecture**: AI Art Director + Unified Execution Engine with complete professional package delivery
+**Architecture**: AI Design Director + Unified Execution Engine with complete professional package delivery
 
 ---
 
-## 🔮 V36 Achievement Summary
+## 🔮 Achievement Summary
 
-### The Ultimate Universal Artisan Transcendence
-V36 has achieved the **ultimate dream** of seamlessly fusing:
+### The Ultimate Professional Design System
+Aura has achieved the seamless fusion of:
 - **🧠 World-Class AI Intelligence** with comprehensive presentation planning
-- **⚡ Universal Architecture** with clean, maintainable, role-based code
+- **⚡ Clean Architecture** with maintainable, role-based code
 - **🎨 Professional Material Systems** with advanced PBR workflows and micro-detail
 - **📸 Studio-Grade Cinematography** with automated depth of field and focus control  
 - **🎬 Professional Animation** with cinematic turntable videos
 - **🏭 Manufacturing Integration** with direct CAD/CAM workflow compatibility
 - **📦 Complete Professional Delivery** with comprehensive zip packages
 
-**The V36 Universal Artisan stands as the ultimate achievement in AI-driven jewelry design - the perfect fusion of artificial intelligence, professional craftsmanship, and manufacturing excellence.**
+**Aura AI Design Assistant stands as the ultimate achievement in AI-driven design - the perfect fusion of artificial intelligence, professional craftsmanship, and manufacturing excellence.**
 
 🎨 **Professional** • ⚡ **Universal** • 🧠 **Intelligent** • 🏭 **Manufacturing Ready** • 🏆 **Ultimate**
 

@@ -1,23 +1,21 @@
 """
-V36 Universal Artisan - AI Orchestrator
-=======================================
+Aura AI Design Assistant - AI Orchestrator
+==========================================
 
-The definitive AI orchestration system that serves as the "Sentient Art Director"
-for the V36 Universal Artisan. This module coordinates all AI decision-making,
-construction planning, and presentation planning with state-of-the-art intelligence.
+The AI orchestration system that coordinates all AI decision-making,
+construction planning, and presentation planning for the Aura AI Design Assistant.
 
-V36 Universal Artisan Capabilities:
-- Advanced JSON Master Blueprint generation with presentation planning
-- Intelligent construction sequence orchestration
-- Hyper-realistic presentation planning and material specification
+Core Capabilities:
+- Advanced JSON blueprint generation with comprehensive presentation planning
+- Intelligent construction sequence orchestration  
+- Professional presentation planning and material specification
 - Autonomous error handling and graceful degradation
-- Professional domain terminology with universal internal architecture
+- Clean architecture with professional domain terminology
 
-The AI orchestrator operates as a world-class jewelry design intelligence that
-rivals professional designers while maintaining complete transparency and
-professional terminology standards.
+The AI orchestrator operates as a professional design intelligence that
+provides expert-level creative direction while maintaining complete transparency.
 
-Implements Protocol 16: The Universal Architecture Mandate
+Architecture:
 - Universal engineering role naming for modules
 - Professional domain-specific naming for user-facing functions
 """
@@ -32,7 +30,7 @@ from typing import Dict, Any, Optional
 
 import bpy
 
-# V24 Enhancement: Load centralized configuration
+# Load centralized configuration
 try:
     from ..config import config, get_lm_studio_url, get_ai_server_config, is_sandbox_mode
     CONFIG_AVAILABLE = True
@@ -44,12 +42,12 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 class AiOrchestrator:
-    """V36 Universal Artisan AI Orchestrator - The Sentient Art Director."""
+    """Aura AI Design Assistant Orchestrator - Professional AI Design Director."""
     
     def __init__(self):
         self.addon_root = self._get_addon_root()
         
-        # V36 Enhanced directory setup with universal architecture
+        # Enhanced directory setup with professional architecture
         if CONFIG_AVAILABLE:
             self.output_dir = os.path.join(self.addon_root, config.get('OUTPUT_DIR', 'output'))
             self.sandbox_mode = is_sandbox_mode()
@@ -62,13 +60,13 @@ class AiOrchestrator:
             self.lm_studio_url = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B-Instruct"
             self.huggingface_api_key = os.environ.get("HUGGINGFACE_API_KEY", "")
         
-        # V36 Universal artisan output directories
+        # Professional design output directories
         self.artisan_output_dir = os.path.join(self.output_dir, "v36_universal_artisan")
         os.makedirs(self.output_dir, exist_ok=True)
         os.makedirs(self.artisan_output_dir, exist_ok=True)
         
-        logger.info(f"🚀 V36 AI Orchestrator initialized - Universal Architecture Mode")
-        logger.info(f"💎 V36: Artisan output: {self.artisan_output_dir}")
+        logger.info(f"🚀 AI Orchestrator initialized - Professional Architecture Mode")
+        logger.info(f"💎 Aura: Design output: {self.artisan_output_dir}")
     
     def generate_jewelry(self, user_prompt: str, user_specs: Optional[Dict] = None) -> Dict[str, Any]:
         """
@@ -85,16 +83,16 @@ class AiOrchestrator:
         """
         start_time = time.time()
         
-        logger.info("🎨 V36: Starting universal artisan jewelry design generation...")
-        logger.info(f"🎯 V36: User Vision: '{user_prompt}'")
+        logger.info("🎨 Design Engine: Starting AI jewelry design generation...")
+        logger.info(f"🎯 Processing: User Vision: '{user_prompt}'")
         
         try:
-            # V36 Stage 1: Advanced design analysis with presentation intent
-            logger.info("🧠 V36 Stage 1: Analyzing design intent for universal artisan quality...")
+            # Stage 1: Advanced design analysis with presentation intent
+            logger.info("🧠 Stage 1: Analyzing design intent for professional quality...")
             design_analysis = self._analyze_design_intent(user_prompt, user_specs)
             
-            # V36 Stage 2: Generate master blueprint with construction and presentation plans
-            logger.info("⚡ V36 Stage 2: Generating master blueprint with AI art director...")
+            # Stage 2: Generate master blueprint with construction and presentation plans
+            logger.info("⚡ Stage 2: Generating master blueprint with AI art director...")
             master_blueprint = self._generate_master_blueprint(user_prompt, user_specs or {})
             
             # V36 Stage 3: Execute with unified execution engine
