@@ -1,0 +1,37 @@
+{
+  "name": "aura-design-studio",
+  "version": "1.0.0",
+  "description": "Aura Professional CAD Design Studio - State-of-the-art web-based jewelry design interface",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "cad",
+    "jewelry", 
+    "design",
+    "3d",
+    "ai",
+    "react",
+    "three.js"
+  ],
+  "author": "Aura AI Design Assistant",
+  "license": "MIT",
+  "dependencies": {
+    "@react-three/drei": "^10.7.5",
+    "@react-three/fiber": "^9.3.0",
+    "@types/node": "^24.3.1",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "@types/three": "^0.180.0",
+    "@vitejs/plugin-react": "^5.0.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "three": "^0.180.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5"
+  }
+}
