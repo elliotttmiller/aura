@@ -1,1 +1,930 @@
-""" AI Design Assistant - Unified Execution Engine =============================================== The definitive execution engine forged from the synthesis of: - blender_proc.py (Blender processing and rendering) - procedural_knowledge.py (Professional creation techniques) - hyperrealistic_blender_proc.py (Advanced material and detail systems) This unified module serves as the single, definitive "robotic arm" and "rendering studio" of the AI Design Assistant system, providing: - Dynamic Construction Plan Execution - Advanced PBR Material Synthesis - Studio Environment Construction - Automated Cinematography with Depth of Field - Automated Turntable Animation - Professional Export Package Generation Implements Protocol 16: The Universal Architecture Mandate - Universal engineering terminology for internal logic - Professional domain-specific naming for user-facing functions - Abstract parameter handling for maximum code reuse """ import os import sys import json import math import time import logging from typing import Dict, List, Tuple, Optional, Any from argparse import ArgumentParser # Import scientific libraries for basic geometry operations (optional) try: import numpy as np NUMPY_AVAILABLE = True except ImportError: NUMPY_AVAILABLE = False logging.warning("NumPy not available - using basic math operations") import bpy import bmesh import addon_utils from mathutils import Vector, Matrix, Euler from bpy_extras.io_utils import ExportHelper # Professional logging configuration logging.basicConfig(level=logging.INFO, format='[%(asctime)s] ENGINE %(levelname)s %(message)s') logger = logging.getLogger(__name__) # ============================================================================= # UNIFIED EXECUTION ENGINE - CORE FUNCTIONALITY # ============================================================================= class UnifiedExecutionEngine: """ AI Design Assistant Unified Execution Engine The single, comprehensive execution system that handles all aspects of jewelry design generation, rendering, and export. """ def __init__(self): self.current_scene = None self.output_directory = None self.asset_scale_factor = 0.02 # 20mm default scale # Initialize rendering subsystems self._setup_rendering_engine() logger.info(" Unified Execution Engine initialized") def _setup_rendering_engine(self): """Initialize the rendering subsystem with professional settings.""" # Enable Cycles rendering with optimal settings if bpy.context.scene: bpy.context.scene.render.engine = 'CYCLES' bpy.context.scene.cycles.samples = 512 bpy.context.scene.cycles.use_adaptive_sampling = True def generate_jewelry(self, construction_plan: List[Dict], presentation_plan: Dict, output_path: str) -> Dict[str, Any]: """ Primary user-facing function: Generate complete jewelry design with presentation. This is the main function called by the AI orchestrator to create the final jewelry piece with full presentation package. Args: construction_plan: Sequential operations for jewelry construction presentation_plan: Rendering and presentation specifications output_path: Base path for output files Returns: Result dictionary with all generated assets """ logger.info("=== JEWELRY GENERATION ENGINE ACTIVATED ===") logger.info(f"Construction plan: {len(construction_plan)} operations") logger.info(f"Presentation plan: {presentation_plan.get('render_environment', 'default')}") start_time = time.time() try: # Stage 1: Setup professional scene environment self._setup_professional_scene() # Stage 2: Execute construction plan dynamically primary_asset = self._execute_construction_sequence(construction_plan) # Stage 3: Apply advanced materials and presentation self._apply_presentation_materials(primary_asset, presentation_plan) # Stage 4: Setup studio environment and cinematography camera_object = self._setup_studio_cinematography(primary_asset, presentation_plan) # Stage 5: Generate presentation renders render_outputs = self._generate_presentation_renders(primary_asset, camera_object, output_path) # Stage 6: Create turntable animation animation_output = self._create_turntable_animation(primary_asset, camera_object, output_path) # Stage 7: Export manufacturing files manufacturing_outputs = self._export_manufacturing_files(primary_asset, output_path) # Stage 8: Package final deliverables package_path = self._create_professional_package( render_outputs, animation_output, manufacturing_outputs, output_path ) execution_time = time.time() - start_time logger.info(f"✅ Jewelry generation completed in {execution_time:.2f}s") return { 'success': True, 'execution_time': execution_time, 'primary_asset': primary_asset.name, 'renders': render_outputs, 'animation': animation_output, 'manufacturing_files': manufacturing_outputs, 'package_path': package_path } except Exception as e: logger.error(f"❌ Jewelry generation failed: {e}") return { 'success': False, 'error': str(e), 'execution_time': time.time() - start_time } def _setup_professional_scene(self): """Setup a clean, professional Blender scene for jewelry creation.""" logger.info("Setting up professional scene environment") # Clear existing scene data bpy.ops.wm.read_factory_settings(use_empty=True) # Remove default objects bpy.ops.object.select_all(action='SELECT') bpy.ops.object.delete(use_global=False) # Clear materials and textures for material in bpy.data.materials: bpy.data.materials.remove(material, do_unlink=True) for texture in bpy.data.textures: bpy.data.textures.remove(texture, do_unlink=True) self.current_scene = bpy.context.scene self.current_scene.name = "_Professional_Studio" # Set professional color management self.current_scene.view_settings.view_transform = 'Standard' self.current_scene.view_settings.look = 'Medium High Contrast' logger.info("Professional scene setup completed") def _execute_construction_sequence(self, construction_plan: List[Dict]) -> bpy.types.Object: """ Execute the AI's construction plan as a sequence of operations. This is the core "robotic arm" functionality that interprets and executes the AI's step-by-step construction instructions. """ logger.info(f"Executing construction sequence: {len(construction_plan)} operations") context_objects = {"primary_component": None} final_object = None # Execute each operation sequentially for i, operation in enumerate(construction_plan): operation_name = operation.get('operation', 'unknown') parameters = operation.get('parameters', {}) logger.info(f"Operation {i+1}/{len(construction_plan)}: {operation_name}") try: # Route operation to appropriate handler result_object = self._route_operation(operation_name, parameters, context_objects) if result_object: final_object = result_object context_objects['primary_component'] = result_object context_objects[f'component_{i+1}'] = result_object logger.info(f"✅ Operation {operation_name} completed") else: logger.warning(f"⚠️ Operation {operation_name} returned no object") except Exception as e: logger.error(f"❌ Operation {operation_name} failed: {e}") continue if not final_object: logger.warning("No operations produced valid objects, creating fallback") final_object = self._create_fallback_component() # Center and scale the final object appropriately bpy.context.view_layer.objects.active = final_object bpy.ops.object.origin_set(type='GEOMETRY_TO_ORIGIN') # Apply professional scale (20mm default) final_object.scale = (self.asset_scale_factor, self.asset_scale_factor, self.asset_scale_factor) bpy.ops.object.transform_apply(scale=True) final_object.name = "Primary_Jewelry_Asset" logger.info("Construction sequence execution completed") return final_object def _route_operation(self, operation_name: str, parameters: Dict, context_objects: Dict) -> bpy.types.Object: """Route operations to appropriate creation functions.""" primary_component = context_objects.get('primary_component') # Route to appropriate creation technique if operation_name == "create_shank": return self._build_primary_component(primary_component, parameters, "shank") elif operation_name == "create_bezel_setting": return self._build_secondary_component(primary_component, parameters, "bezel") elif operation_name == "create_prong_setting": return self._build_secondary_component(primary_component, parameters, "prong") elif operation_name == "apply_twist_modifier": return self._apply_geometric_modifier(primary_component, parameters, "twist") elif operation_name == "apply_procedural_displacement": return self._apply_surface_treatment(primary_component, parameters, "displacement") else: logger.warning(f"Unknown operation: {operation_name}, using fallback") return primary_component or self._create_fallback_component() def _build_primary_component(self, base_object: bpy.types.Object, parameters: Dict, component_type: str) -> bpy.types.Object: """Build primary structural components (rings, bands, etc.).""" logger.info(f"Building primary component: {component_type}") if component_type == "shank": # Create ring/band geometry profile_shape = parameters.get('profile_shape', 'Round') thickness_mm = parameters.get('thickness_mm', 2.0) diameter_mm = parameters.get('diameter_mm', 18.0) # Convert to Blender units (mm to meters) thickness = thickness_mm / 1000.0 radius = (diameter_mm / 1000.0) / 2 bpy.ops.mesh.primitive_torus_add( major_radius=radius, minor_radius=thickness / 2, location=(0, 0, 0) ) shank_object = bpy.context.active_object shank_object.name = "Primary_Component_Shank" # Apply profile modifications if needed if profile_shape == 'D-Shape': self._apply_d_shape_profile(shank_object) return shank_object return None def _build_secondary_component(self, base_object: bpy.types.Object, parameters: Dict, component_type: str) -> bpy.types.Object: """Build secondary components (settings, decorative elements, etc.).""" logger.info(f"Building secondary component: {component_type}") if component_type == "bezel": return self._create_bezel_setting(base_object, parameters) elif component_type == "prong": return self._create_prong_setting(base_object, parameters) return base_object def _create_bezel_setting(self, base_object: bpy.types.Object, parameters: Dict) -> bpy.types.Object: """Create professional bezel setting.""" bezel_height_mm = parameters.get('bezel_height_mm', 2.5) bezel_thickness_mm = parameters.get('bezel_thickness_mm', 0.5) feature_diameter_mm = parameters.get('feature_diameter_mm', 6.0) setting_position = parameters.get('setting_position', [0, 0, 0.002]) # Convert to Blender units bezel_height = bezel_height_mm / 1000.0 bezel_thickness = bezel_thickness_mm / 1000.0 feature_radius = (feature_diameter_mm / 1000.0) / 2 # Create cylindrical bezel bpy.ops.mesh.primitive_cylinder_add( radius=feature_radius + bezel_thickness, depth=bezel_height, location=setting_position ) bezel_object = bpy.context.active_object bezel_object.name = "Secondary_Component_Bezel" # Create inner cavity bpy.ops.object.mode_set(mode='EDIT') bpy.ops.mesh.select_all(action='SELECT') bpy.ops.mesh.inset_faces(thickness=bezel_thickness, depth=0) bpy.ops.mesh.extrude_region_move(MESH_OT_extrude_region={"use_normal_flip":False, "use_dissolve_ortho_edges":False, "mirror":False}, TRANSFORM_OT_translate={"value":(0, 0, -bezel_height * 0.8)}) bpy.ops.object.mode_set(mode='OBJECT') # Join with base object if provided if base_object: bpy.ops.object.select_all(action='DESELECT') base_object.select_set(True) bezel_object.select_set(True) bpy.context.view_layer.objects.active = base_object bpy.ops.object.join() result_object = base_object else: result_object = bezel_object return result_object def _create_prong_setting(self, base_object: bpy.types.Object, parameters: Dict) -> bpy.types.Object: """Create professional prong setting.""" prong_count = parameters.get('prong_count', 4) prong_thickness_mm = parameters.get('prong_thickness_mm', 0.8) prong_height_mm = parameters.get('prong_height_mm', 3.5) placement_radius_mm = parameters.get('prong_placement_radius_mm', 3.0) # Convert to Blender units prong_thickness = prong_thickness_mm / 1000.0 prong_height = prong_height_mm / 1000.0 placement_radius = placement_radius_mm / 1000.0 prong_objects = [] # Create individual prongs for i in range(prong_count): angle = (2 * math.pi * i) / prong_count prong_x = placement_radius * math.cos(angle) prong_y = placement_radius * math.sin(angle) prong_z = 0.002 bpy.ops.mesh.primitive_cylinder_add( radius=prong_thickness / 2, depth=prong_height, location=(prong_x, prong_y, prong_z + prong_height / 2) ) prong = bpy.context.active_object prong.name = f"Secondary_Component_Prong_{i+1}" prong_objects.append(prong) # Join all components if base_object: bpy.ops.object.select_all(action='DESELECT') base_object.select_set(True) for prong in prong_objects: prong.select_set(True) bpy.context.view_layer.objects.active = base_object bpy.ops.object.join() result_object = base_object else: bpy.ops.object.select_all(action='DESELECT') for prong in prong_objects: prong.select_set(True) bpy.context.view_layer.objects.active = prong_objects[0] bpy.ops.object.join() result_object = prong_objects[0] result_object.name = "Secondary_Component_Prong_Setting" return result_object def _apply_geometric_modifier(self, base_object: bpy.types.Object, parameters: Dict, modifier_type: str) -> bpy.types.Object: """Apply geometric modifications to objects.""" if not base_object: return None logger.info(f"Applying geometric modifier: {modifier_type}") if modifier_type == "twist": twist_angle_degrees = parameters.get('twist_angle_degrees', 30) twist_axis = parameters.get('twist_axis', 'Z') bpy.context.view_layer.objects.active = base_object bpy.ops.object.mode_set(mode='OBJECT') twist_modifier = base_object.modifiers.new(name="Geometric_Twist", type='SIMPLE_DEFORM') twist_modifier.deform_method = 'TWIST' twist_modifier.angle = math.radians(twist_angle_degrees) twist_modifier.deform_axis = twist_axis return base_object def _apply_surface_treatment(self, base_object: bpy.types.Object, parameters: Dict, treatment_type: str) -> bpy.types.Object: """Apply surface treatments and texturing.""" if not base_object: return None logger.info(f"Applying surface treatment: {treatment_type}") if treatment_type == "displacement": pattern_type = parameters.get('pattern_type', 'organic') displacement_strength = parameters.get('displacement_strength', 0.5) bpy.context.view_layer.objects.active = base_object bpy.ops.object.mode_set(mode='OBJECT') # Add subdivision for detail subsurf_mod = base_object.modifiers.new(name="Surface_Subdivision", type='SUBSURF') subsurf_mod.levels = 2 # Add displacement displacement_mod = base_object.modifiers.new(name="Surface_Treatment", type='DISPLACE') displacement_mod.strength = displacement_strength # Create noise texture texture = bpy.data.textures.new(name="Surface_Texture", type='NOISE') texture.noise_scale = 0.5 displacement_mod.texture = texture return base_object def _create_fallback_component(self) -> bpy.types.Object: """Create a simple fallback component when operations fail.""" bpy.ops.mesh.primitive_torus_add(major_radius=0.009, minor_radius=0.001) fallback = bpy.context.active_object fallback.name = "Fallback_Component" return fallback def _apply_d_shape_profile(self, obj: bpy.types.Object): """Apply D-shape profile modification to torus.""" bpy.context.view_layer.objects.active = obj bpy.ops.object.mode_set(mode='EDIT') bpy.ops.mesh.select_all(action='SELECT') bpy.ops.mesh.bisect(plane_co=(0, 0, 0), plane_no=(0, 0, -1)) bpy.ops.object.mode_set(mode='OBJECT') # ============================================================================= # ADVANCED PBR MATERIAL SYNTHESIS # ============================================================================= def _apply_presentation_materials(self, primary_asset: bpy.types.Object, presentation_plan: Dict): """Apply advanced PBR materials based on presentation plan.""" logger.info("Applying advanced PBR material synthesis") material_style = presentation_plan.get('material_style', 'Pristine Studio Polish') metal_type = presentation_plan.get('metal_type', 'gold') # Create advanced PBR material material_name = f"Advanced_PBR_{metal_type}" material = bpy.data.materials.new(name=material_name) material.use_nodes = True # Clear default nodes nodes = material.node_tree.nodes nodes.clear() # Create principled BSDF with advanced settings principled = nodes.new(type='ShaderNodeBsdfPrincipled') output = nodes.new(type='ShaderNodeOutputMaterial') # Configure metal properties if metal_type.lower() == "gold": principled.inputs["Base Color"].default_value = (1.0, 0.766, 0.336, 1.0) elif metal_type.lower() == "silver": principled.inputs["Base Color"].default_value = (0.972, 0.960, 0.915, 1.0) elif metal_type.lower() == "platinum": principled.inputs["Base Color"].default_value = (0.9, 0.9, 0.95, 1.0) # Set advanced material properties principled.inputs["Metallic"].default_value = 1.0 if "Polish" in material_style: principled.inputs["Roughness"].default_value = 0.02 elif "Brushed" in material_style: principled.inputs["Roughness"].default_value = 0.3 elif "Antique" in material_style: principled.inputs["Roughness"].default_value = 0.15 # Add advanced features based on style if "Antique" in material_style: # Add ColorRamp for aged effect color_ramp = nodes.new(type='ShaderNodeValToRGB') noise_tex = nodes.new(type='ShaderNodeTexNoise') noise_tex.inputs['Scale'].default_value = 50.0 color_ramp.color_ramp.elements[0].color = (0.8, 0.6, 0.4, 1.0) color_ramp.color_ramp.elements[1].color = (1.0, 0.8, 0.6, 1.0) material.node_tree.links.new(noise_tex.outputs['Fac'], color_ramp.inputs['Fac']) material.node_tree.links.new(color_ramp.outputs['Color'], principled.inputs['Base Color']) # Connect to output material.node_tree.links.new(principled.outputs['BSDF'], output.inputs['Surface']) # Apply to object if primary_asset.data.materials: primary_asset.data.materials[0] = material else: primary_asset.data.materials.append(material) logger.info(f"Advanced PBR material applied: {material_style} {metal_type}") # ============================================================================= # STUDIO ENVIRONMENT CONSTRUCTION # ============================================================================= def _setup_studio_cinematography(self, primary_asset: bpy.types.Object, presentation_plan: Dict) -> bpy.types.Object: """Setup professional studio environment and cinematography.""" logger.info("Setting up studio environment and cinematography") render_environment = presentation_plan.get('render_environment', 'Minimalist Black Pedestal') # Create studio environment self._create_studio_environment(render_environment) # Setup professional lighting self._create_professional_lighting() # Create and position camera with depth of field camera = self._create_studio_camera(primary_asset, presentation_plan) logger.info("Studio cinematography setup completed") return camera def _create_studio_environment(self, environment_type: str): """Create the studio environment backdrop and surfaces.""" logger.info(f"Creating studio environment: {environment_type}") if "Black Pedestal" in environment_type: # Create black pedestal bpy.ops.mesh.primitive_cylinder_add( radius=0.02, depth=0.005, location=(0, 0, -0.0025) ) pedestal = bpy.context.active_object pedestal.name = "Studio_Pedestal" # Apply black material pedestal_mat = bpy.data.materials.new(name="Studio_Black") pedestal_mat.use_nodes = True pedestal_mat.node_tree.nodes["Principled BSDF"].inputs[0].default_value = (0.02, 0.02, 0.02, 1.0) pedestal.data.materials.append(pedestal_mat) elif "Reflective Marble" in environment_type: # Create marble surface bpy.ops.mesh.primitive_plane_add(size=0.1, location=(0, 0, -0.002)) surface = bpy.context.active_object surface.name = "Studio_Surface" # Apply marble material marble_mat = bpy.data.materials.new(name="Studio_Marble") marble_mat.use_nodes = True nodes = marble_mat.node_tree.nodes principled = nodes["Principled BSDF"] principled.inputs["Base Color"].default_value = (0.9, 0.9, 0.85, 1.0) principled.inputs["Roughness"].default_value = 0.1 principled.inputs["Specular"].default_value = 0.8 surface.data.materials.append(marble_mat) def _create_professional_lighting(self): """Create professional three-point lighting setup.""" logger.info("Creating professional lighting setup") # Key Light - Primary illumination bpy.ops.object.light_add(type='SUN', location=(0.05, 0.05, 0.1)) key_light = bpy.context.active_object key_light.name = "Studio_Key_Light" key_light.data.energy = 3.0 key_light.data.color = (1.0, 0.95, 0.9) # Fill Light - Shadow softening bpy.ops.object.light_add(type='SUN', location=(-0.05, 0.03, 0.08)) fill_light = bpy.context.active_object fill_light.name = "Studio_Fill_Light" fill_light.data.energy = 1.5 fill_light.data.color = (0.9, 0.95, 1.0) # Rim Light - Edge definition bpy.ops.object.light_add(type='SUN', location=(0, -0.08, 0.06)) rim_light = bpy.context.active_object rim_light.name = "Studio_Rim_Light" rim_light.data.energy = 2.0 rim_light.data.color = (1.0, 1.0, 1.0) # Environment lighting world = bpy.context.scene.world world.use_nodes = True bg_shader = world.node_tree.nodes['Background'] bg_shader.inputs['Strength'].default_value = 0.3 def _create_studio_camera(self, primary_asset: bpy.types.Object, presentation_plan: Dict) -> bpy.types.Object: """Create and configure professional studio camera.""" # Get bounding box for optimal framing bbox_corners = [primary_asset.matrix_world @ Vector(corner) for corner in primary_asset.bound_box] min_coords = Vector(( min(corner.x for corner in bbox_corners), min(corner.y for corner in bbox_corners), min(corner.z for corner in bbox_corners) )) max_coords = Vector(( max(corner.x for corner in bbox_corners), max(corner.y for corner in bbox_corners), max(corner.z for corner in bbox_corners) )) bbox_center = (min_coords + max_coords) / 2 bbox_dimensions = max_coords - min_coords max_dimension = max(bbox_dimensions) # Calculate optimal camera distance optimal_distance = max_dimension * 2.5 # Position camera at professional angle camera_location = Vector(( optimal_distance * 0.7, optimal_distance * 0.7, optimal_distance * 0.5 )) bpy.ops.object.camera_add(location=camera_location) camera = bpy.context.active_object camera.name = "Studio_Camera" # Point camera at jewelry direction = bbox_center - camera.location rot_quat = direction.to_track_quat('-Z', 'Y') camera.rotation_euler = rot_quat.to_euler() # Configure camera settings camera_data = camera.data camera_data.lens = 85 # Professional jewelry photography lens # Setup depth of field if specified camera_effects = presentation_plan.get('camera_effects', {}) if camera_effects.get('use_depth_of_field', False): camera_data.dof.use_dof = True camera_data.dof.aperture_fstop = 2.8 # Create focus target if specified focus_point = camera_effects.get('focus_point', 'center') if focus_point: bpy.ops.object.empty_add(location=bbox_center) focus_empty = bpy.context.active_object focus_empty.name = "Camera_Focus_Target" camera_data.dof.focus_object = focus_empty # Set as scene camera self.current_scene.camera = camera return camera # ============================================================================= # PRESENTATION RENDERS & TURNTABLE ANIMATION # ============================================================================= def _generate_presentation_renders(self, primary_asset: bpy.types.Object, camera: bpy.types.Object, output_path: str) -> Dict[str, str]: """Generate high-quality presentation renders.""" logger.info("Generating presentation renders") render_outputs = {} # Configure render settings render = self.current_scene.render render.resolution_x = 3840 # 4K resolution render.resolution_y = 2160 render.resolution_percentage = 100 render.image_settings.file_format = 'PNG' render.image_settings.color_mode = 'RGBA' render.image_settings.compression = 15 # Main hero shot hero_path = output_path.replace('.zip', '_hero_4k.png') render.filepath = hero_path bpy.ops.render.render(write_still=True) render_outputs['hero_shot'] = hero_path # Detail shots with different angles angles = [ ('detail_top', (0, 0, math.radians(45))), ('detail_side', (0, math.radians(90), 0)), ('detail_angle', (math.radians(30), math.radians(30), 0)) ] original_rotation = camera.rotation_euler.copy() for angle_name, rotation in angles: camera.rotation_euler = Euler(rotation) detail_path = output_path.replace('.zip', f'_{angle_name}_4k.png') render.filepath = detail_path bpy.ops.render.render(write_still=True) render_outputs[angle_name] = detail_path camera.rotation_euler = original_rotation logger.info(f"Generated {len(render_outputs)} presentation renders") return render_outputs def _create_turntable_animation(self, primary_asset: bpy.types.Object, camera: bpy.types.Object, output_path: str) -> str: """Create 360-degree turntable animation video.""" logger.info("Creating turntable animation") # Setup animation self.current_scene.frame_start = 1 self.current_scene.frame_end = 120 # 5 seconds at 24fps self.current_scene.frame_set(1) # Create rotation animation for the jewelry primary_asset.rotation_euler = (0, 0, 0) primary_asset.keyframe_insert(data_path="rotation_euler", index=2, frame=1) primary_asset.rotation_euler = (0, 0, math.radians(360)) primary_asset.keyframe_insert(data_path="rotation_euler", index=2, frame=120) # Set linear interpolation for smooth rotation action = primary_asset.animation_data.action for fcurve in action.fcurves: for keyframe in fcurve.keyframe_points: keyframe.interpolation = 'LINEAR' # Configure video output animation_path = output_path.replace('.zip', '_turntable.mp4') render = self.current_scene.render render.image_settings.file_format = 'FFMPEG' render.ffmpeg.format = 'MPEG4' render.ffmpeg.codec = 'H264' render.ffmpeg.constant_rate_factor = 'HIGH' render.filepath = animation_path # Render animation bpy.ops.render.render(animation=True) logger.info(f"Turntable animation created: {animation_path}") return animation_path # ============================================================================= # MANUFACTURING FILES & PROFESSIONAL PACKAGE # ============================================================================= def _export_manufacturing_files(self, primary_asset: bpy.types.Object, output_path: str) -> Dict[str, str]: """Export manufacturing-ready files.""" logger.info("Exporting manufacturing files") manufacturing_outputs = {} # Ensure object is selected and active bpy.ops.object.select_all(action='DESELECT') primary_asset.select_set(True) bpy.context.view_layer.objects.active = primary_asset # Apply all modifiers for manufacturing for mod in primary_asset.modifiers[:]: try: bpy.ops.object.modifier_apply(modifier=mod.name) except RuntimeError as e: logger.warning(f"Could not apply modifier {mod.name}: {e}") # Export STL for 3D printing stl_path = output_path.replace('.zip', '_manufacturing.stl') try: addon_utils.enable("io_mesh_stl") except Exception: pass bpy.ops.export_mesh.stl( filepath=stl_path, use_selection=True, global_scale=1000.0, # Convert to millimeters use_mesh_modifiers=True, axis_forward='-Z', axis_up='Y' ) manufacturing_outputs['stl_file'] = stl_path # Export Blender file blend_path = output_path.replace('.zip', '_source.blend') bpy.ops.wm.save_as_mainfile(filepath=blend_path, copy=True) manufacturing_outputs['blend_file'] = blend_path logger.info("Manufacturing files exported") return manufacturing_outputs def _create_professional_package(self, render_outputs: Dict, animation_output: str, manufacturing_outputs: Dict, output_path: str) -> str: """Create final professional package as ZIP file.""" logger.info("Creating professional export package") import zipfile # Create ZIP package with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zipf: # Add render files for render_name, render_path in render_outputs.items(): if os.path.exists(render_path): zipf.write(render_path, f"renders/{os.path.basename(render_path)}") # Add animation if os.path.exists(animation_output): zipf.write(animation_output, f"animation/{os.path.basename(animation_output)}") # Add manufacturing files for file_type, file_path in manufacturing_outputs.items(): if os.path.exists(file_path): zipf.write(file_path, f"manufacturing/{os.path.basename(file_path)}") # Add documentation doc_content = self._generate_package_documentation(render_outputs, animation_output, manufacturing_outputs) zipf.writestr("README.txt", doc_content) logger.info(f"Professional package created: {output_path}") return output_path def _generate_package_documentation(self, render_outputs: Dict, animation_output: str, manufacturing_outputs: Dict) -> str: """Generate documentation for the professional package.""" doc_content = """ AI Design Assistant - PROFESSIONAL JEWELRY DESIGN PACKAGE ================================================================ This package contains a complete professional jewelry design generated by the AI Design Assistant AI system. PACKAGE CONTENTS: ================ renders/ - hero_shot_4k.png: Main presentation render (4K resolution) - detail_*_4k.png: Multiple angle detail shots animation/ - turntable.mp4: 360-degree rotation animation video manufacturing/ - manufacturing.stl: Production-ready STL file (millimeter scale) - source.blend: Original Blender source file with materials SPECIFICATIONS: ============== - All renders: 4K resolution (3840x2160) PNG format - Animation: H.264 MP4, 24fps, 5 second duration - STL: Millimeter scale, ready for jewelry production - Materials: Advanced PBR with professional finish Generated by AI Design Assistant The ultimate fusion of AI intelligence and jewelry craftsmanship """ return doc_content # ============================================================================= # LEGACY COMPATIBILITY FUNCTIONS # ============================================================================= def execute_construction_plan(construction_plan: List[Dict], context: Dict) -> bpy.types.Object: """Legacy compatibility function for + systems.""" engine = UnifiedExecutionEngine() return engine._execute_construction_sequence(construction_plan) def generate_dynamic_procedural_asset(args, blueprint: Dict) -> bpy.types.Object: """Legacy compatibility function for procedural asset generation.""" engine = UnifiedExecutionEngine() construction_plan = blueprint.get('construction_plan', []) if not construction_plan: raise ValueError("No construction_plan in blueprint") return engine._execute_construction_sequence(construction_plan) # Main execution for command-line usage def main(): """Main execution function for direct script usage.""" if '--' not in sys.argv: logger.error("No arguments provided") return parser = ArgumentParser(description=" Unified Execution Engine") parser.add_argument("--construction_plan", type=str, required=True) parser.add_argument("--presentation_plan", type=str, default='{}') parser.add_argument("--output", type=str, required=True) argv = sys.argv[sys.argv.index('--') + 1:] args = parser.parse_args(argv) try: construction_plan = json.loads(args.construction_plan) presentation_plan = json.loads(args.presentation_plan) engine = UnifiedExecutionEngine() result = engine.generate_jewelry(construction_plan, presentation_plan, args.output) if result['success']: logger.info(" Execution completed successfully") else: logger.error(f" Execution failed: {result.get('error')}") except Exception as e: logger.error(f" Execution error: {e}") sys.exit(1) if __name__ == "__main__": main()
+"""
+V36 Universal Artisan - Unified Execution Engine
+===============================================
+
+The definitive execution engine forged from the synthesis of:
+- blender_proc.py (Blender processing and rendering)
+- procedural_knowledge.py (Professional creation techniques)  
+- hyperrealistic_blender_proc.py (Advanced material and detail systems)
+
+This unified module serves as the single, definitive "robotic arm" and "rendering studio" 
+of the V36 Universal Artisan system, providing:
+
+- Dynamic Construction Plan Execution
+- Advanced PBR Material Synthesis  
+- Studio Environment Construction
+- Automated Cinematography with Depth of Field
+- Automated Turntable Animation
+- Professional Export Package Generation
+
+Implements Protocol 16: The Universal Architecture Mandate
+- Universal engineering terminology for internal logic
+- Professional domain-specific naming for user-facing functions
+- Abstract parameter handling for maximum code reuse
+"""
+
+import os
+import sys
+import json
+import math
+import time
+import logging
+from typing import Dict, List, Tuple, Optional, Any
+from argparse import ArgumentParser
+
+# Import scientific libraries for basic geometry operations (optional)
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
+    logging.warning("NumPy not available - using basic math operations")
+
+import bpy
+import bmesh
+import addon_utils
+from mathutils import Vector, Matrix, Euler
+from bpy_extras.io_utils import ExportHelper
+
+# Professional logging configuration
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] ENGINE %(levelname)s %(message)s')
+logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# V36 UNIFIED EXECUTION ENGINE - CORE FUNCTIONALITY
+# =============================================================================
+
+class UnifiedExecutionEngine:
+    """
+    V36 Universal Artisan Unified Execution Engine
+    
+    The single, comprehensive execution system that handles all aspects
+    of jewelry design generation, rendering, and export.
+    """
+    
+    def __init__(self):
+        self.current_scene = None
+        self.output_directory = None
+        self.asset_scale_factor = 0.02  # 20mm default scale
+        
+        # Initialize rendering subsystems
+        self._setup_rendering_engine()
+        logger.info("V36 Unified Execution Engine initialized")
+    
+    def _setup_rendering_engine(self):
+        """Initialize the rendering subsystem with professional settings."""
+        # Enable Cycles rendering with optimal settings
+        if bpy.context.scene:
+            bpy.context.scene.render.engine = 'CYCLES'
+            bpy.context.scene.cycles.samples = 512
+            bpy.context.scene.cycles.use_adaptive_sampling = True
+    
+    def generate_jewelry(self, construction_plan: List[Dict], presentation_plan: Dict, 
+                        output_path: str) -> Dict[str, Any]:
+        """
+        Primary user-facing function: Generate complete jewelry design with presentation.
+        
+        This is the main function called by the AI orchestrator to create the final
+        jewelry piece with full presentation package.
+        
+        Args:
+            construction_plan: Sequential operations for jewelry construction
+            presentation_plan: Rendering and presentation specifications
+            output_path: Base path for output files
+            
+        Returns:
+            Result dictionary with all generated assets
+        """
+        logger.info("=== V36 JEWELRY GENERATION ENGINE ACTIVATED ===")
+        logger.info(f"Construction plan: {len(construction_plan)} operations")
+        logger.info(f"Presentation plan: {presentation_plan.get('render_environment', 'default')}")
+        
+        start_time = time.time()
+        
+        try:
+            # Stage 1: Setup professional scene environment
+            self._setup_professional_scene()
+            
+            # Stage 2: Execute construction plan dynamically
+            primary_asset = self._execute_construction_sequence(construction_plan)
+            
+            # Stage 3: Apply advanced materials and presentation
+            self._apply_presentation_materials(primary_asset, presentation_plan)
+            
+            # Stage 4: Setup studio environment and cinematography  
+            camera_object = self._setup_studio_cinematography(primary_asset, presentation_plan)
+            
+            # Stage 5: Generate presentation renders
+            render_outputs = self._generate_presentation_renders(primary_asset, camera_object, output_path)
+            
+            # Stage 6: Create turntable animation
+            animation_output = self._create_turntable_animation(primary_asset, camera_object, output_path)
+            
+            # Stage 7: Export manufacturing files
+            manufacturing_outputs = self._export_manufacturing_files(primary_asset, output_path)
+            
+            # Stage 8: Package final deliverables
+            package_path = self._create_professional_package(
+                render_outputs, animation_output, manufacturing_outputs, output_path
+            )
+            
+            execution_time = time.time() - start_time
+            
+            logger.info(f"✅ V36 Jewelry generation completed in {execution_time:.2f}s")
+            
+            return {
+                'success': True,
+                'execution_time': execution_time,
+                'primary_asset': primary_asset.name,
+                'renders': render_outputs,
+                'animation': animation_output,
+                'manufacturing_files': manufacturing_outputs,
+                'package_path': package_path
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ V36 Jewelry generation failed: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'execution_time': time.time() - start_time
+            }
+
+    def _setup_professional_scene(self):
+        """Setup a clean, professional Blender scene for jewelry creation."""
+        logger.info("Setting up professional scene environment")
+        
+        # Clear existing scene data
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+        
+        # Remove default objects
+        bpy.ops.object.select_all(action='SELECT')
+        bpy.ops.object.delete(use_global=False)
+        
+        # Clear materials and textures
+        for material in bpy.data.materials:
+            bpy.data.materials.remove(material, do_unlink=True)
+        
+        for texture in bpy.data.textures:
+            bpy.data.textures.remove(texture, do_unlink=True)
+        
+        self.current_scene = bpy.context.scene
+        self.current_scene.name = "V36_Professional_Studio"
+        
+        # Set professional color management
+        self.current_scene.view_settings.view_transform = 'Standard'
+        self.current_scene.view_settings.look = 'Medium High Contrast'
+        
+        logger.info("Professional scene setup completed")
+
+    def _execute_construction_sequence(self, construction_plan: List[Dict]) -> bpy.types.Object:
+        """
+        Execute the AI's construction plan as a sequence of operations.
+        
+        This is the core "robotic arm" functionality that interprets and executes
+        the AI's step-by-step construction instructions.
+        """
+        logger.info(f"Executing construction sequence: {len(construction_plan)} operations")
+        
+        context_objects = {"primary_component": None}
+        final_object = None
+        
+        # Execute each operation sequentially
+        for i, operation in enumerate(construction_plan):
+            operation_name = operation.get('operation', 'unknown')
+            parameters = operation.get('parameters', {})
+            
+            logger.info(f"Operation {i+1}/{len(construction_plan)}: {operation_name}")
+            
+            try:
+                # Route operation to appropriate handler
+                result_object = self._route_operation(operation_name, parameters, context_objects)
+                
+                if result_object:
+                    final_object = result_object
+                    context_objects['primary_component'] = result_object
+                    context_objects[f'component_{i+1}'] = result_object
+                    logger.info(f"✅ Operation {operation_name} completed")
+                else:
+                    logger.warning(f"⚠️ Operation {operation_name} returned no object")
+                    
+            except Exception as e:
+                logger.error(f"❌ Operation {operation_name} failed: {e}")
+                continue
+        
+        if not final_object:
+            logger.warning("No operations produced valid objects, creating fallback")
+            final_object = self._create_fallback_component()
+        
+        # Center and scale the final object appropriately
+        bpy.context.view_layer.objects.active = final_object
+        bpy.ops.object.origin_set(type='GEOMETRY_TO_ORIGIN')
+        
+        # Apply professional scale (20mm default)
+        final_object.scale = (self.asset_scale_factor, self.asset_scale_factor, self.asset_scale_factor)
+        bpy.ops.object.transform_apply(scale=True)
+        
+        final_object.name = "Primary_Jewelry_Asset"
+        
+        logger.info("Construction sequence execution completed")
+        return final_object
+
+    def _route_operation(self, operation_name: str, parameters: Dict, context_objects: Dict) -> bpy.types.Object:
+        """Route operations to appropriate creation functions."""
+        
+        primary_component = context_objects.get('primary_component')
+        
+        # Route to appropriate creation technique
+        if operation_name == "create_shank":
+            return self._build_primary_component(primary_component, parameters, "shank")
+        elif operation_name == "create_bezel_setting":
+            return self._build_secondary_component(primary_component, parameters, "bezel")
+        elif operation_name == "create_prong_setting":
+            return self._build_secondary_component(primary_component, parameters, "prong")
+        elif operation_name == "apply_twist_modifier":
+            return self._apply_geometric_modifier(primary_component, parameters, "twist")
+        elif operation_name == "apply_procedural_displacement":
+            return self._apply_surface_treatment(primary_component, parameters, "displacement")
+        else:
+            logger.warning(f"Unknown operation: {operation_name}, using fallback")
+            return primary_component or self._create_fallback_component()
+
+    def _build_primary_component(self, base_object: bpy.types.Object, parameters: Dict, component_type: str) -> bpy.types.Object:
+        """Build primary structural components (rings, bands, etc.)."""
+        logger.info(f"Building primary component: {component_type}")
+        
+        if component_type == "shank":
+            # Create ring/band geometry
+            profile_shape = parameters.get('profile_shape', 'Round')
+            thickness_mm = parameters.get('thickness_mm', 2.0)
+            diameter_mm = parameters.get('diameter_mm', 18.0)
+            
+            # Convert to Blender units (mm to meters)
+            thickness = thickness_mm / 1000.0
+            radius = (diameter_mm / 1000.0) / 2
+            
+            bpy.ops.mesh.primitive_torus_add(
+                major_radius=radius,
+                minor_radius=thickness / 2,
+                location=(0, 0, 0)
+            )
+            
+            shank_object = bpy.context.active_object
+            shank_object.name = "Primary_Component_Shank"
+            
+            # Apply profile modifications if needed
+            if profile_shape == 'D-Shape':
+                self._apply_d_shape_profile(shank_object)
+            
+            return shank_object
+        
+        return None
+
+    def _build_secondary_component(self, base_object: bpy.types.Object, parameters: Dict, component_type: str) -> bpy.types.Object:
+        """Build secondary components (settings, decorative elements, etc.)."""
+        logger.info(f"Building secondary component: {component_type}")
+        
+        if component_type == "bezel":
+            return self._create_bezel_setting(base_object, parameters)
+        elif component_type == "prong":
+            return self._create_prong_setting(base_object, parameters)
+        
+        return base_object
+
+    def _create_bezel_setting(self, base_object: bpy.types.Object, parameters: Dict) -> bpy.types.Object:
+        """Create professional bezel setting."""
+        bezel_height_mm = parameters.get('bezel_height_mm', 2.5)
+        bezel_thickness_mm = parameters.get('bezel_thickness_mm', 0.5)
+        feature_diameter_mm = parameters.get('feature_diameter_mm', 6.0)
+        setting_position = parameters.get('setting_position', [0, 0, 0.002])
+        
+        # Convert to Blender units
+        bezel_height = bezel_height_mm / 1000.0
+        bezel_thickness = bezel_thickness_mm / 1000.0
+        feature_radius = (feature_diameter_mm / 1000.0) / 2
+        
+        # Create cylindrical bezel
+        bpy.ops.mesh.primitive_cylinder_add(
+            radius=feature_radius + bezel_thickness,
+            depth=bezel_height,
+            location=setting_position
+        )
+        
+        bezel_object = bpy.context.active_object
+        bezel_object.name = "Secondary_Component_Bezel"
+        
+        # Create inner cavity
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.mesh.inset_faces(thickness=bezel_thickness, depth=0)
+        bpy.ops.mesh.extrude_region_move(MESH_OT_extrude_region={"use_normal_flip":False, "use_dissolve_ortho_edges":False, "mirror":False}, 
+                                         TRANSFORM_OT_translate={"value":(0, 0, -bezel_height * 0.8)})
+        bpy.ops.object.mode_set(mode='OBJECT')
+        
+        # Join with base object if provided
+        if base_object:
+            bpy.ops.object.select_all(action='DESELECT')
+            base_object.select_set(True)
+            bezel_object.select_set(True)
+            bpy.context.view_layer.objects.active = base_object
+            bpy.ops.object.join()
+            result_object = base_object
+        else:
+            result_object = bezel_object
+        
+        return result_object
+
+    def _create_prong_setting(self, base_object: bpy.types.Object, parameters: Dict) -> bpy.types.Object:
+        """Create professional prong setting."""
+        prong_count = parameters.get('prong_count', 4)
+        prong_thickness_mm = parameters.get('prong_thickness_mm', 0.8)
+        prong_height_mm = parameters.get('prong_height_mm', 3.5)
+        placement_radius_mm = parameters.get('prong_placement_radius_mm', 3.0)
+        
+        # Convert to Blender units
+        prong_thickness = prong_thickness_mm / 1000.0
+        prong_height = prong_height_mm / 1000.0
+        placement_radius = placement_radius_mm / 1000.0
+        
+        prong_objects = []
+        
+        # Create individual prongs
+        for i in range(prong_count):
+            angle = (2 * math.pi * i) / prong_count
+            prong_x = placement_radius * math.cos(angle)
+            prong_y = placement_radius * math.sin(angle)
+            prong_z = 0.002
+            
+            bpy.ops.mesh.primitive_cylinder_add(
+                radius=prong_thickness / 2,
+                depth=prong_height,
+                location=(prong_x, prong_y, prong_z + prong_height / 2)
+            )
+            
+            prong = bpy.context.active_object
+            prong.name = f"Secondary_Component_Prong_{i+1}"
+            prong_objects.append(prong)
+        
+        # Join all components
+        if base_object:
+            bpy.ops.object.select_all(action='DESELECT')
+            base_object.select_set(True)
+            for prong in prong_objects:
+                prong.select_set(True)
+            bpy.context.view_layer.objects.active = base_object
+            bpy.ops.object.join()
+            result_object = base_object
+        else:
+            bpy.ops.object.select_all(action='DESELECT')
+            for prong in prong_objects:
+                prong.select_set(True)
+            bpy.context.view_layer.objects.active = prong_objects[0]
+            bpy.ops.object.join()
+            result_object = prong_objects[0]
+            result_object.name = "Secondary_Component_Prong_Setting"
+        
+        return result_object
+
+    def _apply_geometric_modifier(self, base_object: bpy.types.Object, parameters: Dict, modifier_type: str) -> bpy.types.Object:
+        """Apply geometric modifications to objects."""
+        if not base_object:
+            return None
+            
+        logger.info(f"Applying geometric modifier: {modifier_type}")
+        
+        if modifier_type == "twist":
+            twist_angle_degrees = parameters.get('twist_angle_degrees', 30)
+            twist_axis = parameters.get('twist_axis', 'Z')
+            
+            bpy.context.view_layer.objects.active = base_object
+            bpy.ops.object.mode_set(mode='OBJECT')
+            
+            twist_modifier = base_object.modifiers.new(name="Geometric_Twist", type='SIMPLE_DEFORM')
+            twist_modifier.deform_method = 'TWIST'
+            twist_modifier.angle = math.radians(twist_angle_degrees)
+            twist_modifier.deform_axis = twist_axis
+            
+        return base_object
+
+    def _apply_surface_treatment(self, base_object: bpy.types.Object, parameters: Dict, treatment_type: str) -> bpy.types.Object:
+        """Apply surface treatments and texturing."""
+        if not base_object:
+            return None
+            
+        logger.info(f"Applying surface treatment: {treatment_type}")
+        
+        if treatment_type == "displacement":
+            pattern_type = parameters.get('pattern_type', 'organic')
+            displacement_strength = parameters.get('displacement_strength', 0.5)
+            
+            bpy.context.view_layer.objects.active = base_object
+            bpy.ops.object.mode_set(mode='OBJECT')
+            
+            # Add subdivision for detail
+            subsurf_mod = base_object.modifiers.new(name="Surface_Subdivision", type='SUBSURF')
+            subsurf_mod.levels = 2
+            
+            # Add displacement
+            displacement_mod = base_object.modifiers.new(name="Surface_Treatment", type='DISPLACE')
+            displacement_mod.strength = displacement_strength
+            
+            # Create noise texture
+            texture = bpy.data.textures.new(name="Surface_Texture", type='NOISE')
+            texture.noise_scale = 0.5
+            displacement_mod.texture = texture
+            
+        return base_object
+
+    def _create_fallback_component(self) -> bpy.types.Object:
+        """Create a simple fallback component when operations fail."""
+        bpy.ops.mesh.primitive_torus_add(major_radius=0.009, minor_radius=0.001)
+        fallback = bpy.context.active_object
+        fallback.name = "Fallback_Component"
+        return fallback
+
+    def _apply_d_shape_profile(self, obj: bpy.types.Object):
+        """Apply D-shape profile modification to torus."""
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.mesh.bisect(plane_co=(0, 0, 0), plane_no=(0, 0, -1))
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+    # =============================================================================
+    # ADVANCED PBR MATERIAL SYNTHESIS
+    # =============================================================================
+
+    def _apply_presentation_materials(self, primary_asset: bpy.types.Object, presentation_plan: Dict):
+        """Apply advanced PBR materials based on presentation plan."""
+        logger.info("Applying advanced PBR material synthesis")
+        
+        material_style = presentation_plan.get('material_style', 'Pristine Studio Polish')
+        metal_type = presentation_plan.get('metal_type', 'gold')
+        
+        # Create advanced PBR material
+        material_name = f"Advanced_PBR_{metal_type}"
+        material = bpy.data.materials.new(name=material_name)
+        material.use_nodes = True
+        
+        # Clear default nodes
+        nodes = material.node_tree.nodes
+        nodes.clear()
+        
+        # Create principled BSDF with advanced settings
+        principled = nodes.new(type='ShaderNodeBsdfPrincipled')
+        output = nodes.new(type='ShaderNodeOutputMaterial')
+        
+        # Configure metal properties
+        if metal_type.lower() == "gold":
+            principled.inputs["Base Color"].default_value = (1.0, 0.766, 0.336, 1.0)
+        elif metal_type.lower() == "silver":
+            principled.inputs["Base Color"].default_value = (0.972, 0.960, 0.915, 1.0)
+        elif metal_type.lower() == "platinum":
+            principled.inputs["Base Color"].default_value = (0.9, 0.9, 0.95, 1.0)
+        
+        # Set advanced material properties
+        principled.inputs["Metallic"].default_value = 1.0
+        
+        if "Polish" in material_style:
+            principled.inputs["Roughness"].default_value = 0.02
+        elif "Brushed" in material_style:
+            principled.inputs["Roughness"].default_value = 0.3
+        elif "Antique" in material_style:
+            principled.inputs["Roughness"].default_value = 0.15
+            
+        # Add advanced features based on style
+        if "Antique" in material_style:
+            # Add ColorRamp for aged effect
+            color_ramp = nodes.new(type='ShaderNodeValToRGB')
+            noise_tex = nodes.new(type='ShaderNodeTexNoise')
+            
+            noise_tex.inputs['Scale'].default_value = 50.0
+            color_ramp.color_ramp.elements[0].color = (0.8, 0.6, 0.4, 1.0)
+            color_ramp.color_ramp.elements[1].color = (1.0, 0.8, 0.6, 1.0)
+            
+            material.node_tree.links.new(noise_tex.outputs['Fac'], color_ramp.inputs['Fac'])
+            material.node_tree.links.new(color_ramp.outputs['Color'], principled.inputs['Base Color'])
+        
+        # Connect to output
+        material.node_tree.links.new(principled.outputs['BSDF'], output.inputs['Surface'])
+        
+        # Apply to object
+        if primary_asset.data.materials:
+            primary_asset.data.materials[0] = material
+        else:
+            primary_asset.data.materials.append(material)
+        
+        logger.info(f"Advanced PBR material applied: {material_style} {metal_type}")
+
+    # =============================================================================
+    # STUDIO ENVIRONMENT CONSTRUCTION
+    # =============================================================================
+
+    def _setup_studio_cinematography(self, primary_asset: bpy.types.Object, presentation_plan: Dict) -> bpy.types.Object:
+        """Setup professional studio environment and cinematography."""
+        logger.info("Setting up studio environment and cinematography")
+        
+        render_environment = presentation_plan.get('render_environment', 'Minimalist Black Pedestal')
+        
+        # Create studio environment
+        self._create_studio_environment(render_environment)
+        
+        # Setup professional lighting
+        self._create_professional_lighting()
+        
+        # Create and position camera with depth of field
+        camera = self._create_studio_camera(primary_asset, presentation_plan)
+        
+        logger.info("Studio cinematography setup completed")
+        return camera
+
+    def _create_studio_environment(self, environment_type: str):
+        """Create the studio environment backdrop and surfaces."""
+        logger.info(f"Creating studio environment: {environment_type}")
+        
+        if "Black Pedestal" in environment_type:
+            # Create black pedestal
+            bpy.ops.mesh.primitive_cylinder_add(
+                radius=0.02, depth=0.005, location=(0, 0, -0.0025)
+            )
+            pedestal = bpy.context.active_object
+            pedestal.name = "Studio_Pedestal"
+            
+            # Apply black material
+            pedestal_mat = bpy.data.materials.new(name="Studio_Black")
+            pedestal_mat.use_nodes = True
+            pedestal_mat.node_tree.nodes["Principled BSDF"].inputs[0].default_value = (0.02, 0.02, 0.02, 1.0)
+            pedestal.data.materials.append(pedestal_mat)
+            
+        elif "Reflective Marble" in environment_type:
+            # Create marble surface
+            bpy.ops.mesh.primitive_plane_add(size=0.1, location=(0, 0, -0.002))
+            surface = bpy.context.active_object
+            surface.name = "Studio_Surface"
+            
+            # Apply marble material
+            marble_mat = bpy.data.materials.new(name="Studio_Marble")
+            marble_mat.use_nodes = True
+            nodes = marble_mat.node_tree.nodes
+            
+            principled = nodes["Principled BSDF"]
+            principled.inputs["Base Color"].default_value = (0.9, 0.9, 0.85, 1.0)
+            principled.inputs["Roughness"].default_value = 0.1
+            principled.inputs["Specular"].default_value = 0.8
+            
+            surface.data.materials.append(marble_mat)
+
+    def _create_professional_lighting(self):
+        """Create professional three-point lighting setup."""
+        logger.info("Creating professional lighting setup")
+        
+        # Key Light - Primary illumination
+        bpy.ops.object.light_add(type='SUN', location=(0.05, 0.05, 0.1))
+        key_light = bpy.context.active_object
+        key_light.name = "Studio_Key_Light"
+        key_light.data.energy = 3.0
+        key_light.data.color = (1.0, 0.95, 0.9)
+        
+        # Fill Light - Shadow softening  
+        bpy.ops.object.light_add(type='SUN', location=(-0.05, 0.03, 0.08))
+        fill_light = bpy.context.active_object
+        fill_light.name = "Studio_Fill_Light"
+        fill_light.data.energy = 1.5
+        fill_light.data.color = (0.9, 0.95, 1.0)
+        
+        # Rim Light - Edge definition
+        bpy.ops.object.light_add(type='SUN', location=(0, -0.08, 0.06))
+        rim_light = bpy.context.active_object
+        rim_light.name = "Studio_Rim_Light" 
+        rim_light.data.energy = 2.0
+        rim_light.data.color = (1.0, 1.0, 1.0)
+        
+        # Environment lighting
+        world = bpy.context.scene.world
+        world.use_nodes = True
+        bg_shader = world.node_tree.nodes['Background']
+        bg_shader.inputs['Strength'].default_value = 0.3
+
+    def _create_studio_camera(self, primary_asset: bpy.types.Object, presentation_plan: Dict) -> bpy.types.Object:
+        """Create and configure professional studio camera."""
+        # Get bounding box for optimal framing
+        bbox_corners = [primary_asset.matrix_world @ Vector(corner) for corner in primary_asset.bound_box]
+        
+        min_coords = Vector((
+            min(corner.x for corner in bbox_corners),
+            min(corner.y for corner in bbox_corners), 
+            min(corner.z for corner in bbox_corners)
+        ))
+        
+        max_coords = Vector((
+            max(corner.x for corner in bbox_corners),
+            max(corner.y for corner in bbox_corners),
+            max(corner.z for corner in bbox_corners)
+        ))
+        
+        bbox_center = (min_coords + max_coords) / 2
+        bbox_dimensions = max_coords - min_coords
+        max_dimension = max(bbox_dimensions)
+        
+        # Calculate optimal camera distance
+        optimal_distance = max_dimension * 2.5
+        
+        # Position camera at professional angle
+        camera_location = Vector((
+            optimal_distance * 0.7,
+            optimal_distance * 0.7, 
+            optimal_distance * 0.5
+        ))
+        
+        bpy.ops.object.camera_add(location=camera_location)
+        camera = bpy.context.active_object
+        camera.name = "Studio_Camera"
+        
+        # Point camera at jewelry
+        direction = bbox_center - camera.location
+        rot_quat = direction.to_track_quat('-Z', 'Y')
+        camera.rotation_euler = rot_quat.to_euler()
+        
+        # Configure camera settings
+        camera_data = camera.data
+        camera_data.lens = 85  # Professional jewelry photography lens
+        
+        # Setup depth of field if specified
+        camera_effects = presentation_plan.get('camera_effects', {})
+        if camera_effects.get('use_depth_of_field', False):
+            camera_data.dof.use_dof = True
+            camera_data.dof.aperture_fstop = 2.8
+            
+            # Create focus target if specified
+            focus_point = camera_effects.get('focus_point', 'center')
+            if focus_point:
+                bpy.ops.object.empty_add(location=bbox_center)
+                focus_empty = bpy.context.active_object
+                focus_empty.name = "Camera_Focus_Target"
+                camera_data.dof.focus_object = focus_empty
+        
+        # Set as scene camera
+        self.current_scene.camera = camera
+        
+        return camera
+
+    # =============================================================================
+    # PRESENTATION RENDERS & TURNTABLE ANIMATION
+    # =============================================================================
+
+    def _generate_presentation_renders(self, primary_asset: bpy.types.Object, camera: bpy.types.Object, 
+                                     output_path: str) -> Dict[str, str]:
+        """Generate high-quality presentation renders."""
+        logger.info("Generating presentation renders")
+        
+        render_outputs = {}
+        
+        # Configure render settings
+        render = self.current_scene.render
+        render.resolution_x = 3840  # 4K resolution
+        render.resolution_y = 2160
+        render.resolution_percentage = 100
+        
+        render.image_settings.file_format = 'PNG'
+        render.image_settings.color_mode = 'RGBA'
+        render.image_settings.compression = 15
+        
+        # Main hero shot
+        hero_path = output_path.replace('.zip', '_hero_4k.png')
+        render.filepath = hero_path
+        bpy.ops.render.render(write_still=True)
+        render_outputs['hero_shot'] = hero_path
+        
+        # Detail shots with different angles
+        angles = [
+            ('detail_top', (0, 0, math.radians(45))),
+            ('detail_side', (0, math.radians(90), 0)), 
+            ('detail_angle', (math.radians(30), math.radians(30), 0))
+        ]
+        
+        original_rotation = camera.rotation_euler.copy()
+        
+        for angle_name, rotation in angles:
+            camera.rotation_euler = Euler(rotation)
+            detail_path = output_path.replace('.zip', f'_{angle_name}_4k.png')
+            render.filepath = detail_path
+            bpy.ops.render.render(write_still=True)
+            render_outputs[angle_name] = detail_path
+        
+        camera.rotation_euler = original_rotation
+        
+        logger.info(f"Generated {len(render_outputs)} presentation renders")
+        return render_outputs
+
+    def _create_turntable_animation(self, primary_asset: bpy.types.Object, camera: bpy.types.Object, 
+                                  output_path: str) -> str:
+        """Create 360-degree turntable animation video."""
+        logger.info("Creating turntable animation")
+        
+        # Setup animation
+        self.current_scene.frame_start = 1
+        self.current_scene.frame_end = 120  # 5 seconds at 24fps
+        self.current_scene.frame_set(1)
+        
+        # Create rotation animation for the jewelry
+        primary_asset.rotation_euler = (0, 0, 0)
+        primary_asset.keyframe_insert(data_path="rotation_euler", index=2, frame=1)
+        
+        primary_asset.rotation_euler = (0, 0, math.radians(360))
+        primary_asset.keyframe_insert(data_path="rotation_euler", index=2, frame=120)
+        
+        # Set linear interpolation for smooth rotation
+        action = primary_asset.animation_data.action
+        for fcurve in action.fcurves:
+            for keyframe in fcurve.keyframe_points:
+                keyframe.interpolation = 'LINEAR'
+        
+        # Configure video output
+        animation_path = output_path.replace('.zip', '_turntable.mp4')
+        
+        render = self.current_scene.render
+        render.image_settings.file_format = 'FFMPEG'
+        render.ffmpeg.format = 'MPEG4'
+        render.ffmpeg.codec = 'H264'
+        render.ffmpeg.constant_rate_factor = 'HIGH'
+        
+        render.filepath = animation_path
+        
+        # Render animation
+        bpy.ops.render.render(animation=True)
+        
+        logger.info(f"Turntable animation created: {animation_path}")
+        return animation_path
+
+    # =============================================================================
+    # MANUFACTURING FILES & PROFESSIONAL PACKAGE
+    # =============================================================================
+
+    def _export_manufacturing_files(self, primary_asset: bpy.types.Object, output_path: str) -> Dict[str, str]:
+        """Export manufacturing-ready files."""
+        logger.info("Exporting manufacturing files")
+        
+        manufacturing_outputs = {}
+        
+        # Ensure object is selected and active
+        bpy.ops.object.select_all(action='DESELECT')
+        primary_asset.select_set(True)
+        bpy.context.view_layer.objects.active = primary_asset
+        
+        # Apply all modifiers for manufacturing
+        for mod in primary_asset.modifiers[:]:
+            try:
+                bpy.ops.object.modifier_apply(modifier=mod.name)
+            except RuntimeError as e:
+                logger.warning(f"Could not apply modifier {mod.name}: {e}")
+        
+        # Export STL for 3D printing
+        stl_path = output_path.replace('.zip', '_manufacturing.stl')
+        try:
+            addon_utils.enable("io_mesh_stl")
+        except Exception:
+            pass
+        
+        bpy.ops.export_mesh.stl(
+            filepath=stl_path,
+            use_selection=True,
+            global_scale=1000.0,  # Convert to millimeters
+            use_mesh_modifiers=True,
+            axis_forward='-Z',
+            axis_up='Y'
+        )
+        manufacturing_outputs['stl_file'] = stl_path
+        
+        # Export Blender file
+        blend_path = output_path.replace('.zip', '_source.blend')
+        bpy.ops.wm.save_as_mainfile(filepath=blend_path, copy=True)
+        manufacturing_outputs['blend_file'] = blend_path
+        
+        logger.info("Manufacturing files exported")
+        return manufacturing_outputs
+
+    def _create_professional_package(self, render_outputs: Dict, animation_output: str, 
+                                   manufacturing_outputs: Dict, output_path: str) -> str:
+        """Create final professional package as ZIP file."""
+        logger.info("Creating professional export package")
+        
+        import zipfile
+        
+        # Create ZIP package
+        with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            
+            # Add render files
+            for render_name, render_path in render_outputs.items():
+                if os.path.exists(render_path):
+                    zipf.write(render_path, f"renders/{os.path.basename(render_path)}")
+            
+            # Add animation
+            if os.path.exists(animation_output):
+                zipf.write(animation_output, f"animation/{os.path.basename(animation_output)}")
+            
+            # Add manufacturing files
+            for file_type, file_path in manufacturing_outputs.items():
+                if os.path.exists(file_path):
+                    zipf.write(file_path, f"manufacturing/{os.path.basename(file_path)}")
+            
+            # Add documentation
+            doc_content = self._generate_package_documentation(render_outputs, animation_output, manufacturing_outputs)
+            zipf.writestr("README.txt", doc_content)
+        
+        logger.info(f"Professional package created: {output_path}")
+        return output_path
+
+    def _generate_package_documentation(self, render_outputs: Dict, animation_output: str, 
+                                      manufacturing_outputs: Dict) -> str:
+        """Generate documentation for the professional package."""
+        
+        doc_content = """V36 UNIVERSAL ARTISAN - PROFESSIONAL JEWELRY DESIGN PACKAGE
+================================================================
+
+This package contains a complete professional jewelry design generated by the 
+V36 Universal Artisan AI system.
+
+PACKAGE CONTENTS:
+================
+
+renders/
+    - hero_shot_4k.png: Main presentation render (4K resolution)
+    - detail_*_4k.png: Multiple angle detail shots
+    
+animation/ 
+    - turntable.mp4: 360-degree rotation animation video
+
+manufacturing/
+    - manufacturing.stl: Production-ready STL file (millimeter scale)
+    - source.blend: Original Blender source file with materials
+
+SPECIFICATIONS:
+==============
+- All renders: 4K resolution (3840x2160) PNG format
+- Animation: H.264 MP4, 24fps, 5 second duration  
+- STL: Millimeter scale, ready for jewelry production
+- Materials: Advanced PBR with professional finish
+
+Generated by V36 Universal Artisan
+The ultimate fusion of AI intelligence and jewelry craftsmanship
+"""
+        
+        return doc_content
+
+
+# =============================================================================
+# LEGACY COMPATIBILITY FUNCTIONS
+# =============================================================================
+
+def execute_construction_plan(construction_plan: List[Dict], context: Dict) -> bpy.types.Object:
+    """Legacy compatibility function for V22+ systems."""
+    engine = UnifiedExecutionEngine()
+    return engine._execute_construction_sequence(construction_plan)
+
+
+def generate_dynamic_procedural_asset(args, blueprint: Dict) -> bpy.types.Object:
+    """Legacy compatibility function for procedural asset generation."""
+    engine = UnifiedExecutionEngine()
+    
+    construction_plan = blueprint.get('construction_plan', [])
+    if not construction_plan:
+        raise ValueError("No construction_plan in blueprint")
+    
+    return engine._execute_construction_sequence(construction_plan)
+
+
+# Main execution for command-line usage
+def main():
+    """Main execution function for direct script usage."""
+    if '--' not in sys.argv:
+        logger.error("No arguments provided")
+        return
+    
+    parser = ArgumentParser(description="V36 Unified Execution Engine")
+    parser.add_argument("--construction_plan", type=str, required=True)
+    parser.add_argument("--presentation_plan", type=str, default='{}')
+    parser.add_argument("--output", type=str, required=True)
+    
+    argv = sys.argv[sys.argv.index('--') + 1:]
+    args = parser.parse_args(argv)
+    
+    try:
+        construction_plan = json.loads(args.construction_plan)
+        presentation_plan = json.loads(args.presentation_plan)
+        
+        engine = UnifiedExecutionEngine()
+        result = engine.generate_jewelry(construction_plan, presentation_plan, args.output)
+        
+        if result['success']:
+            logger.info("V36 Execution completed successfully")
+        else:
+            logger.error(f"V36 Execution failed: {result.get('error')}")
+            
+    except Exception as e:
+        logger.error(f"V36 Execution error: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
