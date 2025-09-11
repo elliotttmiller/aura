@@ -26,6 +26,10 @@ export interface SceneObject {
     roughness: number
     metallic: number
   }
+  // New properties for GLB layers
+  isLayer?: boolean
+  parentModelId?: string
+  meshData?: any // THREE.Mesh reference for GLB layers
 }
 
 export interface DesignSession {
@@ -41,6 +45,11 @@ export interface SystemState {
   lastSync: number
 }
 
+export interface UIState {
+  isLeftSidebarVisible: boolean
+  isRightSidebarVisible: boolean
+}
+
 // Complete application state
 interface DesignStoreState {
   // Session data (Digital Twin of backend)
@@ -48,6 +57,9 @@ interface DesignStoreState {
   
   // System state
   system: SystemState
+  
+  // UI state for adaptive layout
+  ui: UIState
   
   // Actions for state mutations
   actions: {
@@ -61,6 +73,11 @@ interface DesignStoreState {
     selectObject: (objectId: string | null) => void
     toggleObjectVisibility: (objectId: string) => void
     
+    // GLB Model management
+    loadGLBModel: (modelPath: string, modelName: string) => void
+    addGLBLayers: (modelId: string, layers: Array<{id: string, name: string, mesh: any}>) => void
+    selectLayer: (layerId: string | null) => void
+    
     // AI integration
     executeAIPrompt: (prompt: string) => Promise<void>
     
@@ -68,6 +85,12 @@ interface DesignStoreState {
     setSystemStatus: (status: SystemState['status']) => void
     setGenerating: (isGenerating: boolean) => void
     syncWithBackend: () => Promise<void>
+    
+    // UI management for adaptive layout
+    toggleLeftSidebar: () => void
+    toggleRightSidebar: () => void
+    setLeftSidebarVisible: (visible: boolean) => void
+    setRightSidebarVisible: (visible: boolean) => void
   }
 }
 
@@ -87,6 +110,11 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     status: 'connecting',
     isGenerating: false,
     lastSync: 0
+  },
+
+  ui: {
+    isLeftSidebarVisible: true,
+    isRightSidebarVisible: true
   },
 
   actions: {
@@ -225,6 +253,87 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
       }
     },
 
+    // Load GLB Model - create a parent model object
+    loadGLBModel: (_modelPath: string, modelName: string) => {
+      const modelId = `model_${Date.now()}`
+      const modelObject: SceneObject = {
+        id: modelId,
+        name: modelName,
+        type: 'glb_model',
+        visible: true,
+        transform: {
+          position: [0, 0, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1]
+        },
+        material: {
+          color: '#ffffff',
+          roughness: 0.5,
+          metallic: 0.5
+        }
+      }
+      
+      set((state) => ({
+        session: {
+          ...state.session,
+          objects: [...state.session.objects, modelObject],
+          lastModified: Date.now()
+        }
+      }))
+      
+      console.log('✅ GLB Model loaded:', modelName)
+    },
+
+    // Add GLB Layers as individual objects
+    addGLBLayers: (modelId: string, layers: Array<{id: string, name: string, mesh: any}>) => {
+      const layerObjects: SceneObject[] = layers.map(layer => ({
+        id: layer.id,
+        name: layer.name,
+        type: 'glb_layer',
+        visible: true,
+        isLayer: true,
+        parentModelId: modelId,
+        meshData: layer.mesh,
+        transform: {
+          position: [0, 0, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1]
+        },
+        material: {
+          color: '#ffffff',
+          roughness: 0.5,
+          metallic: 0.5
+        }
+      }))
+      
+      set((state) => ({
+        session: {
+          ...state.session,
+          objects: [...state.session.objects, ...layerObjects],
+          lastModified: Date.now()
+        }
+      }))
+      
+      console.log('✅ GLB Layers added to scene:', layers.map(l => l.name))
+    },
+
+    // Select layer (same as selectObject but with additional logging for layers)
+    selectLayer: (layerId: string | null) => {
+      const { session } = get()
+      const layer = session.objects.find(obj => obj.id === layerId)
+      
+      set((state) => ({
+        session: {
+          ...state.session,
+          selectedObjectId: layerId
+        }
+      }))
+      
+      if (layer && layer.isLayer) {
+        console.log('🎯 Layer selected in store:', layer.name)
+      }
+    },
+
     // Execute AI prompt with context awareness
     executeAIPrompt: async (prompt: string) => {
       const { session } = get()
@@ -291,6 +400,31 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     // Force sync with backend
     syncWithBackend: async () => {
       await get().actions.loadSceneFromBackend()
+    },
+
+    // UI management for adaptive layout
+    toggleLeftSidebar: () => {
+      set((state) => ({
+        ui: { ...state.ui, isLeftSidebarVisible: !state.ui.isLeftSidebarVisible }
+      }))
+    },
+
+    toggleRightSidebar: () => {
+      set((state) => ({
+        ui: { ...state.ui, isRightSidebarVisible: !state.ui.isRightSidebarVisible }
+      }))
+    },
+
+    setLeftSidebarVisible: (visible: boolean) => {
+      set((state) => ({
+        ui: { ...state.ui, isLeftSidebarVisible: visible }
+      }))
+    },
+
+    setRightSidebarVisible: (visible: boolean) => {
+      set((state) => ({
+        ui: { ...state.ui, isRightSidebarVisible: visible }
+      }))
     }
   }
 }))
@@ -298,6 +432,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
 // Convenience hooks for accessing specific parts of the store
 export const useSession = () => useDesignStore((state) => state.session)
 export const useSystemState = () => useDesignStore((state) => state.system)
+export const useUIState = () => useDesignStore((state) => state.ui)
 export const useActions = () => useDesignStore((state) => state.actions)
 
 // Health check helper

@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Grid, Environment } from '@react-three/drei'
+import { OrbitControls, Grid } from '@react-three/drei'
 import * as THREE from 'three'
+import GLBModel from '../GLBModel/GLBModel'
 import './Viewport.css'
 
 interface SceneObject {
@@ -19,12 +20,18 @@ interface SceneObject {
     roughness: number
     metallic: number
   }
+  // New properties for GLB layers
+  isLayer?: boolean
+  parentModelId?: string
+  meshData?: any // THREE.Mesh reference for GLB layers
 }
 
 interface ViewportProps {
   objects: SceneObject[]
   selectedObjectId: string | null
   onObjectSelect: (objectId: string | null) => void
+  onLayerSelect: (layerId: string | null) => void
+  onGLBLayersDetected: (modelId: string, layers: Array<{id: string, name: string, mesh: any}>) => void
   isGenerating: boolean
 }
 
@@ -71,15 +78,36 @@ function GeneratingOverlay({ isVisible }: { isVisible: boolean }) {
   )
 }
 
-export default function Viewport({ objects, selectedObjectId, onObjectSelect, isGenerating }: ViewportProps) {
+export default function Viewport({ 
+  objects, 
+  selectedObjectId, 
+  onObjectSelect, 
+  onLayerSelect, 
+  onGLBLayersDetected,
+  isGenerating 
+}: ViewportProps) {
   const [cameraPosition, setCameraPosition] = useState<[number, number, number]>([5, 5, 5])
 
   const handleCanvasClick = (event: any) => {
     // If clicking on canvas background (not an object), deselect
     if (event.target.classList.contains('webgl-canvas')) {
       onObjectSelect(null)
+      onLayerSelect(null)
     }
   }
+
+  const handleGLBLayersDetected = (layers: Array<{id: string, name: string, mesh: any}>) => {
+    // Find the GLB model object to get its ID
+    const glbModel = objects.find(obj => obj.type === 'glb_model')
+    if (glbModel) {
+      onGLBLayersDetected(glbModel.id, layers)
+    }
+  }
+
+  // Get GLB models and regular objects
+  const glbModels = objects.filter(obj => obj.type === 'glb_model')
+  const regularObjects = objects.filter(obj => obj.type !== 'glb_model' && !obj.isLayer)
+  const selectedLayer = objects.find(obj => obj.id === selectedObjectId && obj.isLayer)
 
   return (
     <div className="viewport">
@@ -111,8 +139,19 @@ export default function Viewport({ objects, selectedObjectId, onObjectSelect, is
           position={[0, -2, 0]} 
         />
 
-        {/* Render scene objects */}
-        {objects.map(object => (
+        {/* Render GLB Models */}
+        {glbModels.map(model => (
+          <GLBModel
+            key={model.id}
+            url="/3d_models/diamond_ring_example.glb"
+            selectedLayerId={selectedLayer?.id || null}
+            onLayerSelect={onLayerSelect}
+            onLayersDetected={handleGLBLayersDetected}
+          />
+        ))}
+
+        {/* Render regular scene objects (basic shapes) */}
+        {regularObjects.map(object => (
           <SceneObjectMesh
             key={object.id}
             object={object}
