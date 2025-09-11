@@ -1,4 +1,3 @@
-import React from 'react'
 import './SceneOutliner.css'
 
 interface SceneObject {
@@ -34,10 +33,6 @@ export default function SceneOutliner({
 
   const handleVisibilityToggle = (objectId: string, currentVisibility: boolean) => {
     onObjectUpdate(objectId, { visible: !currentVisibility })
-  }
-
-  const handleObjectRename = (objectId: string, newName: string) => {
-    onObjectUpdate(objectId, { name: newName })
   }
 
   return (

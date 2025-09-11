@@ -1,4 +1,3 @@
-import React from 'react'
 import './ViewportControls.css'
 
 export default function ViewportControls() {

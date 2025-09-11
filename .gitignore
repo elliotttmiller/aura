@@ -83,6 +83,11 @@ models/*.pth
 # System control panel logs
 system_control.log
 
+# Node.js / Frontend
+frontend/static/node_modules/
+frontend/static/.vite/
+frontend/static/dist/
+
 # Keep folder structure but ignore content
 output/.gitkeep
 models/generated/.gitkeep
