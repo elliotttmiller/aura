@@ -1,0 +1,33 @@
+/* Viewport Controls Header Styles */
+.viewport-controls-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.control-btn {
+  padding: 6px 10px;
+  background: rgba(45, 55, 72, 0.9);
+  border: 1px solid #4a5568;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
+}
+
+.control-btn:hover {
+  background: rgba(66, 153, 225, 0.9);
+  transform: translateY(-1px);
+}
+
+.control-divider {
+  width: 1px;
+  height: 20px;
+  background: #4a5568;
+  margin: 0 4px;
+}
