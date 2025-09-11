@@ -41,6 +41,11 @@ export interface SystemState {
   lastSync: number
 }
 
+export interface UIState {
+  isLeftSidebarVisible: boolean
+  isRightSidebarVisible: boolean
+}
+
 // Complete application state
 interface DesignStoreState {
   // Session data (Digital Twin of backend)
@@ -48,6 +53,9 @@ interface DesignStoreState {
   
   // System state
   system: SystemState
+  
+  // UI state for adaptive layout
+  ui: UIState
   
   // Actions for state mutations
   actions: {
@@ -68,6 +76,12 @@ interface DesignStoreState {
     setSystemStatus: (status: SystemState['status']) => void
     setGenerating: (isGenerating: boolean) => void
     syncWithBackend: () => Promise<void>
+    
+    // UI management for adaptive layout
+    toggleLeftSidebar: () => void
+    toggleRightSidebar: () => void
+    setLeftSidebarVisible: (visible: boolean) => void
+    setRightSidebarVisible: (visible: boolean) => void
   }
 }
 
@@ -87,6 +101,11 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     status: 'connecting',
     isGenerating: false,
     lastSync: 0
+  },
+
+  ui: {
+    isLeftSidebarVisible: true,
+    isRightSidebarVisible: true
   },
 
   actions: {
@@ -291,6 +310,31 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     // Force sync with backend
     syncWithBackend: async () => {
       await get().actions.loadSceneFromBackend()
+    },
+
+    // UI management for adaptive layout
+    toggleLeftSidebar: () => {
+      set((state) => ({
+        ui: { ...state.ui, isLeftSidebarVisible: !state.ui.isLeftSidebarVisible }
+      }))
+    },
+
+    toggleRightSidebar: () => {
+      set((state) => ({
+        ui: { ...state.ui, isRightSidebarVisible: !state.ui.isRightSidebarVisible }
+      }))
+    },
+
+    setLeftSidebarVisible: (visible: boolean) => {
+      set((state) => ({
+        ui: { ...state.ui, isLeftSidebarVisible: visible }
+      }))
+    },
+
+    setRightSidebarVisible: (visible: boolean) => {
+      set((state) => ({
+        ui: { ...state.ui, isRightSidebarVisible: visible }
+      }))
     }
   }
 }))
@@ -298,6 +342,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
 // Convenience hooks for accessing specific parts of the store
 export const useSession = () => useDesignStore((state) => state.session)
 export const useSystemState = () => useDesignStore((state) => state.system)
+export const useUIState = () => useDesignStore((state) => state.ui)
 export const useActions = () => useDesignStore((state) => state.actions)
 
 // Health check helper

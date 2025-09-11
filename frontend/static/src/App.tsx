@@ -7,12 +7,13 @@ import AIChatSidebar from './components/AIChatSidebar/AIChatSidebar'
 import ViewportControls from './components/ViewportControls/ViewportControls'
 
 // Import the centralized store
-import { useSession, useSystemState, useActions, checkSystemHealth } from './store/designStore'
+import { useSession, useSystemState, useUIState, useActions, checkSystemHealth } from './store/designStore'
 
 function App() {
   // Use the centralized store instead of local state
   const session = useSession()
   const system = useSystemState()
+  const ui = useUIState()
   const actions = useActions()
 
   // Initialize the application
@@ -40,27 +41,47 @@ function App() {
   const selectedObject = session.objects.find(obj => obj.id === session.selectedObjectId)
 
   return (
-    <div className="design-studio">
+    <div className={`design-studio ${!ui.isLeftSidebarVisible ? 'left-sidebar-hidden' : ''} ${!ui.isRightSidebarVisible ? 'right-sidebar-hidden' : ''}`}>
       {/* Header */}
       <div className="header">
-        <div className="logo">
-          <span>💎</span>
-          <span>Aura Sentient Design Studio</span>
+        <div className="header-left">
+          <button 
+            className="sidebar-toggle-btn"
+            onClick={actions.toggleLeftSidebar}
+            title="Toggle Scene Outliner"
+          >
+            📋
+          </button>
+          <div className="logo">
+            <span>💎</span>
+            <span>Aura Sentient Design Studio</span>
+          </div>
         </div>
-        <div className="status">
-          <div className={`status-indicator status-${system.status}`}></div>
-          <span>{system.status === 'online' ? 'System Online' : system.status === 'connecting' ? 'Connecting...' : 'System Error'}</span>
-          <ViewportControls />
+        <div className="header-right">
+          <div className="status">
+            <div className={`status-indicator status-${system.status}`}></div>
+            <span>{system.status === 'online' ? 'System Online' : system.status === 'connecting' ? 'Connecting...' : 'System Error'}</span>
+            <ViewportControls />
+          </div>
+          <button 
+            className="sidebar-toggle-btn"
+            onClick={actions.toggleRightSidebar}
+            title="Toggle Properties & Chat"
+          >
+            🔧
+          </button>
         </div>
       </div>
 
       {/* Scene Outliner */}
-      <SceneOutliner 
-        objects={session.objects}
-        selectedObjectId={session.selectedObjectId}
-        onObjectSelect={actions.selectObject}
-        onObjectUpdate={actions.updateObject}
-      />
+      {ui.isLeftSidebarVisible && (
+        <SceneOutliner 
+          objects={session.objects}
+          selectedObjectId={session.selectedObjectId}
+          onObjectSelect={actions.selectObject}
+          onObjectUpdate={actions.updateObject}
+        />
+      )}
 
       {/* Main 3D Viewport */}
       <Viewport 
@@ -71,16 +92,20 @@ function App() {
       />
 
       {/* AI Chat Sidebar */}
-      <AIChatSidebar 
-        onPromptSubmit={actions.executeAIPrompt}
-        isGenerating={system.isGenerating}
-      />
+      {ui.isRightSidebarVisible && (
+        <AIChatSidebar 
+          onPromptSubmit={actions.executeAIPrompt}
+          isGenerating={system.isGenerating}
+        />
+      )}
 
       {/* Properties Inspector */}
-      <PropertiesInspector 
-        selectedObject={selectedObject}
-        onObjectUpdate={actions.updateObject}
-      />
+      {ui.isRightSidebarVisible && (
+        <PropertiesInspector 
+          selectedObject={selectedObject}
+          onObjectUpdate={actions.updateObject}
+        />
+      )}
     </div>
   )
 }
