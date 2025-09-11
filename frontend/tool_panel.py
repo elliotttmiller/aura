@@ -20,183 +20,215 @@ logger = logging.getLogger(__name__)
 
 class ChatPanel(bpy.types.Panel):
     """
-    V22 Verifiable Artisan Chat Interface Panel
+    V32 Unified Design Studio - Master Control Room
     
-    Live cognitive streaming interface showcasing AI's multi-step thought process.
-    Features real-time updates, clear error display, and professional tooltips
-    for true AI collaboration transparency.
+    Multi-paradigm interface supporting both NURBS precision and Mesh artistry.
+    Features tabbed interface switching between Rhino (NURBS) and Blender (Mesh)
+    paradigms, with unified AI chat and collapsible sidebar functionality.
+    
+    Implements Protocol 13: The Unified Studio Doctrine (Master Control Room)
+    Implements Protocol 14: AI as Multi-Paradigm Architect (Strategic Delegation)
     """
     
-    bl_label = "🔮 Aura V22 Verifiable Artisan"
+    bl_label = "🔮 Aura V32 Unified Design Studio"
     bl_idname = "DESIGN_PT_ChatPanel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'Aura'
     bl_order = 0
-    bl_description = "V22 Verifiable Artisan - Live AI cognitive streaming with real-time Shape Key animations and complete transparency"
+    bl_description = "V32 Unified Design Studio - Multi-paradigm Master Control Room with NURBS precision and Mesh artistry"
     
     def draw(self, context):
         layout = self.layout
         settings = context.scene.settings
         
-        # V22 Header with live cognitive streaming status
+        # V32 Master Header with collapsible controls
         header_box = layout.box()
-        header_box.label(text="🔮 Aura V22 Verifiable Artisan", icon='TOOL_SETTINGS')
+        header_row = header_box.row(align=True)
         
-        # V22 Enhanced status with cognitive streaming indicators
-        if settings.is_processing:
-            status_text = "🧠 Live Cognitive Streaming..."
-            status_icon = 'TIME'
-            header_box.alert = True  # Visual emphasis during processing
+        # Collapse/Expand button for full-screen viewport
+        if settings.sidebar_collapsed:
+            expand_op = header_row.operator("design.toggle_sidebar", text="⬅️", emboss=True)
+            expand_op.action = 'EXPAND'
+            header_row.label(text="V32 Studio")
+            return  # Show minimal collapsed state
         else:
-            status_text = "✅ Ready for AI Collaboration"
+            collapse_op = header_row.operator("design.toggle_sidebar", text="➡️", emboss=True)  
+            collapse_op.action = 'COLLAPSE'
+            header_row.label(text="🔮 Aura V32 Unified Design Studio", icon='TOOL_SETTINGS')
+        
+        # V32 Enhanced status with multi-paradigm awareness
+        if settings.is_processing:
+            status_text = f"🧠 Processing ({settings.active_paradigm_tab} Engine)..."
+            status_icon = 'TIME'
+            header_box.alert = True
+        else:
+            status_text = "✅ Ready for Multi-Paradigm Design"
             status_icon = 'CHECKMARK'
             header_box.alert = False
         
         status_row = header_box.row()
         status_row.label(text=f"Status: {status_text}", icon=status_icon)
         
-        # Start/Stop Design Operator with V22 language
+        # Start/Stop Design Operator check
         if not self._is_design_operator_running(context):
-            activate_op = layout.operator("design.sentient_operator", text="🔮 Activate V22 Verifiable Artisan", icon='PLAY')
-            activate_op.bl_description = "Start the V22 Verifiable Artisan for live cognitive streaming and Shape Key animations"
+            activate_op = layout.operator("design.sentient_operator", text="🔮 Activate V32 Multi-Paradigm Studio", icon='PLAY')
+            activate_op.bl_description = "Start the V32 Unified Design Studio for multi-paradigm collaboration"
             layout.separator()
-            layout.label(text="💡 Activate to begin verifiable AI collaboration", icon='INFO')
+            layout.label(text="💡 Activate to begin multi-paradigm design collaboration", icon='INFO')
             return
+
+        # V32 TABBED INTERFACE - The Core Innovation
+        tabs_box = layout.box()
+        tabs_box.label(text="🎛️ Design Paradigm Selection", icon='TAB_NEW')
         
-        # V22 Enhanced Chat Messages Display with cognitive streaming visibility
+        tab_row = tabs_box.row(align=True)
+        tab_row.scale_y = 1.2
+        
+        # NURBS tab
+        nurbs_op = tab_row.operator("design.switch_paradigm", text="🏭 Rhino (NURBS)")
+        nurbs_op.paradigm = 'NURBS'
+        if settings.active_paradigm_tab == 'NURBS':
+            nurbs_op = tab_row.operator("design.switch_paradigm", text="🏭 Rhino (NURBS) ✓", depress=True)
+            nurbs_op.paradigm = 'NURBS'
+            
+        # MESH tab  
+        mesh_op = tab_row.operator("design.switch_paradigm", text="🎨 Blender (Mesh)")
+        mesh_op.paradigm = 'MESH'
+        if settings.active_paradigm_tab == 'MESH':
+            mesh_op = tab_row.operator("design.switch_paradigm", text="🎨 Blender (Mesh) ✓", depress=True)
+            mesh_op.paradigm = 'MESH'
+
+        layout.separator()
+
+        # V32 CONTEXT-SENSITIVE TOOLSETS
+        self._draw_paradigm_toolset(layout, context, settings)
+        
+        layout.separator()
+        
+        # V32 UNIFIED AI CHAT INTERFACE - Persistent across paradigms
+        self._draw_unified_ai_chat(layout, context, settings)
+
+    def _draw_paradigm_toolset(self, layout, context, settings):
+        """Draw context-sensitive toolset based on active paradigm tab."""
+        
+        toolset_box = layout.box()
+        
+        if settings.active_paradigm_tab == 'NURBS':
+            # NURBS Precision Toolset
+            toolset_box.label(text="🏭 NURBS Precision Controls", icon='MESH_GRID')
+            
+            nurbs_col = toolset_box.column(align=True)
+            nurbs_col.scale_y = 0.9
+            
+            # NURBS-specific controls
+            nurbs_col.prop(settings, "nurbs_fillet_radius", text="Fillet Radius")
+            nurbs_col.prop(settings, "nurbs_curve_degree", text="Curve Degree") 
+            
+            # Material properties for NURBS
+            material_row = nurbs_col.row()
+            material_row.prop(settings, "material_type", text="Material")
+            
+            # Size controls for precision
+            size_row = nurbs_col.row()
+            size_row.prop(settings, "asset_size", text="Size (mm)")
+            
+        elif settings.active_paradigm_tab == 'MESH':
+            # Mesh Artistic Toolset  
+            toolset_box.label(text="🎨 Mesh Artistry Controls", icon='SCULPTMODE_HLT')
+            
+            mesh_col = toolset_box.column(align=True)
+            mesh_col.scale_y = 0.9
+            
+            # Mesh-specific controls
+            mesh_col.prop(settings, "mesh_subdivision_levels", text="Subdivision Levels")
+            mesh_col.prop(settings, "mesh_remesh_resolution", text="Remesh Resolution")
+            mesh_col.prop(settings, "mesh_quality", text="Mesh Quality")
+            
+            # Artistic properties for mesh
+            feature_row = mesh_col.row()
+            feature_row.prop(settings, "feature_shape", text="Feature Shape")
+            
+            scale_row = mesh_col.row()
+            scale_row.prop(settings, "feature_scale", text="Feature Detail")
+
+    def _draw_unified_ai_chat(self, layout, context, settings):
+        """Draw the unified AI chat interface - persistent across all paradigms."""
+        
+        # AI Chat Messages Display
         chat_box = layout.box()
-        chat_box.label(text="🧠 Live Cognitive Streaming", icon='COMMUNITY')
+        paradigm_indicator = "🏭 NURBS" if settings.active_paradigm_tab == 'NURBS' else "🎨 MESH"
+        chat_box.label(text=f"🧠 Multi-Paradigm AI Architect ({paradigm_indicator})", icon='COMMUNITY')
         
-        # Display chat messages with V22 enhanced cognitive streaming formatting
+        # Display chat messages with paradigm awareness
         try:
             messages = json.loads(settings.chat_messages or "[]")
             
             if messages:
-                # Create scrollable chat area for live streaming
                 chat_scroll = chat_box.column(align=True)
                 chat_scroll.scale_y = 0.8
                 
-                # Show last 10 messages to prevent UI overflow while preserving cognitive flow
-                recent_messages = messages[-10:] if len(messages) > 10 else messages
+                recent_messages = messages[-8:] if len(messages) > 8 else messages
                 
                 for msg in recent_messages:
                     msg_row = chat_scroll.row(align=True)
-                    
-                    # V22 Enhanced message formatting with cognitive streaming indicators
                     content = msg['content']
-                    is_error = content.startswith('❌') or 'error' in content.lower()
-                    is_cognitive_step = any(indicator in content for indicator in ['🧠', '🔍', '⚡', '📐', '✅', '🔧', '🏗️', '✨'])
                     
                     if msg['role'] == 'system':
-                        msg_row.label(text="🔧 " + content[:80] + ("..." if len(content) > 80 else ""))
+                        msg_row.label(text="🔧 " + content[:70] + ("..." if len(content) > 70 else ""))
                     elif msg['role'] == 'assistant':
-                        if is_error:
-                            # V22: Red coloring for error messages
-                            error_row = msg_row.row()
-                            error_row.alert = True
-                            error_row.label(text="❌ " + content[:80] + ("..." if len(content) > 80 else ""))
-                        elif is_cognitive_step:
-                            # V22: Highlight cognitive streaming steps
-                            cognitive_row = msg_row.row()
-                            cognitive_row.label(text=content[:80] + ("..." if len(content) > 80 else ""))
+                        # Show paradigm awareness in AI responses
+                        if 'NURBS' in content or 'nurbs' in content:
+                            msg_row.label(text="🏭 " + content[:70] + ("..." if len(content) > 70 else ""))
+                        elif 'MESH' in content or 'mesh' in content:
+                            msg_row.label(text="🎨 " + content[:70] + ("..." if len(content) > 70 else ""))
                         else:
-                            msg_row.label(text="🔮 " + content[:80] + ("..." if len(content) > 80 else ""))
+                            msg_row.label(text="🔮 " + content[:70] + ("..." if len(content) > 70 else ""))
                     else:
-                        msg_row.label(text="👤 " + content[:80] + ("..." if len(content) > 80 else ""))
+                        msg_row.label(text="👤 " + content[:70] + ("..." if len(content) > 70 else ""))
                     
                     chat_scroll.separator()
             else:
                 info_row = chat_box.row()
-                info_row.label(text="💭 Ready for live cognitive streaming collaboration...")
+                info_row.label(text="💭 Ready for multi-paradigm collaboration...")
         except json.JSONDecodeError:
-            chat_box.label(text="🔄 Loading cognitive stream...")
+            chat_box.label(text="🔄 Loading multi-paradigm AI...")
         
-        # V22 Enhanced User Input Area with verifiable artisan tooltips
+        # User Input Area with paradigm context
         input_box = layout.box()
-        input_box.label(text="✨ Send Request to V22 AI Artisan", icon='OUTLINER_DATA_LIGHTPROBE')
+        current_paradigm = settings.active_paradigm_tab
+        paradigm_desc = "NURBS precision" if current_paradigm == 'NURBS' else "Mesh artistry"
+        input_box.label(text=f"✨ Send Request to Multi-Paradigm AI ({paradigm_desc})", icon='OUTLINER_DATA_LIGHTPROBE')
         
-        # Large text input for prompts with V24 tooltip
+        # Prompt input
         col = input_box.column()
         prompt_row = col.row()
         prompt_row.prop(settings, "current_prompt", text="")
         
-        # V22 Enhanced Action buttons with verifiable artisan descriptions
+        # Action buttons with paradigm awareness
         button_row = input_box.row(align=True)
         button_row.scale_y = 1.5
         
-        # Generate button (primary action) with V22 instant disable/enable
         if settings.is_processing:
-            # V22: Button disabled instantly when cognitive streaming starts
             disabled_row = button_row.row()
             disabled_row.enabled = False
-            disabled_row.operator("design.generate_design", text="🧠 Cognitive Streaming...", icon='TIME')
+            disabled_row.operator("design.generate_design", text=f"🧠 Processing {current_paradigm}...", icon='TIME')
         else:
-            # V22 Enhanced generate button with verifiable artisan tooltip
+            # Generate button  
             generate_op = button_row.operator("design.generate_design", text="🔮 Generate", icon='PLAY')
             generate_op.is_refinement = False
             
-            # Refine button (secondary action) with V22 tooltip
+            # Refine button
             refine_op = button_row.operator("design.generate_design", text="✨ Refine", icon='MODIFIER')
             refine_op.is_refinement = True
         
-        # V22 Enhanced Processing indicator with live cognitive streaming
+        # V32 Enhanced Processing indicator with paradigm info
         if settings.is_processing:
             proc_box = layout.box()
             proc_box.alert = True
-            proc_box.label(text="🧠 V22 Live Cognitive Streaming...", icon='TIME')
-            proc_box.label(text="💭 AI processing with full transparency", icon='NONE')
+            proc_box.label(text=f"🧠 V32 Multi-Paradigm Processing ({current_paradigm})...", icon='TIME')
+            proc_box.label(text="💭 AI strategically delegating to optimal engine", icon='NONE')
             proc_box.scale_y = 0.8
-        
-        # V22 Enhanced Technical specifications with verifiable artisan tooltips
-        specs_box = layout.box()
-        specs_box.label(text="⚙️ V22 Verifiable Configuration", icon='PREFERENCES')
-        
-        specs_col = specs_box.column(align=True)
-        specs_col.scale_y = 0.9
-        
-        # V22 Enhanced Mesh Quality Control with Shape Key animation descriptions
-        quality_box = specs_col.box()
-        quality_box.label(text="🔬 V22 Mesh Quality Control", icon='MESH_GRID')
-        quality_col = quality_box.column(align=True)
-        
-        # Mesh quality slider with V22 enhanced labels and Shape Key tooltips
-        quality_row = quality_col.row()
-        quality_row.prop(settings, "mesh_quality", text="Resolution")
-        
-        # V22 Quality indicator with Shape Key animation descriptions
-        mesh_quality = settings.mesh_quality
-        if mesh_quality <= 32:
-            quality_label = "🟡 Low Quality (Fast) - Basic Shape Key animations"
-        elif mesh_quality <= 64:
-            quality_label = "🟠 Medium Quality (Balanced) - Smooth Shape Key transitions"
-        elif mesh_quality <= 128:
-            quality_label = "🔵 High Quality (Detailed) - Professional Shape Key animations"
-        else:
-            quality_label = "🟣 Ultra Quality (Slow) - Ultra-smooth Shape Key transitions"
-            
-        quality_col.label(text=quality_label)
-        quality_col.separator()
-        
-        # V24 Enhanced asset specifications with professional tooltips
-        asset_row = specs_col.row()
-        asset_row.prop(settings, "asset_size", text="Asset Scale (mm)")
-        
-        material_row = specs_col.row()
-        material_row.prop(settings, "material_type", text="Material Type")
-        
-        feature_row = specs_col.row()
-        feature_row.prop(settings, "feature_shape", text="Primary Feature")
-        
-        scale_row = specs_col.row()
-        scale_row.prop(settings, "feature_scale", text="Feature Detail")
-        
-        # V22 Enhanced technique selection with verifiable artisan language
-        specs_col.separator()
-        technique_label = specs_col.row()
-        technique_label.label(text="🧠 V22 AI Strategy")
-        technique_row = specs_col.row()
-        technique_row.prop(settings, "preferred_technique", text="")
     
     def _is_design_operator_running(self, context):
         """Check if the design operator is currently running."""
@@ -293,6 +325,67 @@ class ModalOperator(bpy.types.Operator):
                     area.tag_redraw()
         
         return {'PASS_THROUGH'}
+
+
+class ToggleSidebarOperator(bpy.types.Operator):
+    """V32 Operator to toggle sidebar collapse/expand for full-screen viewport."""
+    
+    bl_idname = "design.toggle_sidebar"
+    bl_label = "Toggle Sidebar"
+    bl_description = "Collapse or expand the sidebar for full-screen 3D viewport"
+    
+    action: bpy.props.EnumProperty(
+        items=[
+            ('COLLAPSE', 'Collapse', 'Collapse sidebar for full-screen viewport'),
+            ('EXPAND', 'Expand', 'Expand sidebar to show full controls'),
+        ]
+    )
+    
+    def execute(self, context):
+        settings = context.scene.settings
+        
+        if self.action == 'COLLAPSE':
+            settings.sidebar_collapsed = True
+            self.report({'INFO'}, "V32: Sidebar collapsed - Full-screen viewport active")
+        else:
+            settings.sidebar_collapsed = False
+            self.report({'INFO'}, "V32: Sidebar expanded - Full controls restored")
+        
+        # Force UI redraw
+        for area in context.screen.areas:
+            if area.type == 'VIEW_3D':
+                area.tag_redraw()
+        
+        return {'FINISHED'}
+
+
+class SwitchParadigmOperator(bpy.types.Operator):
+    """V32 Operator to switch between NURBS and Mesh paradigm tabs."""
+    
+    bl_idname = "design.switch_paradigm"
+    bl_label = "Switch Paradigm"
+    bl_description = "Switch between NURBS precision and Mesh artistry paradigms"
+    
+    paradigm: bpy.props.EnumProperty(
+        items=[
+            ('NURBS', 'NURBS', 'Switch to NURBS precision paradigm'),
+            ('MESH', 'MESH', 'Switch to Mesh artistry paradigm'),
+        ]
+    )
+    
+    def execute(self, context):
+        settings = context.scene.settings
+        settings.active_paradigm_tab = self.paradigm
+        
+        paradigm_name = "NURBS Precision" if self.paradigm == 'NURBS' else "Mesh Artistry"
+        self.report({'INFO'}, f"V32: Switched to {paradigm_name} paradigm")
+        
+        # Force UI redraw to show new toolset
+        for area in context.screen.areas:
+            if area.type == 'VIEW_3D':
+                area.tag_redraw()
+        
+        return {'FINISHED'}
 
 
 

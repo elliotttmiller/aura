@@ -4,7 +4,7 @@ from backend.backend import check_dependencies
 
 from .settings import install_settings, uninstall_settings
 from .backend.preferences import AddonPreferences, install_preferences, uninstall_preferences
-from .frontend.tool_panel import ChatPanel, GenerateOperator, ModalOperator
+from .frontend.tool_panel import ChatPanel, GenerateOperator, ModalOperator, ToggleSidebarOperator, SwitchParadigmOperator
 from .backend.operators import SentientOperator
 
 
@@ -13,19 +13,21 @@ ALL_CLASSES = [
     ChatPanel, 
     GenerateOperator,
     ModalOperator,
+    ToggleSidebarOperator,
+    SwitchParadigmOperator,
     SentientOperator,
 ]
 
 def create_design_workspace():
     """
-    V22 Pillar 1: Forging the "Aura Mode" Immersive User Experience
+    V32 Pillar 1: Forging the "Unified Studio" Multi-Paradigm Experience
     
-    Create the dedicated "Aura" workspace with clean, focused UI.
-    - Hide all non-essential UI elements
-    - Leave only 3D Viewport and "Design" sidebar  
-    - Set as default workspace for immersive design experience
+    Create the dedicated "Aura" workspace optimized for multi-paradigm design.
+    - Clean, focused UI with tabbed paradigm switching
+    - Leave only 3D Viewport and unified Design sidebar  
+    - Optimized for seamless NURBS/Mesh paradigm transitions
     """
-    print("V22: Creating Aura Mode immersive design workspace...")
+    print("V32: Creating Unified Studio multi-paradigm workspace...")
     
     # Create new workspace named "Aura" as specified
     workspace_name = "Aura"
@@ -35,7 +37,7 @@ def create_design_workspace():
         # Get the first screen from the workspace
         screen = workspace.screens[0]
         
-        # V22 Enhancement: Create truly clean, focused layout
+        # V32 Enhancement: Create clean, multi-paradigm focused layout
         # Clear all existing areas and create single 3D viewport
         for area in screen.areas:
             area.type = 'VIEW_3D'
@@ -43,7 +45,7 @@ def create_design_workspace():
         # Set workspace as active to configure
         bpy.context.window.workspace = workspace
         
-        # V22 Immersive Mode: Configure 3D viewport for optimal design experience
+        # V32 Multi-Paradigm Mode: Configure 3D viewport for optimal design experience
         for area in bpy.context.screen.areas:
             if area.type == 'VIEW_3D':
                 for space in area.spaces:
@@ -51,17 +53,17 @@ def create_design_workspace():
                         # Show the "Design" sidebar (region_ui) 
                         space.show_region_ui = True
                         
-                        # V22 Enhancement: Optimal shading for design work
+                        # V32 Enhancement: Optimal shading for multi-paradigm work
                         space.shading.type = 'MATERIAL' 
                         space.shading.use_scene_lights_render = True
                         space.shading.use_scene_world_render = True
                         
-                        # V22 Enhancement: Hide non-essential UI elements
+                        # V32 Enhancement: Hide non-essential UI elements for paradigm focus
                         space.show_region_header = True  # Keep header for essential controls
                         space.show_region_toolbar = False  # Hide tool toolbar for clean experience
                         space.show_region_hud = False  # Hide HUD for minimalism
                         
-                        # V22 Enhancement: Ensure Aura sidebar is visible and selected
+                        # V32 Enhancement: Ensure Aura sidebar is visible and selected
                         for region in area.regions:
                             if region.type == 'UI':
                                 # The sidebar will default to the Aura category due to bl_category = 'Aura'
@@ -71,7 +73,7 @@ def create_design_workspace():
     
     # Set Aura workspace as active (this becomes the default)
     bpy.context.window.workspace = bpy.data.workspaces[workspace_name]
-    print("V22: Aura Mode workspace created and activated - Immersive design experience ready")
+    print("V32: Unified Studio workspace created and activated - Multi-paradigm design experience ready")
 
 def install():
     print("Installing Aura V22 Verifiable Artisan...")
