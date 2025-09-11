@@ -100,8 +100,8 @@ export default function Viewport({ objects, selectedObjectId, onObjectSelect, is
         />
         <pointLight position={[-10, -10, -10]} intensity={0.5} />
 
-        {/* Environment */}
-        <Environment preset="studio" />
+        {/* Environment - Using simple background color instead of HDR */}
+        <color attach="background" args={['#1a202c']} />
         
         {/* Grid */}
         <Grid 
