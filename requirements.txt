@@ -1,10 +1,10 @@
 # ===================================================================
-# Requirements for Universal Design Engine V20.0
+# Requirements for Aura V32 Ultimate Rhino-Native Plugin
 # ===================================================================
 #
-# State-of-the-art dependencies for low-level implicit function-based
-# AI pipeline with native shap_e integration and Marching Cubes algorithm.
-# Optimized for 8GB VRAM consumer hardware (NVIDIA 1070).
+# State-of-the-art dependencies for native Rhino 8 plugin development
+# with Eto framework UI and direct RhinoCommon integration.
+# Optimized for professional CAD workflows and AI-driven geometry creation.
 #
 # Setup Instructions:
 # > python -m venv venv
@@ -12,23 +12,14 @@
 # > pip install -r requirements.txt
 # -------------------------------------------------------------------
 
-# --- Core Web Framework ---
-# FastAPI for AI server endpoints
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
+# --- Rhino Integration ---
+# rhino3dm for NURBS geometry creation and .3dm file operations
+rhino3dm>=8.0.0
 
 # --- AI and Machine Learning ---
-# OpenAI Shap-E for implicit 3D generation
-shap-e>=1.0.0
-torch>=1.13.0
-torchvision>=0.14.0
+# For AI-driven construction plan generation
 transformers>=4.21.0
-
-# --- 3D Processing ---
-# For Marching Cubes algorithm and implicit surface extraction
-scikit-image>=0.19.0
-numpy>=1.21.0
-trimesh>=3.15.0
+torch>=2.0.0
 
 # --- HTTP Client ---
 # For communication with external LM Studio and AI services
@@ -37,6 +28,7 @@ requests>=2.31.0
 # --- Data Processing ---
 # Essential for JSON processing and file operations
 certifi>=2023.0.0
+numpy>=1.21.0
 
 # --- Environment Configuration ---
 # For loading .env files and environment management
@@ -45,3 +37,7 @@ python-dotenv>=1.0.0
 # --- System Monitoring and Diagnostics ---
 # For system resource monitoring and health checks
 psutil>=5.9.0
+
+# --- Threading and Asynchronous Processing ---
+# For non-blocking UI operations in Rhino plugin
+threading

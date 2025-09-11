@@ -30,7 +30,7 @@ import requests
 import subprocess
 from typing import Dict, Any, Optional
 
-import bpy
+# import bpy  # REMOVED: Blender dependency removed for native Rhino plugin
 
 # V24 Enhancement: Load centralized configuration
 try:
