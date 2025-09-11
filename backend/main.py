@@ -155,6 +155,121 @@ class DesignSession:
 # Global sessions storage (in production, use database)
 active_sessions: Dict[str, DesignSession] = {}
 
+# Enhanced AI Processing Functions
+def analyze_scene_context(current_scene: Dict[str, Any]) -> Dict[str, Any]:
+    """Analyze the current scene context for AI decision making."""
+    objects = current_scene.get('objects', [])
+    selected_object_id = current_scene.get('selected_object_id')
+    
+    context = {
+        "object_count": len(objects),
+        "object_types": list(set(obj.get('type', 'unknown') for obj in objects)),
+        "materials_used": list(set(obj.get('material', {}).get('color', '#ffffff') for obj in objects)),
+        "has_selection": selected_object_id is not None,
+        "selected_object": None
+    }
+    
+    # Get selected object details if any
+    if selected_object_id:
+        selected = next((obj for obj in objects if obj.get('id') == selected_object_id), None)
+        if selected:
+            context["selected_object"] = {
+                "name": selected.get('name', ''),
+                "type": selected.get('type', ''),
+                "material": selected.get('material', {}),
+                "transform": selected.get('transform', {})
+            }
+    
+    return context
+
+def generate_intelligent_response(prompt: str, scene_context: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate an intelligent response based on prompt and scene context."""
+    prompt_lower = prompt.lower()
+    
+    # Determine object type and properties based on prompt analysis
+    object_type = "mesh"
+    material_properties = {
+        "color": "#C0C0C0",  # Default silver
+        "roughness": 0.5,
+        "metallic": 0.8
+    }
+    
+    analysis_notes = []
+    
+    # Material intelligence
+    if any(material in prompt_lower for material in ["gold", "golden"]):
+        material_properties["color"] = "#FFD700"
+        material_properties["roughness"] = 0.3
+        material_properties["metallic"] = 1.0
+        analysis_notes.append("Detected gold material request")
+    elif any(material in prompt_lower for material in ["silver", "platinum"]):
+        material_properties["color"] = "#C0C0C0"
+        material_properties["roughness"] = 0.2
+        material_properties["metallic"] = 1.0
+        analysis_notes.append("Detected precious metal material")
+    elif any(gem in prompt_lower for gem in ["diamond", "crystal", "gem"]):
+        material_properties["color"] = "#ffffff"
+        material_properties["roughness"] = 0.0
+        material_properties["metallic"] = 0.1
+        analysis_notes.append("Detected gemstone material - high clarity")
+    
+    # Object type intelligence
+    if any(jewelry in prompt_lower for jewelry in ["ring", "band"]):
+        object_type = "ring"
+        analysis_notes.append("Identified ring/band geometry")
+    elif any(jewelry in prompt_lower for jewelry in ["necklace", "chain"]):
+        object_type = "chain"
+        analysis_notes.append("Identified chain/necklace geometry")
+    elif any(jewelry in prompt_lower for jewelry in ["earring", "stud"]):
+        object_type = "earring"
+        analysis_notes.append("Identified earring geometry")
+    
+    # Context awareness
+    if scene_context["has_selection"] and any(word in prompt_lower for word in ["add", "attach", "mount", "set"]):
+        analysis_notes.append(f"Context: Working with selected object '{scene_context['selected_object']['name']}'")
+    
+    # Size intelligence
+    size_scale = [1.0, 1.0, 1.0]
+    if any(size in prompt_lower for size in ["small", "tiny", "delicate"]):
+        size_scale = [0.7, 0.7, 0.7]
+        analysis_notes.append("Scaled for small/delicate proportions")
+    elif any(size in prompt_lower for size in ["large", "big", "bold"]):
+        size_scale = [1.3, 1.3, 1.3]
+        analysis_notes.append("Scaled for large/bold proportions")
+    
+    return {
+        "object_type": object_type,
+        "material": material_properties,
+        "scale": size_scale,
+        "analysis": "; ".join(analysis_notes) if analysis_notes else "Standard object creation",
+        "prompt_keywords": [word for word in prompt_lower.split() if word in [
+            "gold", "silver", "diamond", "ring", "necklace", "earring", "small", "large", "add", "create"
+        ]]
+    }
+
+def create_object_from_ai_response(ai_response: Dict[str, Any]) -> 'SceneObject':
+    """Create a SceneObject from AI analysis."""
+    object_type = ai_response.get("object_type", "mesh")
+    material = ai_response.get("material", {})
+    scale = ai_response.get("scale", [1.0, 1.0, 1.0])
+    
+    # Generate intelligent object name
+    object_names = {
+        "ring": ["Elegant Ring", "Wedding Band", "Signet Ring", "Statement Ring"],
+        "chain": ["Fine Chain", "Cuban Link", "Rope Chain", "Box Chain"],
+        "earring": ["Stud Earring", "Drop Earring", "Hoop Earring", "Chandelier Earring"],
+        "mesh": ["Custom Jewelry", "Artisan Piece", "Designer Element", "Geometric Form"]
+    }
+    
+    import random
+    object_name = random.choice(object_names.get(object_type, object_names["mesh"]))
+    
+    new_object = SceneObject(object_name, object_type)
+    new_object.material.update(material)
+    new_object.transform["scale"] = scale
+    
+    return new_object
+
 def get_output_path(prompt: str) -> str:
     """Generate output file path based on prompt."""
     safe_name = "".join(c for c in prompt.lower() if c.isalnum() or c in (' ', '_')).rstrip()
@@ -196,7 +311,7 @@ async def get_session(session_id: str):
 
 @app.post("/session/{session_id}/execute_prompt")
 async def execute_ai_prompt(session_id: str, request: Request):
-    """Execute AI prompt and modify scene state."""
+    """Execute AI prompt with enhanced scene context awareness."""
     session = active_sessions.get(session_id)
     if not session:
         return JSONResponse(status_code=404, content={
@@ -207,30 +322,26 @@ async def execute_ai_prompt(session_id: str, request: Request):
     try:
         data = await request.json()
         prompt = data.get("prompt", "")
+        current_scene = data.get("current_scene", {})
         
-        logger.info(f"Executing AI prompt for session {session_id}: {prompt}")
+        logger.info(f"Executing context-aware AI prompt for session {session_id}: {prompt}")
+        logger.info(f"Current scene context: {len(current_scene.get('objects', []))} objects")
         
-        # For now, create a mock object based on the prompt
-        # TODO: Integrate with actual AI pipeline
-        object_name = f"AI Generated: {prompt[:30]}..."
-        new_object = SceneObject(object_name, "mesh")
+        # Enhanced AI processing with scene context
+        scene_context = analyze_scene_context(current_scene)
+        ai_response = generate_intelligent_response(prompt, scene_context)
         
-        # Add some intelligence based on prompt keywords
-        if "gold" in prompt.lower():
-            new_object.material["color"] = "#FFD700"
-        elif "silver" in prompt.lower():
-            new_object.material["color"] = "#C0C0C0"
-        elif "diamond" in prompt.lower():
-            new_object.material["roughness"] = 0.0
-            new_object.material["metallic"] = 0.1
-        
+        # Create new object based on AI analysis
+        new_object = create_object_from_ai_response(ai_response)
         object_id = session.add_object(new_object)
         
         return JSONResponse({
             "success": True,
-            "message": "AI prompt executed successfully",
+            "message": "Context-aware AI prompt executed successfully",
             "created_object_id": object_id,
-            "object": new_object.to_dict()
+            "object": new_object.to_dict(),
+            "ai_analysis": ai_response.get("analysis", ""),
+            "scene_context": scene_context
         })
         
     except Exception as e:

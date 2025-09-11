@@ -1,4 +1,3 @@
-import React from 'react'
 import './PropertiesInspector.css'
 
 interface SceneObject {
