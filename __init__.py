@@ -1,1 +1,17 @@
-bl_info = { "name": "Aura Verifiable Artisan", "author": "Aura Development Team", "version": (22, 0, 0), "blender": (3, 0, 0), "location": "View3D > Sidebar > Aura", "description": " Verifiable Artisan - State-of-the-art AI-driven 3D creation with live cognitive streaming, real-time Shape Key animations, and complete sentient transparency", "category": "3D View", } from .setup import install, uninstall def register(): install() def unregister(): uninstall() 
+bl_info = {
+    "name": "Aura Verifiable Artisan",
+    "author": "Aura Development Team",
+    "version": (22, 0, 0),
+    "blender": (3, 0, 0),
+    "location": "View3D > Sidebar > Aura",
+    "description": "Verifiable Artisan - State-of-the-art AI-driven 3D creation with live cognitive streaming, real-time Shape Key animations, and complete sentient transparency",
+    "category": "3D View",
+}
+
+from .setup import install, uninstall
+
+def register():
+    install()
+
+def unregister():
+    uninstall() 

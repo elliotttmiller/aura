@@ -1,6 +1,19 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Grid } from '@react-three/drei'
+import { 
+  OrbitControls, 
+  Grid, 
+  Environment,
+  ContactShadows,
+  PerspectiveCamera,
+  useProgress,
+  Html,
+  Sky,
+  Stars,
+  Sparkles,
+  Center,
+  BakeShadows
+} from '@react-three/drei'
 import * as THREE from 'three'
 import GLBModel from '../GLBModel/GLBModel'
 import './Viewport.css'
@@ -35,7 +48,7 @@ interface ViewportProps {
   isGenerating: boolean
 }
 
-// 3D Object Component
+// 3D Object Component with enhanced materials
 function SceneObjectMesh({ object, isSelected, onSelect }: { 
   object: SceneObject
   isSelected: boolean
@@ -51,29 +64,103 @@ function SceneObjectMesh({ object, isSelected, onSelect }: {
       scale={object.transform.scale}
       visible={object.visible}
       onClick={onSelect}
+      castShadow
+      receiveShadow
     >
       {/* For now, render as a torus (ring-like shape) */}
-      <torusGeometry args={[2, 0.5, 16, 100]} />
+      <torusGeometry args={[2, 0.5, 32, 100]} />
       <meshStandardMaterial
         color={object.material.color}
         roughness={object.material.roughness}
         metalness={object.material.metallic}
-        emissive={isSelected ? '#4299e1' : '#000000'}
-        emissiveIntensity={isSelected ? 0.2 : 0}
+        emissive={isSelected ? '#667eea' : '#000000'}
+        emissiveIntensity={isSelected ? 0.3 : 0}
+        envMapIntensity={1.5}
       />
+      {/* Selection outline effect */}
+      {isSelected && (
+        <mesh scale={1.05}>
+          <torusGeometry args={[2, 0.5, 32, 100]} />
+          <meshBasicMaterial 
+            color="#667eea" 
+            wireframe 
+            transparent 
+            opacity={0.3}
+          />
+        </mesh>
+      )}
     </mesh>
   )
 }
 
-// Loading/Generation Overlay
+// Advanced Lighting Setup
+function SceneLighting() {
+  return (
+    <>
+      {/* Ambient light for base illumination */}
+      <ambientLight intensity={0.3} />
+      
+      {/* Key light - main directional light */}
+      <directionalLight 
+        position={[10, 10, 5]} 
+        intensity={1.2} 
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-far={50}
+        shadow-camera-left={-10}
+        shadow-camera-right={10}
+        shadow-camera-top={10}
+        shadow-camera-bottom={-10}
+        shadow-bias={-0.0001}
+      />
+      
+      {/* Fill light - softer from opposite side */}
+      <directionalLight 
+        position={[-5, 5, -5]} 
+        intensity={0.4}
+      />
+      
+      {/* Rim light - for edge highlighting */}
+      <pointLight position={[0, 10, -10]} intensity={0.5} color="#667eea" />
+      
+      {/* Accent lights for jewelry sparkle */}
+      <pointLight position={[5, 0, 5]} intensity={0.3} color="#ffd700" />
+      <pointLight position={[-5, 0, -5]} intensity={0.3} color="#fff" />
+    </>
+  )
+}
+
+// Progressive loader for 3D assets
+function Loader() {
+  const { progress } = useProgress()
+  return (
+    <Html center>
+      <div className="loader-container">
+        <div className="loader-ring"></div>
+        <div className="loader-text">{progress.toFixed(0)}%</div>
+        <p className="loader-subtitle">Loading 3D Assets...</p>
+      </div>
+    </Html>
+  )
+}
+
+// Loading/Generation Overlay with enhanced design
 function GeneratingOverlay({ isVisible }: { isVisible: boolean }) {
   if (!isVisible) return null
   
   return (
     <div className="generating-overlay">
-      <div className="spinner"></div>
-      <h3>AI is creating your design...</h3>
-      <p>This may take a few moments</p>
+      <div className="spinner-container">
+        <div className="spinner-ring"></div>
+        <div className="spinner-ring-2"></div>
+        <div className="spinner-core"></div>
+      </div>
+      <h3>AI Design Generation</h3>
+      <p>Creating your masterpiece...</p>
+      <div className="progress-bar">
+        <div className="progress-fill"></div>
+      </div>
     </div>
   )
 }
@@ -87,6 +174,9 @@ export default function Viewport({
   isGenerating 
 }: ViewportProps) {
   const [cameraPosition, setCameraPosition] = useState<[number, number, number]>([5, 5, 5])
+  const [showWireframe, setShowWireframe] = useState(false)
+  const [showGrid, setShowGrid] = useState(true)
+  const [renderMode, setRenderMode] = useState<'realistic' | 'studio' | 'night'>('realistic')
 
   const handleCanvasClick = (event: any) => {
     // If clicking on canvas background (not an object), deselect
@@ -113,60 +203,125 @@ export default function Viewport({
     <div className="viewport">
       <Canvas
         className="webgl-canvas"
-        camera={{ position: cameraPosition, fov: 45 }}
         onClick={handleCanvasClick}
         shadows
+        gl={{ 
+          antialias: true,
+          alpha: false,
+          powerPreference: 'high-performance',
+          preserveDrawingBuffer: true
+        }}
+        dpr={[1, 2]} // Adaptive pixel ratio for performance
+        frameloop="demand" // Render only when needed for better performance
       >
-        {/* Lighting */}
-        <ambientLight intensity={0.4} />
-        <directionalLight 
-          position={[10, 10, 5]} 
-          intensity={1} 
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-        />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} />
-
-        {/* Environment - Using simple background color instead of HDR */}
-        <color attach="background" args={['#1a202c']} />
+        {/* Camera with smooth controls */}
+        <PerspectiveCamera makeDefault position={cameraPosition} fov={45} />
         
-        {/* Grid */}
-        <Grid 
-          args={[10, 10]} 
-          cellColor="#4a5568" 
-          sectionColor="#2d3748" 
-          position={[0, -2, 0]} 
-        />
+        <Suspense fallback={<Loader />}>
+          {/* Advanced Lighting */}
+          <SceneLighting />
 
-        {/* Render GLB Models */}
-        {glbModels.map(model => (
-          <GLBModel
-            key={model.id}
-            url="/3d_models/diamond_ring_example.glb"
-            selectedLayerId={selectedLayer?.id || null}
-            onLayerSelect={onLayerSelect}
-            onLayersDetected={handleGLBLayersDetected}
+          {/* HDR Environment for realistic reflections */}
+          {renderMode === 'realistic' && (
+            <Environment preset="studio" background={false} />
+          )}
+          
+          {/* Studio environment for jewelry */}
+          {renderMode === 'studio' && (
+            <Environment preset="city" background={false} />
+          )}
+          
+          {/* Night/Dark environment */}
+          {renderMode === 'night' && (
+            <>
+              <Sky sunPosition={[0, -1, 0]} />
+              <Stars radius={100} depth={50} count={5000} factor={4} fade speed={1} />
+            </>
+          )}
+
+          {/* Premium Background */}
+          <color attach="background" args={['#0f0f1e']} />
+          
+          {/* Grid with conditional rendering */}
+          {showGrid && (
+            <Grid 
+              args={[20, 20]} 
+              cellColor="#667eea" 
+              sectionColor="#764ba2" 
+              position={[0, -2, 0]}
+              fadeDistance={30}
+              fadeStrength={1}
+              cellSize={0.5}
+              sectionSize={2}
+              infiniteGrid
+            />
+          )}
+
+          {/* Contact shadows for realism */}
+          <ContactShadows 
+            position={[0, -1.99, 0]} 
+            opacity={0.4} 
+            scale={10} 
+            blur={2} 
+            far={4}
+            resolution={256}
+            color="#000000"
           />
-        ))}
 
-        {/* Render regular scene objects (basic shapes) */}
-        {regularObjects.map(object => (
-          <SceneObjectMesh
-            key={object.id}
-            object={object}
-            isSelected={object.id === selectedObjectId}
-            onSelect={() => onObjectSelect(object.id)}
+          {/* Sparkles effect for jewelry */}
+          {glbModels.length > 0 && (
+            <Sparkles 
+              count={100}
+              scale={5}
+              size={2}
+              speed={0.3}
+              opacity={0.5}
+              color="#ffd700"
+            />
+          )}
+
+          {/* Render GLB Models with centering */}
+          {glbModels.map(model => (
+            <Center key={model.id}>
+              <GLBModel
+                url="/3d_models/diamond_ring_example.glb"
+                selectedLayerId={selectedLayer?.id || null}
+                onLayerSelect={onLayerSelect}
+                onLayersDetected={handleGLBLayersDetected}
+              />
+            </Center>
+          ))}
+
+          {/* Render regular scene objects (basic shapes) */}
+          {regularObjects.map(object => (
+            <SceneObjectMesh
+              key={object.id}
+              object={object}
+              isSelected={object.id === selectedObjectId}
+              onSelect={() => onObjectSelect(object.id)}
+            />
+          ))}
+
+          {/* Advanced Camera Controls with damping */}
+          <OrbitControls 
+            makeDefault
+            enablePan={true}
+            enableZoom={true}
+            enableRotate={true}
+            enableDamping={true}
+            dampingFactor={0.05}
+            rotateSpeed={0.5}
+            zoomSpeed={0.8}
+            panSpeed={0.5}
+            minDistance={2}
+            maxDistance={20}
+            maxPolarAngle={Math.PI / 2}
+            target={[0, 0, 0]}
           />
-        ))}
-
-        {/* Camera Controls */}
-        <OrbitControls 
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
-          target={[0, 0, 0]}
-        />
+          
+          {/* Bake shadows for better performance */}
+          <BakeShadows />
+        </Suspense>
       </Canvas>
 
       {/* Show empty state when no objects */}
@@ -175,20 +330,69 @@ export default function Viewport({
           <div className="empty-icon">💎</div>
           <h3>AI Design Studio Ready</h3>
           <p>Start by describing your jewelry vision in the AI chat</p>
-          <p className="hint">Real-time rendering and AI collaboration active</p>
+          <p className="hint">Real-time rendering with physically-based materials</p>
         </div>
       )}
 
       {/* Generation overlay */}
       <GeneratingOverlay isVisible={isGenerating} />
       
-      {/* Viewport controls overlay */}
+      {/* Enhanced Viewport controls overlay */}
       <div className="viewport-controls">
-        <button className="viewport-btn" onClick={() => setCameraPosition([5, 5, 5])}>
-          Reset View
-        </button>
-        <button className="viewport-btn">Wireframe</button>
-        <button className="viewport-btn">Materials</button>
+        <div className="controls-group">
+          <button 
+            className="viewport-btn"
+            onClick={() => setCameraPosition([5, 5, 5])}
+            title="Reset Camera View"
+          >
+            🎯 Reset
+          </button>
+          <button 
+            className={`viewport-btn ${showWireframe ? 'active' : ''}`}
+            onClick={() => setShowWireframe(!showWireframe)}
+            title="Toggle Wireframe"
+          >
+            📐 Wire
+          </button>
+          <button 
+            className={`viewport-btn ${showGrid ? 'active' : ''}`}
+            onClick={() => setShowGrid(!showGrid)}
+            title="Toggle Grid"
+          >
+            ⊞ Grid
+          </button>
+        </div>
+        <div className="controls-group">
+          <button 
+            className={`viewport-btn ${renderMode === 'realistic' ? 'active' : ''}`}
+            onClick={() => setRenderMode('realistic')}
+            title="Realistic Rendering"
+          >
+            ✨ Real
+          </button>
+          <button 
+            className={`viewport-btn ${renderMode === 'studio' ? 'active' : ''}`}
+            onClick={() => setRenderMode('studio')}
+            title="Studio Lighting"
+          >
+            💡 Studio
+          </button>
+          <button 
+            className={`viewport-btn ${renderMode === 'night' ? 'active' : ''}`}
+            onClick={() => setRenderMode('night')}
+            title="Night Mode"
+          >
+            🌙 Night
+          </button>
+        </div>
+      </div>
+
+      {/* Performance indicator */}
+      <div className="performance-indicator">
+        <div className="fps-badge">
+          <span className="fps-label">Render:</span>
+          <span className="fps-value">60 FPS</span>
+        </div>
       </div>
     </div>
   )

@@ -31,3 +31,23 @@ python-dotenv>=1.0.0
 # --- System Monitoring and Diagnostics ---
 # For system resource monitoring and health checks
 psutil>=5.9.0
+
+# --- Security ---
+# JWT authentication
+python-jose[cryptography]>=3.3.0
+passlib>=1.7.4
+bcrypt>=4.0.1
+
+# --- Development and Testing Dependencies ---
+# Code quality
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.0.0
+pylint>=2.17.0
+isort>=5.12.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+httpx>=0.24.0
