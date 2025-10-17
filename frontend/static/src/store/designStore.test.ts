@@ -5,7 +5,6 @@ import type { SceneObject } from './designStore'
 describe('Design Store', () => {
   beforeEach(() => {
     // Reset store state before each test
-    const { actions } = useDesignStore.getState()
     useDesignStore.setState({
       session: {
         id: 'test-session',

@@ -13,11 +13,25 @@ body {
   height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 #root {
   height: 100vh;
   width: 100vw;
+}
+
+/* Enable hardware acceleration for smooth animations */
+.design-studio,
+.viewport,
+.sidebar,
+.ai-chat-sidebar,
+.properties-inspector,
+.header {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
 /* Premium CAD Studio Layout - Glass Morphism Design */
@@ -32,7 +46,7 @@ body {
   height: 100vh;
   gap: 2px;
   background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
-  transition: grid-template-columns 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Responsive breakpoints */
@@ -241,8 +255,32 @@ body, #root {
   backdrop-filter: blur(20px);
   border-right: 1px solid rgba(255, 255, 255, 0.05);
   overflow-y: auto;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 4px 0 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Smooth scrollbar styling */
+.sidebar::-webkit-scrollbar,
+.properties-inspector::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track,
+.properties-inspector::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.sidebar::-webkit-scrollbar-thumb,
+.properties-inspector::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.3);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover,
+.properties-inspector::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.5);
 }
 
 /* Main Viewport */
@@ -251,7 +289,7 @@ body, #root {
   background: radial-gradient(ellipse at center, #1a1a2e 0%, #0f0f1e 100%);
   position: relative;
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 2px;
 }
 
@@ -264,7 +302,7 @@ body, #root {
   border-left: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: -4px 0 30px rgba(0, 0, 0, 0.2);
 }
 
@@ -277,7 +315,8 @@ body, #root {
   border-left: 1px solid rgba(255, 255, 255, 0.05);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   overflow-y: auto;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: -4px 4px 30px rgba(0, 0, 0, 0.2);
 }
 
@@ -351,7 +390,7 @@ body, #root {
   color: white;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 14px;
   letter-spacing: 0.3px;
   position: relative;
@@ -367,7 +406,7 @@ body, #root {
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
+  transition: left 0.4s ease;
 }
 
 .btn:hover::before {
@@ -375,12 +414,13 @@ body, #root {
 }
 
 .btn:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.02);
   box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
 }
 
 .btn:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-secondary {
