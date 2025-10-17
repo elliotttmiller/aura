@@ -1,4 +1,4 @@
-import { useRef, useState, Suspense } from 'react'
+import { useRef, useState, Suspense, memo, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { 
   OrbitControls, 
@@ -48,8 +48,8 @@ interface ViewportProps {
   isGenerating: boolean
 }
 
-// 3D Object Component with enhanced materials
-function SceneObjectMesh({ object, isSelected, onSelect }: { 
+// 3D Object Component with enhanced materials - optimized with memo
+const SceneObjectMesh = memo(function SceneObjectMesh({ object, isSelected, onSelect }: { 
   object: SceneObject
   isSelected: boolean
   onSelect: () => void 
@@ -91,10 +91,10 @@ function SceneObjectMesh({ object, isSelected, onSelect }: {
       )}
     </mesh>
   )
-}
+})
 
-// Advanced Lighting Setup
-function SceneLighting() {
+// Advanced Lighting Setup - optimized with memo
+const SceneLighting = memo(function SceneLighting() {
   return (
     <>
       {/* Ambient light for base illumination */}
@@ -129,7 +129,7 @@ function SceneLighting() {
       <pointLight position={[-5, 0, -5]} intensity={0.3} color="#fff" />
     </>
   )
-}
+})
 
 // Progressive loader for 3D assets
 function Loader() {
@@ -178,21 +178,37 @@ export default function Viewport({
   const [showGrid, setShowGrid] = useState(true)
   const [renderMode, setRenderMode] = useState<'realistic' | 'studio' | 'night'>('realistic')
 
-  const handleCanvasClick = (event: any) => {
+  const handleCanvasClick = useCallback((event: any) => {
     // If clicking on canvas background (not an object), deselect
     if (event.target.classList.contains('webgl-canvas')) {
       onObjectSelect(null)
       onLayerSelect(null)
     }
-  }
+  }, [onObjectSelect, onLayerSelect])
 
-  const handleGLBLayersDetected = (layers: Array<{id: string, name: string, mesh: any}>) => {
+  const handleGLBLayersDetected = useCallback((layers: Array<{id: string, name: string, mesh: any}>) => {
     // Find the GLB model object to get its ID
     const glbModel = objects.find(obj => obj.type === 'glb_model')
     if (glbModel) {
       onGLBLayersDetected(glbModel.id, layers)
     }
-  }
+  }, [objects, onGLBLayersDetected])
+
+  const handleResetCamera = useCallback(() => {
+    setCameraPosition([5, 5, 5])
+  }, [])
+
+  const handleToggleWireframe = useCallback(() => {
+    setShowWireframe(prev => !prev)
+  }, [])
+
+  const handleToggleGrid = useCallback(() => {
+    setShowGrid(prev => !prev)
+  }, [])
+
+  const handleSetRenderMode = useCallback((mode: 'realistic' | 'studio' | 'night') => {
+    setRenderMode(mode)
+  }, [])
 
   // Get GLB models and regular objects
   const glbModels = objects.filter(obj => obj.type === 'glb_model')
@@ -209,10 +225,13 @@ export default function Viewport({
           antialias: true,
           alpha: false,
           powerPreference: 'high-performance',
-          preserveDrawingBuffer: true
+          preserveDrawingBuffer: true,
+          stencil: false,
+          depth: true
         }}
         dpr={[1, 2]} // Adaptive pixel ratio for performance
-        frameloop="demand" // Render only when needed for better performance
+        frameloop="always" // Continuous rendering for smooth animations
+        performance={{ min: 0.5 }} // Adaptive performance scaling
       >
         {/* Camera with smooth controls */}
         <PerspectiveCamera makeDefault position={cameraPosition} fov={45} />
@@ -342,21 +361,21 @@ export default function Viewport({
         <div className="controls-group">
           <button 
             className="viewport-btn"
-            onClick={() => setCameraPosition([5, 5, 5])}
+            onClick={handleResetCamera}
             title="Reset Camera View"
           >
             🎯 Reset
           </button>
           <button 
             className={`viewport-btn ${showWireframe ? 'active' : ''}`}
-            onClick={() => setShowWireframe(!showWireframe)}
+            onClick={handleToggleWireframe}
             title="Toggle Wireframe"
           >
             📐 Wire
           </button>
           <button 
             className={`viewport-btn ${showGrid ? 'active' : ''}`}
-            onClick={() => setShowGrid(!showGrid)}
+            onClick={handleToggleGrid}
             title="Toggle Grid"
           >
             ⊞ Grid
@@ -365,21 +384,21 @@ export default function Viewport({
         <div className="controls-group">
           <button 
             className={`viewport-btn ${renderMode === 'realistic' ? 'active' : ''}`}
-            onClick={() => setRenderMode('realistic')}
+            onClick={() => handleSetRenderMode('realistic')}
             title="Realistic Rendering"
           >
             ✨ Real
           </button>
           <button 
             className={`viewport-btn ${renderMode === 'studio' ? 'active' : ''}`}
-            onClick={() => setRenderMode('studio')}
+            onClick={() => handleSetRenderMode('studio')}
             title="Studio Lighting"
           >
             💡 Studio
           </button>
           <button 
             className={`viewport-btn ${renderMode === 'night' ? 'active' : ''}`}
-            onClick={() => setRenderMode('night')}
+            onClick={() => handleSetRenderMode('night')}
             title="Night Mode"
           >
             🌙 Night
