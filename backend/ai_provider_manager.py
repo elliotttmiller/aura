@@ -17,6 +17,10 @@ Key Features:
 Part of the V36 Universal Artisan production implementation.
 """
 
+# Load environment configuration first
+from backend.config_init import ensure_config_loaded
+ensure_config_loaded(verbose=False)
+
 import os
 import json
 import logging

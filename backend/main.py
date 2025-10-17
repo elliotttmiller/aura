@@ -10,6 +10,10 @@ Stage 3: State-of-the-Art Blender engine executes the Master Blueprint
 Part of the Professional Integration.
 """
 
+# CRITICAL: Load environment configuration FIRST before any other imports
+from backend.config_init import ensure_config_loaded, validate_critical_config
+ensure_config_loaded(verbose=True)
+
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,13 +23,8 @@ import time
 from typing import Dict, Any, Optional
 import uuid
 
-# Enhancement: Centralized environment configuration
-try:
-    from ..config import config, get_lm_studio_url, get_ai_server_config, is_sandbox_mode
-    CONFIG_AVAILABLE = True
-except ImportError:
-    logging.warning("Config module not available, using environment variables")
-    CONFIG_AVAILABLE = False
+# Use centralized configuration
+from config import config, get_lm_studio_url, get_ai_server_config, is_sandbox_mode, get_blender_path
 
 app = FastAPI(title="Aura Backend Orchestrator", version="24.0")
 
@@ -42,34 +41,29 @@ app.add_middleware(
 from fastapi import APIRouter
 api_router = APIRouter(prefix="/api")
 
-# Enhanced logging configuration
-if CONFIG_AVAILABLE:
-    log_level = getattr(logging, config.get('LOG_LEVEL', 'INFO').upper())
-    logging.basicConfig(level=log_level, format=config.get('LOG_FORMAT', '[%(asctime)s] %(levelname)s %(message)s'))
-else:
-    logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(levelname)s %(message)s')
+# Configure logging from centralized config
+log_level = getattr(logging, config.get('LOG_LEVEL', 'INFO').upper())
+log_format = config.get('LOG_FORMAT', '[%(asctime)s] %(levelname)s %(message)s')
+logging.basicConfig(level=log_level, format=log_format)
 
 logger = logging.getLogger(__name__)
 
-# Configuration with centralized config management
-if CONFIG_AVAILABLE:
-    SANDBOX_MODE = is_sandbox_mode()
-    BLENDER_PATH = config.get('BLENDER_PATH', r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe")
-    OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", config.get('OUTPUT_DIR', 'output')))
-    LM_STUDIO_URL = get_lm_studio_url()
-    EXTERNAL_AI_URL = get_ai_server_config()['url']
-    HUGGINGFACE_API_KEY = config.get('HUGGINGFACE_API_KEY', '')
-else:
-    # Fallback to environment variables
-    SANDBOX_MODE = os.environ.get("SANDBOX_MODE", "").lower() == "true"
-    BLENDER_PATH = os.environ.get("BLENDER_PATH", r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe")
-    OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "output"))
-    if SANDBOX_MODE:
-        LM_STUDIO_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B-Instruct"
-        HUGGINGFACE_API_KEY = os.environ.get("HUGGINGFACE_API_KEY", "")
-    else:
-        LM_STUDIO_URL = os.environ.get("LM_STUDIO_URL", "http://localhost:1234/v1/chat/completions")
-    EXTERNAL_AI_URL = os.environ.get("EXTERNAL_AI_URL", "http://localhost:8002")
+# Validate configuration on startup
+validation = validate_critical_config()
+if validation['status'] != 'ok':
+    logger.warning(f"Configuration validation: {validation['status']}")
+    for warning in validation['warnings']:
+        logger.warning(f"  - {warning}")
+    for error in validation['errors']:
+        logger.error(f"  - {error}")
+
+# Load configuration from centralized config
+SANDBOX_MODE = is_sandbox_mode()
+BLENDER_PATH = get_blender_path() or r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe"
+OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", config.get('OUTPUT_DIR', 'output')))
+LM_STUDIO_URL = get_lm_studio_url()
+EXTERNAL_AI_URL = get_ai_server_config().get('url', 'http://localhost:8002')
+HUGGINGFACE_API_KEY = config.get('HUGGINGFACE_API_KEY', '')
 
 # Enhanced script paths
 BLENDER_PROC_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "blender_proc.py"))

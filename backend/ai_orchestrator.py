@@ -22,6 +22,10 @@ Implements Protocol 16: The Universal Architecture Mandate
 - Professional domain-specific naming for user-facing functions
 """
 
+# Load environment configuration first
+from backend.config_init import ensure_config_loaded
+ensure_config_loaded(verbose=False)
+
 import os
 import json
 import time
@@ -32,9 +36,9 @@ from typing import Dict, Any, Optional
 
 import bpy
 
-# V24 Enhancement: Load centralized configuration
+# Use centralized configuration
 try:
-    from ..config import config, get_lm_studio_url, get_ai_server_config, is_sandbox_mode
+    from config import config, get_lm_studio_url, get_ai_server_config, is_sandbox_mode
     CONFIG_AVAILABLE = True
 except ImportError:
     logging.warning("Config module not available, using environment variables")
