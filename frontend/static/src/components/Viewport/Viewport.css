@@ -8,6 +8,34 @@
   overflow: hidden;
 }
 
+/* Make viewport fill available space and adapt responsively */
+.viewport {
+  width: 100vw;
+  height: 100vh;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+@media (max-width: 900px) {
+  .viewport {
+    width: 100vw;
+    height: calc(100vh - 60px);
+    min-width: 0;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .viewport {
+    width: 100vw;
+    height: calc(100vh - 50px);
+    min-width: 0;
+    min-height: 0;
+  }
+}
+
 .webgl-canvas {
   width: 100% !important;
   height: 100% !important;
@@ -93,8 +121,8 @@
   display: flex;
   gap: 8px;
   background: rgba(15, 15, 30, 0.8);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(102, 126, 234, 0.2);
   border-radius: 12px;
   padding: 8px;
@@ -110,8 +138,8 @@
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   letter-spacing: 0.3px;
@@ -144,8 +172,8 @@
 
 .fps-badge {
   background: rgba(15, 15, 30, 0.9);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(102, 126, 234, 0.3);
   border-radius: 8px;
   padding: 8px 12px;
@@ -180,8 +208,8 @@
   left: 50%;
   transform: translate(-50%, -50%);
   background: rgba(15, 15, 30, 0.95);
-  backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
+  backdrop-filter: blur(30px);
   padding: 40px;
   border-radius: 20px;
   text-align: center;
@@ -293,8 +321,8 @@
   text-align: center;
   padding: 20px;
   background: rgba(15, 15, 30, 0.9);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   border-radius: 16px;
   border: 1px solid rgba(102, 126, 234, 0.2);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
