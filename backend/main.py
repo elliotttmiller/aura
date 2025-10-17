@@ -718,8 +718,21 @@ async def serve_stl(filename: str):
 
 @api_router.get("/health")
 async def health_check():
-    """Enhanced health check endpoint with Blender status."""
+    """Enhanced health check endpoint with Blender and AI provider status."""
     from .blender_bridge import check_blender_available
+    from .ai_provider_manager import get_ai_provider_manager
+    
+    # Get AI provider status
+    try:
+        provider_manager = get_ai_provider_manager()
+        ai_status = provider_manager.get_status()
+    except Exception as e:
+        logger.warning(f"Could not get AI provider status: {e}")
+        ai_status = {
+            'active_provider': None,
+            'available_providers': [],
+            'error': str(e)
+        }
     
     health_status = {
         "status": "healthy",
@@ -733,12 +746,84 @@ async def health_check():
         "blender_available": check_blender_available(),
         "output_directory": OUTPUT_DIR,
         "active_sessions": len(active_sessions),
+        "ai_provider": ai_status,
         "capabilities": {
             "ai_generation": check_blender_available(),
-            "fallback_mode": not check_blender_available()
+            "fallback_mode": not check_blender_available(),
+            "multi_provider_ai": len(ai_status.get('available_providers', [])) > 0
         }
     }
     return health_status
+
+
+@api_router.get("/ai/providers")
+async def get_ai_providers():
+    """Get information about available AI providers."""
+    from .ai_provider_manager import get_ai_provider_manager
+    
+    try:
+        provider_manager = get_ai_provider_manager()
+        status = provider_manager.get_status()
+        
+        return JSONResponse({
+            "success": True,
+            "providers": status
+        })
+    except Exception as e:
+        logger.exception('Failed to get AI provider status')
+        return JSONResponse(status_code=500, content={
+            "success": False,
+            "error": str(e)
+        })
+
+
+@api_router.post("/ai/providers/switch")
+async def switch_ai_provider(request: Request):
+    """Switch the active AI provider."""
+    from .ai_provider_manager import get_ai_provider_manager, AIProvider
+    
+    try:
+        data = await request.json()
+        provider_name = data.get('provider', '').lower()
+        
+        if not provider_name:
+            return JSONResponse(status_code=400, content={
+                "success": False,
+                "error": "Provider name required"
+            })
+        
+        # Convert to enum
+        try:
+            provider_enum = AIProvider(provider_name)
+        except ValueError:
+            return JSONResponse(status_code=400, content={
+                "success": False,
+                "error": f"Unknown provider: {provider_name}",
+                "available_providers": [p.value for p in AIProvider]
+            })
+        
+        # Switch provider
+        provider_manager = get_ai_provider_manager()
+        success = provider_manager.set_active_provider(provider_enum)
+        
+        if success:
+            return JSONResponse({
+                "success": True,
+                "message": f"Switched to provider: {provider_name}",
+                "active_provider": provider_name
+            })
+        else:
+            return JSONResponse(status_code=400, content={
+                "success": False,
+                "error": f"Provider {provider_name} not available or not configured"
+            })
+    
+    except Exception as e:
+        logger.exception('Failed to switch AI provider')
+        return JSONResponse(status_code=500, content={
+            "success": False,
+            "error": str(e)
+        })
 
 @app.get("/")
 async def root():

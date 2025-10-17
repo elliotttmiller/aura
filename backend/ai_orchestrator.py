@@ -599,12 +599,19 @@ Generate a complete blueprint with both construction_plan (2-4 operations) and p
 Respond only with valid JSON, no other text."""
 
         try:
-            if self.sandbox_mode:
-                blueprint = self._call_huggingface_api(master_blueprint_prompt)
-            else:
-                blueprint = self._call_lm_studio_api(master_blueprint_prompt)
+            # Use unified AI provider manager for seamless multi-provider support
+            from .ai_provider_manager import get_ai_provider_manager
             
-            logger.info("Master Blueprint generated successfully")
+            provider_manager = get_ai_provider_manager()
+            system_message = "You are a world-class master artisan and jewelry designer. Respond only with valid JSON."
+            
+            response_text = provider_manager.call_llm(master_blueprint_prompt, system_message)
+            
+            # Parse and validate JSON structure
+            blueprint = json.loads(response_text)
+            self._validate_master_blueprint(blueprint)
+            
+            logger.info("Master Blueprint generated successfully via AI provider")
             return blueprint
             
         except Exception as e:
@@ -776,11 +783,13 @@ Here are the parameters you have to work with:
 Now, write only the Python code for the `create_custom_component` function. Do not include any other text, explanations, or markdown formatting."""
 
         try:
-            # Use the same LLM endpoint as blueprint generation
-            if self.sandbox_mode:
-                code_response = self._call_huggingface_api_for_code(text_to_bmesh_prompt)
-            else:
-                code_response = self._call_lm_studio_api_for_code(text_to_bmesh_prompt)
+            # Use unified AI provider manager
+            from .ai_provider_manager import get_ai_provider_manager
+            
+            provider_manager = get_ai_provider_manager()
+            system_message = "You are a world-class Blender Python programmer. Write only clean Python code."
+            
+            code_response = provider_manager.call_llm(text_to_bmesh_prompt, system_message)
             
             logger.info("V23: Dynamic bmesh code generated successfully")
             return code_response
