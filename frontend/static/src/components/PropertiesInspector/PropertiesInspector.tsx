@@ -1,3 +1,4 @@
+import { memo, useCallback } from 'react'
 import './PropertiesInspector.css'
 
 interface SceneObject {
@@ -22,7 +23,34 @@ interface PropertiesInspectorProps {
   onObjectUpdate: (objectId: string, updates: Partial<SceneObject>) => void
 }
 
-export default function PropertiesInspector({ selectedObject, onObjectUpdate }: PropertiesInspectorProps) {
+const PropertiesInspector = memo(function PropertiesInspector({ selectedObject, onObjectUpdate }: PropertiesInspectorProps) {
+  
+  const handleTransformChange = useCallback((
+    property: 'position' | 'rotation' | 'scale',
+    axis: 0 | 1 | 2,
+    value: number
+  ) => {
+    if (!selectedObject) return
+    const newTransform = { ...selectedObject.transform }
+    newTransform[property][axis] = value
+    onObjectUpdate(selectedObject.id, { transform: newTransform })
+  }, [selectedObject, onObjectUpdate])
+
+  const handleMaterialChange = useCallback((property: 'color' | 'roughness' | 'metallic', value: string | number) => {
+    if (!selectedObject) return
+    const newMaterial = { ...selectedObject.material }
+    if (property === 'color') {
+      newMaterial.color = value as string
+    } else {
+      newMaterial[property] = value as number
+    }
+    onObjectUpdate(selectedObject.id, { material: newMaterial })
+  }, [selectedObject, onObjectUpdate])
+
+  const handleNameChange = useCallback((newName: string) => {
+    if (!selectedObject) return
+    onObjectUpdate(selectedObject.id, { name: newName })
+  }, [selectedObject, onObjectUpdate])
   
   if (!selectedObject) {
     return (
@@ -34,30 +62,6 @@ export default function PropertiesInspector({ selectedObject, onObjectUpdate }: 
         </div>
       </div>
     )
-  }
-
-  const handleTransformChange = (
-    property: 'position' | 'rotation' | 'scale',
-    axis: 0 | 1 | 2,
-    value: number
-  ) => {
-    const newTransform = { ...selectedObject.transform }
-    newTransform[property][axis] = value
-    onObjectUpdate(selectedObject.id, { transform: newTransform })
-  }
-
-  const handleMaterialChange = (property: 'color' | 'roughness' | 'metallic', value: string | number) => {
-    const newMaterial = { ...selectedObject.material }
-    if (property === 'color') {
-      newMaterial.color = value as string
-    } else {
-      newMaterial[property] = value as number
-    }
-    onObjectUpdate(selectedObject.id, { material: newMaterial })
-  }
-
-  const handleNameChange = (newName: string) => {
-    onObjectUpdate(selectedObject.id, { name: newName })
   }
 
   return (
@@ -265,4 +269,6 @@ export default function PropertiesInspector({ selectedObject, onObjectUpdate }: 
       </div>
     </div>
   )
-}
+})
+
+export default PropertiesInspector

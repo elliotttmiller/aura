@@ -1,3 +1,4 @@
+import { memo, useCallback } from 'react'
 import './SceneOutliner.css'
 
 interface SceneObject {
@@ -18,7 +19,7 @@ interface SceneObject {
   // New properties for GLB layers
   isLayer?: boolean
   parentModelId?: string
-  meshData?: any // THREE.Mesh reference for GLB layers
+  meshData?: unknown // THREE.Mesh reference for GLB layers
 }
 
 interface SceneOutlinerProps {
@@ -28,16 +29,16 @@ interface SceneOutlinerProps {
   onObjectUpdate: (objectId: string, updates: Partial<SceneObject>) => void
 }
 
-export default function SceneOutliner({ 
+const SceneOutliner = memo(function SceneOutliner({ 
   objects, 
   selectedObjectId, 
   onObjectSelect, 
   onObjectUpdate 
 }: SceneOutlinerProps) {
 
-  const handleVisibilityToggle = (objectId: string, currentVisibility: boolean) => {
+  const handleVisibilityToggle = useCallback((objectId: string, currentVisibility: boolean) => {
     onObjectUpdate(objectId, { visible: !currentVisibility })
-  }
+  }, [onObjectUpdate])
 
   // Organize objects into models and their layers
   const glbModels = objects.filter(obj => obj.type === 'glb_model')
@@ -194,4 +195,6 @@ export default function SceneOutliner({
       </div>
     </div>
   )
-}
+})
+
+export default SceneOutliner
