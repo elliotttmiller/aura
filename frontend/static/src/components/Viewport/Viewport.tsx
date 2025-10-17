@@ -246,10 +246,6 @@ export default function Viewport({
         frameloop="demand"
         performance={{ min: 0.5 }}
       >
-      {/* Debug overlay for objects and glbModels length */}
-  <div className="viewport-debug-overlay">
-        objects: {objects.length} | glbModels: {glbModels.length}
-      </div>
         <PerspectiveCamera makeDefault position={cameraPosition} fov={45} />
         <Suspense fallback={<Loader />}>
           <SceneLighting />
@@ -316,6 +312,10 @@ export default function Viewport({
           <BakeShadows />
         </Suspense>
       </Canvas>
+      {/* Debug overlay for objects and glbModels length */}
+      <div className="viewport-debug-overlay">
+        objects: {objects.length} | glbModels: {glbModels.length}
+      </div>
       {objects.length === 0 && !isGenerating && (
         <MinimalWebGLTest />
       )}
