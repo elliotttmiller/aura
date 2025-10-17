@@ -67,7 +67,7 @@ function App() {
                 objects={session.objects}
                 selectedObjectId={session.selectedObjectId}
                 onObjectSelect={actions.selectObject}
-                onObjectUpdate={(objectId, updates) => { void actions.updateObject(objectId, updates); }}
+                onObjectUpdate={(objectId: string, updates: Partial<import('./store/designStore').SceneObject>) => { void actions.updateObject(objectId, updates); }}
               />
             </div>
           )}
@@ -88,7 +88,7 @@ function App() {
           {ui.isRightSidebarVisible && (
             <div className="sidebar ai-chat-sidebar">
               <AIChatSidebar 
-                onPromptSubmit={actions.executeAIPrompt}
+                onPromptSubmit={(prompt: string) => actions.executeAIPrompt(prompt)}
                 isGenerating={system.isGenerating}
               />
             </div>
@@ -99,7 +99,7 @@ function App() {
             <div className="properties-inspector">
               <PropertiesInspector 
                 selectedObject={selectedObject}
-                onObjectUpdate={actions.updateObject}
+                onObjectUpdate={(objectId: string, updates: Partial<import('./store/designStore').SceneObject>) => actions.updateObject(objectId, updates)}
               />
             </div>
           )}

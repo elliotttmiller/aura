@@ -1,20 +1,22 @@
 import './ViewportControls.css'
+import { useActions } from '../../store/designStore'
 
 export default function ViewportControls() {
+  const actions = useActions()
   const handleExport = () => {
-    console.log('Export functionality would connect to backend STL generation')
+    actions.exportSceneJSON()
   }
 
   const handleSave = () => {
-    console.log('Save project to workspace')
+    actions.saveProject()
   }
 
   const handleUndo = () => {
-    console.log('Undo last action')
+    actions.undo()
   }
 
   const handleRedo = () => {
-    console.log('Redo last action')
+    actions.redo()
   }
 
   return (

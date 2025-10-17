@@ -54,6 +54,11 @@ export interface UIState {
 interface DesignStoreState {
   // Session data (Digital Twin of backend)
   session: DesignSession
+  // History stacks for undo/redo
+  history: {
+    past: Array<{ objects: SceneObject[]; selectedObjectId: string | null }>
+    future: Array<{ objects: SceneObject[]; selectedObjectId: string | null }>
+  }
   
   // System state
   system: SystemState
@@ -72,6 +77,9 @@ interface DesignStoreState {
     updateObject: (objectId: string, updates: Partial<SceneObject>) => Promise<void>
     selectObject: (objectId: string | null) => void
     toggleObjectVisibility: (objectId: string) => void
+  // History
+  undo: () => void
+  redo: () => void
     
     // GLB Model management
     loadGLBModel: (modelPath: string, modelName: string) => void
@@ -91,6 +99,9 @@ interface DesignStoreState {
     toggleRightSidebar: () => void
     setLeftSidebarVisible: (visible: boolean) => void
     setRightSidebarVisible: (visible: boolean) => void
+    // Persistence helpers
+    saveProject: () => void
+    exportSceneJSON: () => void
   }
 }
 
@@ -105,6 +116,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     selectedObjectId: null,
     lastModified: Date.now()
   },
+  history: { past: [], future: [] },
   
   system: {
     status: 'connecting',
@@ -134,10 +146,13 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
           const data = await response.json()
           set((state) => ({
             session: {
-              ...state.session,
+              // Start fresh on new session
               id: data.session_id,
+              objects: [],
+              selectedObjectId: null,
               lastModified: Date.now()
             },
+            history: { past: [], future: [] },
             system: { ...state.system, status: 'online', lastSync: Date.now() }
           }))
           // ...existing code...
@@ -179,6 +194,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     // Add new object to scene
     addObject: (object: SceneObject) => {
       set((state) => ({
+        history: { past: [...state.history.past, { objects: [...state.session.objects], selectedObjectId: state.session.selectedObjectId }], future: [] },
         session: {
           ...state.session,
           objects: [...state.session.objects, object],
@@ -195,6 +211,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
       
       // Optimistic update
       set((state) => ({
+        history: { past: [...state.history.past, { objects: [...state.session.objects], selectedObjectId: state.session.selectedObjectId }], future: [] },
         session: {
           ...state.session,
           objects: state.session.objects.map(obj =>
@@ -236,6 +253,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     // Select object in scene
     selectObject: (objectId: string | null) => {
       set((state) => ({
+        history: { past: [...state.history.past, { objects: [...state.session.objects], selectedObjectId: state.session.selectedObjectId }], future: [] },
         session: {
           ...state.session,
           selectedObjectId: objectId
@@ -280,6 +298,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
       }
       
       set((state) => ({
+        history: { past: [...state.history.past, { objects: [...state.session.objects], selectedObjectId: state.session.selectedObjectId }], future: [] },
         session: {
           ...state.session,
           objects: [...state.session.objects, modelObject],
@@ -314,6 +333,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
       }))
       
       set((state) => ({
+        history: { past: [...state.history.past, { objects: [...state.session.objects], selectedObjectId: state.session.selectedObjectId }], future: [] },
         session: {
           ...state.session,
           objects: [...state.session.objects, ...layerObjects],
@@ -322,6 +342,44 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
       }))
       
   // ...existing code...
+    },
+
+    // History controls
+    undo: () => {
+      const { history, session } = get()
+      if (history.past.length === 0) return
+      const previous = history.past[history.past.length - 1]
+      const newPast = history.past.slice(0, -1)
+      set({
+        history: {
+          past: newPast,
+          future: [{ objects: [...session.objects], selectedObjectId: session.selectedObjectId }, ...history.future]
+        },
+        session: {
+          ...session,
+          objects: previous.objects,
+          selectedObjectId: previous.selectedObjectId,
+          lastModified: Date.now()
+        }
+      })
+    },
+    redo: () => {
+      const { history, session } = get()
+      if (history.future.length === 0) return
+      const next = history.future[0]
+      const newFuture = history.future.slice(1)
+      set({
+        history: {
+          past: [...history.past, { objects: [...session.objects], selectedObjectId: session.selectedObjectId }],
+          future: newFuture
+        },
+        session: {
+          ...session,
+          objects: next.objects,
+          selectedObjectId: next.selectedObjectId,
+          lastModified: Date.now()
+        }
+      })
     },
 
     // Select layer (same as selectObject but with additional logging for layers)
@@ -440,6 +498,37 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
       set((state) => ({
         ui: { ...state.ui, isRightSidebarVisible: visible }
       }))
+    },
+    // Persistence helpers (client-side JSON)
+    saveProject: () => {
+      const { session } = get()
+      const blob = new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `aura_project_${session.id}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    },
+    exportSceneJSON: () => {
+      const { session } = get()
+      const scene = {
+        id: session.id,
+        objects: session.objects,
+        selectedObjectId: session.selectedObjectId,
+        lastModified: session.lastModified
+      }
+      const blob = new Blob([JSON.stringify(scene, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `aura_scene_${session.id}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
     }
   }
 }))
