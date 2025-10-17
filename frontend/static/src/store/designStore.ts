@@ -114,7 +114,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
 
   ui: {
     isLeftSidebarVisible: true, // Always true on load
-    isRightSidebarVisible: true
+    isRightSidebarVisible: true // Show right sidebar (Properties Inspector & Chat) by default
   },
 
   actions: {
@@ -344,14 +344,22 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     // Execute AI prompt with context awareness
     executeAIPrompt: async (prompt: string) => {
       const { session } = get()
-      
+      // Guard: Only allow if session.id is valid
+      if (!session.id || session.id === 'new-session') {
+        set((state) => ({
+          system: { ...state.system, isGenerating: false }
+        }))
+        console.error('Cannot execute prompt: No valid session established.')
+        // Optionally, trigger a user-facing error here
+        return
+      }
+
       set((state) => ({
         system: { ...state.system, isGenerating: true }
       }))
-      
+
       try {
-  // ...existing code...
-        
+        // ...existing code...
         const response = await fetch(`${API_BASE}/session/${session.id}/execute_prompt`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

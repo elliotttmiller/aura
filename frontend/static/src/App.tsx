@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import './App.css';
 import './fullpage-container.css';
 import { useSession, useSystemState, useUIState, useActions } from './store/designStore';
@@ -10,6 +10,13 @@ const AIChatSidebar = lazy(() => import('./components/AIChatSidebar/AIChatSideba
 const ViewportControls = lazy(() => import('./components/ViewportControls/ViewportControls'));
 
 function App() {
+  // Ensure a valid session is always initialized on mount
+  useEffect(() => {
+    if (!session.id || session.id === 'new-session') {
+      actions.initializeSession();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const ui = useUIState();
   const system = useSystemState();
   const session = useSession();
@@ -51,38 +58,48 @@ function App() {
             </div>
           </div>
 
-          {/* Scene Outliner - always rendered */}
-          <SceneOutliner 
-            objects={session.objects}
-            selectedObjectId={session.selectedObjectId}
-            onObjectSelect={actions.selectObject}
-            onObjectUpdate={(objectId, updates) => { void actions.updateObject(objectId, updates); }}
-          />
-
-          {/* Main 3D Viewport */}
-          <Viewport 
-            objects={session.objects}
-            selectedObjectId={session.selectedObjectId}
-            onObjectSelect={actions.selectObject}
-            onLayerSelect={actions.selectLayer}
-            onGLBLayersDetected={actions.addGLBLayers}
-            isGenerating={system.isGenerating}
-          />
-
-          {/* AI Chat Sidebar */}
-          {ui.isRightSidebarVisible && (
-            <AIChatSidebar 
-              onPromptSubmit={actions.executeAIPrompt}
-              isGenerating={system.isGenerating}
-            />
+          {/* Left Sidebar (Scene Outliner) */}
+          {ui.isLeftSidebarVisible && (
+            <div className="sidebar">
+              <SceneOutliner 
+                objects={session.objects}
+                selectedObjectId={session.selectedObjectId}
+                onObjectSelect={actions.selectObject}
+                onObjectUpdate={(objectId, updates) => { void actions.updateObject(objectId, updates); }}
+              />
+            </div>
           )}
 
-          {/* Properties Inspector */}
-          {ui.isRightSidebarVisible && (
-            <PropertiesInspector 
-              selectedObject={selectedObject}
-              onObjectUpdate={actions.updateObject}
+          {/* Main 3D Viewport */}
+          <div className="main-viewport">
+            <Viewport 
+              objects={session.objects}
+              selectedObjectId={session.selectedObjectId}
+              onObjectSelect={actions.selectObject}
+              onLayerSelect={actions.selectLayer}
+              onGLBLayersDetected={actions.addGLBLayers}
+              isGenerating={system.isGenerating}
             />
+          </div>
+
+          {/* AI Chat Sidebar (right sidebar, styled like left sidebar) */}
+          {ui.isRightSidebarVisible && (
+            <div className="sidebar ai-chat-sidebar">
+              <AIChatSidebar 
+                onPromptSubmit={actions.executeAIPrompt}
+                isGenerating={system.isGenerating}
+              />
+            </div>
+          )}
+
+          {/* Properties Inspector (only when object selected) */}
+          {selectedObject && (
+            <div className="properties-inspector">
+              <PropertiesInspector 
+                selectedObject={selectedObject}
+                onObjectUpdate={actions.updateObject}
+              />
+            </div>
           )}
         </div>
       </Suspense>

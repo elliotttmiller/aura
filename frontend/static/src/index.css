@@ -1,4 +1,11 @@
 @import './fullpage-container.css';
+/* Ensure grid-area assignment for main layout children */
+.design-studio > .header { grid-area: header; }
+.design-studio > .sidebar { grid-area: sidebar; }
+.design-studio > .main-viewport { grid-area: viewport; }
+.design-studio > .ai-chat-sidebar { grid-area: chat; }
+.design-studio > .sidebar.ai-chat-sidebar { grid-area: chat; }
+.design-studio > .properties-inspector { grid-area: properties; }
 /* Modern Professional Design Studio - Premium Dark Theme */
 * {
   margin: 0;
