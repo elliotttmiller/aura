@@ -218,10 +218,11 @@ describe('Design Store', () => {
       actions.loadGLBModel('/models/test.glb', 'Test Model')
       const modelId = useDesignStore.getState().session.objects[0].id
       
-      // Add layers
+      // Add layers with mock Mesh
+      const mockMesh = {} as import('three').Mesh
       const layers = [
-        { id: 'layer-1', name: 'Band', mesh: {} },
-        { id: 'layer-2', name: 'Stone', mesh: {} },
+        { id: 'layer-1', name: 'Band', mesh: mockMesh },
+        { id: 'layer-2', name: 'Stone', mesh: mockMesh },
       ]
       actions.addGLBLayers(modelId, layers)
       

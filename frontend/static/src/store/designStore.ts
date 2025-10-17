@@ -29,7 +29,7 @@ export interface SceneObject {
   // New properties for GLB layers
   isLayer?: boolean
   parentModelId?: string
-  meshData?: any // THREE.Mesh reference for GLB layers
+  meshData?: import('three').Mesh // THREE.Mesh reference for GLB layers
 }
 
 export interface DesignSession {
@@ -75,7 +75,7 @@ interface DesignStoreState {
     
     // GLB Model management
     loadGLBModel: (modelPath: string, modelName: string) => void
-    addGLBLayers: (modelId: string, layers: Array<{id: string, name: string, mesh: any}>) => void
+  addGLBLayers: (modelId: string, layers: Array<{id: string, name: string, mesh: import('three').Mesh}>) => void
     selectLayer: (layerId: string | null) => void
     
     // AI integration
@@ -113,7 +113,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
   },
 
   ui: {
-    isLeftSidebarVisible: true,
+    isLeftSidebarVisible: true, // Always true on load
     isRightSidebarVisible: true
   },
 
@@ -140,7 +140,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
             },
             system: { ...state.system, status: 'online', lastSync: Date.now() }
           }))
-          console.log('✅ Design session initialized:', data.session_id)
+          // ...existing code...
         } else {
           throw new Error('Failed to create session')
         }
@@ -169,7 +169,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
             },
             system: { ...state.system, lastSync: Date.now() }
           }))
-          console.log('✅ Scene state synchronized with backend')
+          // ...existing code...
         }
       } catch (error) {
         console.error('Failed to load scene from backend:', error)
@@ -186,7 +186,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
           lastModified: Date.now()
         }
       }))
-      console.log('✅ Object added to scene:', object.name)
+  // ...existing code...
     },
 
     // Update object with optimistic UI + backend sync
@@ -226,7 +226,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
           system: { ...state.system, lastSync: Date.now() }
         }))
         
-        console.log('✅ Object updated on backend')
+  // ...existing code...
       } catch (error) {
         console.error('Failed to update object on backend:', error)
         // Could implement rollback here if needed
@@ -255,7 +255,13 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
 
     // Load GLB Model - create a parent model object
     loadGLBModel: (_modelPath: string, modelName: string) => {
-      const modelId = `model_${Date.now()}`
+      // Use crypto.randomUUID for unique model IDs; fallback to Date.now if unavailable
+      let modelId: string
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        modelId = `model_${crypto.randomUUID()}`
+      } else {
+        modelId = `model_${Date.now()}_${Math.floor(Math.random() * 1e9)}`
+      }
       const modelObject: SceneObject = {
         id: modelId,
         name: modelName,
@@ -281,13 +287,14 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
         }
       }))
       
-      console.log('✅ GLB Model loaded:', modelName)
+  // ...existing code...
     },
 
     // Add GLB Layers as individual objects
-    addGLBLayers: (modelId: string, layers: Array<{id: string, name: string, mesh: any}>) => {
+    // Layer ids must be globally unique: `${modelId}_layer_${child.uuid}`
+  addGLBLayers: (modelId: string, layers: Array<{id: string, name: string, mesh: import('three').Mesh}>) => {
       const layerObjects: SceneObject[] = layers.map(layer => ({
-        id: layer.id,
+        id: layer.id, // already unique from GLBModel
         name: layer.name,
         type: 'glb_layer',
         visible: true,
@@ -314,7 +321,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
         }
       }))
       
-      console.log('✅ GLB Layers added to scene:', layers.map(l => l.name))
+  // ...existing code...
     },
 
     // Select layer (same as selectObject but with additional logging for layers)
@@ -330,7 +337,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
       }))
       
       if (layer && layer.isLayer) {
-        console.log('🎯 Layer selected in store:', layer.name)
+  // ...existing code...
       }
     },
 
@@ -343,7 +350,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
       }))
       
       try {
-        console.log('🤖 Processing AI prompt with scene context:', prompt)
+  // ...existing code...
         
         const response = await fetch(`${API_BASE}/session/${session.id}/execute_prompt`, {
           method: 'POST',
@@ -359,7 +366,7 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
         
         if (response.ok) {
           const data = await response.json()
-          console.log('✅ AI prompt executed:', data)
+          // ...existing code...
           
           // Add the new object to scene
           if (data.object) {

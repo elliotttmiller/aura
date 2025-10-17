@@ -4,14 +4,16 @@ import { useFrame } from '@react-three/fiber'
 import { Group, Mesh, Material, MeshStandardMaterial } from 'three'
 import { ThreeEvent } from '@react-three/fiber'
 
+
 interface GLBModelProps {
   url: string
+  parentModelId: string
   selectedLayerId: string | null
   onLayerSelect: (layerId: string) => void
-  onLayersDetected: (layers: Array<{id: string, name: string, mesh: Mesh}>) => void
+  onLayersDetected: (layers: Array<{id: string, name: string, mesh: import('three').Mesh}>) => void
 }
 
-export default function GLBModel({ url, selectedLayerId, onLayerSelect, onLayersDetected }: GLBModelProps) {
+export default function GLBModel({ url, parentModelId, selectedLayerId, onLayerSelect, onLayersDetected }: GLBModelProps) {
   const { scene } = useGLTF(url)
   const groupRef = useRef<Group>(null)
   const [layers, setLayers] = useState<Array<{id: string, name: string, mesh: Mesh, originalMaterial: Material | Material[]}>>([])
@@ -26,19 +28,17 @@ export default function GLBModel({ url, selectedLayerId, onLayerSelect, onLayers
         if (child instanceof Mesh) {
           // Store original material for restoration
           const originalMaterial = Array.isArray(child.material) ? child.material : child.material
-          
           // Enable shadows for all meshes
           child.castShadow = true
           child.receiveShadow = true
-          
           // Enhance material properties for jewelry
           if (child.material instanceof MeshStandardMaterial) {
             child.material.envMapIntensity = 1.5
             child.material.needsUpdate = true
           }
-          
+          // Use parentModelId to guarantee uniqueness
           meshes.push({
-            id: `layer_${child.uuid}`,
+            id: `${parentModelId}_layer_${child.uuid}`,
             name: child.name || `Layer ${meshes.length + 1}`,
             mesh: child,
             originalMaterial: originalMaterial
@@ -48,12 +48,10 @@ export default function GLBModel({ url, selectedLayerId, onLayerSelect, onLayers
       
       setLayers(meshes)
       
-      // Notify parent of detected layers
-      onLayersDetected(meshes.map(({ id, name, mesh }) => ({ id, name, mesh })))
-      
-      console.log('✨ Enhanced GLB model with', meshes.length, 'layers')
+  // Notify parent of detected layers
+  onLayersDetected(meshes.map(({ id, name, mesh }) => ({ id, name, mesh })))
     }
-  }, [scene, onLayersDetected])
+  }, [scene, onLayersDetected, parentModelId])
 
   useEffect(() => {
     // Apply selection and hover highlighting
@@ -108,7 +106,7 @@ export default function GLBModel({ url, selectedLayerId, onLayerSelect, onLayers
     const clickedLayer = layers.find(layer => layer.mesh === clickedObject)
     
     if (clickedLayer) {
-      console.log('✨ Layer selected:', clickedLayer.name)
+  // ...existing code...
       onLayerSelect(clickedLayer.id)
     }
   }

@@ -79,6 +79,10 @@ const PropertiesInspector = memo(function PropertiesInspector({ selectedObject, 
             className="control-input"
             value={selectedObject.name}
             onChange={(e) => handleNameChange(e.target.value)}
+            id="object-name-input"
+            title="Object Name"
+            placeholder="Enter object name"
+            aria-label="Object Name"
           />
         </div>
 
@@ -89,6 +93,9 @@ const PropertiesInspector = memo(function PropertiesInspector({ selectedObject, 
             className="control-input"
             value={selectedObject.type}
             disabled
+            id="object-type-input"
+            title="Object Type"
+            aria-label="Object Type"
           />
         </div>
 
@@ -99,6 +106,9 @@ const PropertiesInspector = memo(function PropertiesInspector({ selectedObject, 
             className="control-input"
             value={selectedObject.id}
             disabled
+            id="object-id-input"
+            title="Object ID"
+            aria-label="Object ID"
           />
         </div>
       </div>
@@ -117,7 +127,10 @@ const PropertiesInspector = memo(function PropertiesInspector({ selectedObject, 
               value={selectedObject.transform.position[0]}
               onChange={(e) => handleTransformChange('position', 0, parseFloat(e.target.value))}
               className="vector-component"
+              id="position-x"
+              title="Position X"
               placeholder="X"
+              aria-label="Position X"
             />
             <input
               type="number"
@@ -125,7 +138,10 @@ const PropertiesInspector = memo(function PropertiesInspector({ selectedObject, 
               value={selectedObject.transform.position[1]}
               onChange={(e) => handleTransformChange('position', 1, parseFloat(e.target.value))}
               className="vector-component"
+              id="position-y"
+              title="Position Y"
               placeholder="Y"
+              aria-label="Position Y"
             />
             <input
               type="number"
@@ -133,7 +149,10 @@ const PropertiesInspector = memo(function PropertiesInspector({ selectedObject, 
               value={selectedObject.transform.position[2]}
               onChange={(e) => handleTransformChange('position', 2, parseFloat(e.target.value))}
               className="vector-component"
+              id="position-z"
+              title="Position Z"
               placeholder="Z"
+              aria-label="Position Z"
             />
           </div>
         </div>
@@ -216,13 +235,19 @@ const PropertiesInspector = memo(function PropertiesInspector({ selectedObject, 
               value={selectedObject.material.color}
               onChange={(e) => handleMaterialChange('color', e.target.value)}
               className="color-picker"
+              id="material-color-picker"
+              title="Material Color"
+              aria-label="Material Color"
             />
             <input
               type="text"
               value={selectedObject.material.color}
               onChange={(e) => handleMaterialChange('color', e.target.value)}
               className="color-text"
+              id="material-color-text"
+              title="Material Color Hex"
               placeholder="#FFD700"
+              aria-label="Material Color Hex"
             />
           </div>
         </div>
@@ -238,6 +263,9 @@ const PropertiesInspector = memo(function PropertiesInspector({ selectedObject, 
               value={selectedObject.material.roughness}
               onChange={(e) => handleMaterialChange('roughness', parseFloat(e.target.value))}
               className="slider"
+              id="material-roughness"
+              title="Material Roughness"
+              aria-label="Material Roughness"
             />
             <span className="slider-value">{selectedObject.material.roughness.toFixed(2)}</span>
           </div>
@@ -254,6 +282,9 @@ const PropertiesInspector = memo(function PropertiesInspector({ selectedObject, 
               value={selectedObject.material.metallic}
               onChange={(e) => handleMaterialChange('metallic', parseFloat(e.target.value))}
               className="slider"
+              id="material-metallic"
+              title="Material Metallic"
+              aria-label="Material Metallic"
             />
             <span className="slider-value">{selectedObject.material.metallic.toFixed(2)}</span>
           </div>
@@ -263,9 +294,9 @@ const PropertiesInspector = memo(function PropertiesInspector({ selectedObject, 
       {/* Actions */}
       <div className="property-section">
         <div className="section-title">Actions</div>
-        <button className="btn btn-secondary">Reset Transform</button>
-        <button className="btn btn-secondary">Duplicate Object</button>
-        <button className="btn" style={{background: '#f56565'}}>Delete Object</button>
+  <button className="btn btn-secondary">Reset Transform</button>
+  <button className="btn btn-secondary">Duplicate Object</button>
+  <button className="btn btn-danger">Delete Object</button>
       </div>
     </div>
   )

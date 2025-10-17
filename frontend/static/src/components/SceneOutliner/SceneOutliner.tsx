@@ -19,7 +19,7 @@ interface SceneObject {
   // New properties for GLB layers
   isLayer?: boolean
   parentModelId?: string
-  meshData?: unknown // THREE.Mesh reference for GLB layers
+  meshData?: import('three').Mesh // THREE.Mesh reference for GLB layers
 }
 
 interface SceneOutlinerProps {

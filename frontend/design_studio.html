@@ -10,6 +10,22 @@
             padding: 0;
             box-sizing: border-box;
         }
+                .design-prompt-area {
+                    resize: vertical;
+                    min-height: 60px;
+                }
+                /* Ensure the design prompt textarea uses stylesheet rules instead of inline styles */
+                #designPrompt {
+                    resize: vertical;
+                    min-height: 60px;
+                }
+                .rendering-active {
+                    margin-top: 10px;
+                    color: #4299e1;
+                }
+                #previewArea {
+                    display: none;
+                }
 
         body {
             font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -217,11 +233,17 @@
             background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><defs><radialGradient id="grad" cx="50%" cy="50%" r="50%"><stop offset="0%" style="stop-color:rgb(66,153,225);stop-opacity:0.3" /><stop offset="100%" style="stop-color:rgb(26,32,44);stop-opacity:0.1" /></radialGradient></defs><circle cx="200" cy="200" r="80" fill="url(%23grad)" stroke="rgb(66,153,225)" stroke-width="2" opacity="0.8"><animate attributeName="r" values="80;120;80" dur="3s" repeatCount="indefinite"/></circle></svg>') no-repeat center center;
             background-size: contain;
             animation: rotate 20s linear infinite;
+            display: none; /* moved from inline style to CSS */
         }
 
         @keyframes rotate {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
+        }
+
+        .render-note {
+            margin-top: 10px;
+            color: #4299e1;
         }
 
         .rendering-overlay {
@@ -517,15 +539,14 @@
             </div>
         </div>
 
-        <!-- Sidebar - Project Controls -->
-        <div class="sidebar">
-            <div class="panel-title">Design Parameters</div>
-            
-            <div class="design-controls">
                 <div class="control-group">
                     <label for="designPrompt">Design Request</label>
                     <textarea 
                         id="designPrompt" 
+                        class="control-input" 
+                        rows="3" 
+                        placeholder="Describe your jewelry design vision..."></textarea>
+                </div>
                         class="control-input" 
                         rows="3" 
                         placeholder="Describe your jewelry design vision..."
@@ -587,17 +608,17 @@
                     <button class="viewport-btn" onclick="toggleMaterial()">Materials</button>
                 </div>
             </div>
-            
-            <div class="render-area" id="renderArea">
+                    <p class="render-note">Real-time rendering and AI collaboration active</p>
                 <div class="render-placeholder">
                     <div class="icon">💎</div>
                     <h3>AI Design Studio Ready</h3>
                     <p>Start by describing your jewelry vision above</p>
-                    <p style="margin-top: 10px; color: #4299e1;">Real-time rendering and AI collaboration active</p>
+                    <p class="render-note">Real-time rendering and AI collaboration active</p>
                 </div>
                 
-                <div class="real-time-preview" id="previewArea" style="display: none;"></div>
+                <div class="real-time-preview" id="previewArea"></div>
                 
+                <div class="rendering-overlay" id="renderingOverlay">
                 <div class="rendering-overlay" id="renderingOverlay">
                     <div class="spinner"></div>
                     <p id="renderingStatus">Generating your design...</p>

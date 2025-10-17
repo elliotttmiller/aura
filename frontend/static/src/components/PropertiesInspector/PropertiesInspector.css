@@ -1,3 +1,15 @@
+/* Danger button for destructive actions */
+.btn-danger {
+  background: #f56565;
+  color: #fff;
+  border: none;
+  transition: background 0.2s;
+}
+
+.btn-danger:hover, .btn-danger:focus {
+  background: #c53030;
+  color: #fff;
+}
 /* Properties Inspector - Premium Design */
 .properties {
   overflow-y: auto;
@@ -155,12 +167,14 @@
   border-radius: 10px;
   outline: none;
   -webkit-appearance: none;
+  appearance: none;
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
+  appearance: none;
   width: 20px;
   height: 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

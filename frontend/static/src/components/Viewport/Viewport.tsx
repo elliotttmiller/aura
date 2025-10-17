@@ -1,4 +1,6 @@
 import { useRef, useState, Suspense, memo, useCallback } from 'react'
+import { invalidate } from '@react-three/fiber'
+import React from 'react'
 import { Canvas } from '@react-three/fiber'
 import { 
   OrbitControls, 
@@ -28,15 +30,15 @@ interface SceneObject {
     rotation: [number, number, number]
     scale: [number, number, number]
   }
-  material: {
-    color: string
-    roughness: number
-    metallic: number
-  }
+    material: {
+      color: string
+      roughness: number
+      metallic: number
+    }
   // New properties for GLB layers
   isLayer?: boolean
   parentModelId?: string
-  meshData?: any // THREE.Mesh reference for GLB layers
+  meshData?: import('three').Mesh // THREE.Mesh reference for GLB layers
 }
 
 interface ViewportProps {
@@ -44,7 +46,7 @@ interface ViewportProps {
   selectedObjectId: string | null
   onObjectSelect: (objectId: string | null) => void
   onLayerSelect: (layerId: string | null) => void
-  onGLBLayersDetected: (modelId: string, layers: Array<{id: string, name: string, mesh: any}>) => void
+  onGLBLayersDetected: (modelId: string, layers: Array<{id: string, name: string, mesh: import('three').Mesh}>) => void
   isGenerating: boolean
 }
 
@@ -178,15 +180,16 @@ export default function Viewport({
   const [showGrid, setShowGrid] = useState(true)
   const [renderMode, setRenderMode] = useState<'realistic' | 'studio' | 'night'>('realistic')
 
-  const handleCanvasClick = useCallback((event: any) => {
+  const handleCanvasClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     // If clicking on canvas background (not an object), deselect
-    if (event.target.classList.contains('webgl-canvas')) {
+    const target = event.target as HTMLElement;
+    if (target.classList && target.classList.contains('webgl-canvas')) {
       onObjectSelect(null)
       onLayerSelect(null)
     }
   }, [onObjectSelect, onLayerSelect])
 
-  const handleGLBLayersDetected = useCallback((layers: Array<{id: string, name: string, mesh: any}>) => {
+  const handleGLBLayersDetected = useCallback((layers: Array<{id: string, name: string, mesh: import('three').Mesh}>) => {
     // Find the GLB model object to get its ID
     const glbModel = objects.find(obj => obj.type === 'glb_model')
     if (glbModel) {
@@ -196,18 +199,28 @@ export default function Viewport({
 
   const handleResetCamera = useCallback(() => {
     setCameraPosition([5, 5, 5])
+    invalidate()
   }, [])
 
   const handleToggleWireframe = useCallback(() => {
-    setShowWireframe(prev => !prev)
+    setShowWireframe(prev => {
+      const next = !prev
+      invalidate()
+      return next
+    })
   }, [])
 
   const handleToggleGrid = useCallback(() => {
-    setShowGrid(prev => !prev)
+    setShowGrid(prev => {
+      const next = !prev
+      invalidate()
+      return next
+    })
   }, [])
 
   const handleSetRenderMode = useCallback((mode: 'realistic' | 'studio' | 'night') => {
     setRenderMode(mode)
+    invalidate()
   }, [])
 
   // Get GLB models and regular objects
@@ -230,7 +243,7 @@ export default function Viewport({
           depth: true
         }}
         dpr={[1, 2]} // Adaptive pixel ratio for performance
-        frameloop="always" // Continuous rendering for smooth animations
+        frameloop="demand" // Only render on demand for optimal performance
         performance={{ min: 0.5 }} // Adaptive performance scaling
       >
         {/* Camera with smooth controls */}
@@ -304,6 +317,7 @@ export default function Viewport({
             <Center key={model.id}>
               <GLBModel
                 url="/3d_models/diamond_ring_example.glb"
+                parentModelId={model.id}
                 selectedLayerId={selectedLayer?.id || null}
                 onLayerSelect={onLayerSelect}
                 onLayersDetected={handleGLBLayersDetected}

@@ -7,10 +7,12 @@ Starts both backend and frontend servers for local development.
 Usage:
     python start.py
 """
+
 import subprocess
 import sys
 import os
 import time
+import signal
 
 def run_backend():
     print("Starting backend server...")
@@ -30,6 +32,8 @@ def run_frontend():
 
 def main():
     print("\nAura Quick Start - Local Development\n" + "="*40)
+    # Kill any running backend/frontend server processes
+    kill_existing_servers()
     backend_proc = run_backend()
     time.sleep(3)  # Give backend time to start
     frontend_proc = run_frontend()
@@ -45,6 +49,31 @@ def main():
         backend_proc.wait()
         frontend_proc.wait()
         print("All servers stopped.")
+
+
+def kill_existing_servers():
+    """Find and kill any running backend (uvicorn) and frontend (vite) server processes."""
+    import psutil
+    killed = False
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            cmdline = ' '.join(proc.info['cmdline']).lower() if proc.info['cmdline'] else ''
+            # Kill uvicorn (backend)
+            if 'uvicorn' in cmdline and 'main:app' in cmdline:
+                print(f"Killing backend server (PID {proc.pid})...")
+                proc.kill()
+                killed = True
+            # Kill vite (frontend)
+            elif ('vite' in cmdline or 'npm run dev' in cmdline) and 'frontend' in cmdline:
+                print(f"Killing frontend server (PID {proc.pid})...")
+                proc.kill()
+                killed = True
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    if killed:
+        print("Old server processes terminated.\n")
+    else:
+        print("No old server processes found.\n")
 
 if __name__ == "__main__":
     main()

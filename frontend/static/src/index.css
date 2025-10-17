@@ -1,3 +1,4 @@
+@import './fullpage-container.css';
 /* Modern Professional Design Studio - Premium Dark Theme */
 * {
   margin: 0;
@@ -57,20 +58,7 @@ body {
   }
 }
 
-@media (max-width: 900px) {
-  .design-studio {
-    grid-template-columns: 0px 1fr 0px;
-    grid-template-areas:
-      "header"
-      "viewport"
-      "properties";
-    grid-template-rows: 60px 1fr 180px;
-    height: 100vh;
-  }
-  .sidebar, .ai-chat-sidebar, .properties-inspector {
-    display: none !important;
-  }
-}
+
 
 @media (max-width: 600px) {
   .design-studio {
