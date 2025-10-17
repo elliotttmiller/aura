@@ -1,0 +1,83 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info
+dist
+build
+venv/
+env/
+ENV/
+.venv/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Frontend build (will be built during Docker build)
+frontend/static/dist/
+frontend/static/.vite/
+frontend/static/coverage/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+coverage/
+*.cover
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Output files
+output/*
+!output/.gitkeep
+
+# Models (should be volume mounted)
+models/*.pkl
+models/*.onnx
+models/*.pt
+models/*.pth
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+docs/
+!README.md
+
+# Test files
+tests/
+*_test.py
+test_*.py
+
+# Development
+.env
+.env.local
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Screenshots and demos
+*.png
+*.jpg
+*.jpeg
