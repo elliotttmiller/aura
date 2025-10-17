@@ -10,6 +10,11 @@ const AIChatSidebar = lazy(() => import('./components/AIChatSidebar/AIChatSideba
 const ViewportControls = lazy(() => import('./components/ViewportControls/ViewportControls'));
 
 function App() {
+  const ui = useUIState();
+  const system = useSystemState();
+  const session = useSession();
+  const actions = useActions();
+  
   // Ensure a valid session is always initialized on mount
   useEffect(() => {
     if (!session.id || session.id === 'new-session') {
@@ -17,10 +22,7 @@ function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const ui = useUIState();
-  const system = useSystemState();
-  const session = useSession();
-  const actions = useActions();
+  
   const selectedObject = session.objects.find(obj => obj.id === session.selectedObjectId) || undefined;
 
   return (
