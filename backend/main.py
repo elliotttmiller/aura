@@ -11,16 +11,11 @@ Part of the Professional Integration.
 """
 
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
-from fastapi import WebSocket
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-import subprocess
 import os
 import logging
-import json
-import requests
 import time
-import asyncio
 from typing import Dict, Any, Optional
 import uuid
 
@@ -106,6 +101,7 @@ class SceneObject:
         }
         self.geometry_data = None  # Store mesh/geometry data
 
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
@@ -117,6 +113,7 @@ class SceneObject:
             "material": self.material
         }
 
+
 class DesignSession:
     """Manages a design session with scene state."""
     def __init__(self):
@@ -124,31 +121,31 @@ class DesignSession:
         self.objects: Dict[str, SceneObject] = {}
         self.created_at = time.time()
         self.last_modified = time.time()
-        
+
     def add_object(self, obj: SceneObject) -> str:
         """Add object to scene and return its ID."""
         self.objects[obj.id] = obj
         self.last_modified = time.time()
         return obj.id
-        
+
     def get_object(self, obj_id: str) -> Optional[SceneObject]:
         """Get object by ID."""
         return self.objects.get(obj_id)
-        
+
     def update_object(self, obj_id: str, updates: Dict[str, Any]) -> bool:
         """Update object properties."""
         obj = self.objects.get(obj_id)
         if not obj:
             return False
-            
+
         # Update properties
         for key, value in updates.items():
             if hasattr(obj, key):
                 setattr(obj, key, value)
-        
+
         self.last_modified = time.time()
         return True
-    
+
     def remove_object(self, obj_id: str) -> bool:
         """Remove object from scene."""
         if obj_id in self.objects:
@@ -156,7 +153,7 @@ class DesignSession:
             self.last_modified = time.time()
             return True
         return False
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert session to dictionary."""
         return {
@@ -166,15 +163,17 @@ class DesignSession:
             "last_modified": self.last_modified
         }
 
+
 # Global sessions storage (in production, use database)
 active_sessions: Dict[str, DesignSession] = {}
+
 
 # Enhanced AI Processing Functions
 def analyze_scene_context(current_scene: Dict[str, Any]) -> Dict[str, Any]:
     """Analyze the current scene context for AI decision making."""
     objects = current_scene.get('objects', [])
     selected_object_id = current_scene.get('selected_object_id')
-    
+
     context = {
         "object_count": len(objects),
         "object_types": list(set(obj.get('type', 'unknown') for obj in objects)),
@@ -182,7 +181,7 @@ def analyze_scene_context(current_scene: Dict[str, Any]) -> Dict[str, Any]:
         "has_selection": selected_object_id is not None,
         "selected_object": None
     }
-    
+
     # Get selected object details if any
     if selected_object_id:
         selected = next((obj for obj in objects if obj.get('id') == selected_object_id), None)
@@ -193,7 +192,7 @@ def analyze_scene_context(current_scene: Dict[str, Any]) -> Dict[str, Any]:
                 "material": selected.get('material', {}),
                 "transform": selected.get('transform', {})
             }
-    
+
     return context
 
 def generate_intelligent_response(prompt: str, scene_context: Dict[str, Any]) -> Dict[str, Any]:
@@ -207,9 +206,9 @@ def generate_intelligent_response(prompt: str, scene_context: Dict[str, Any]) ->
         "roughness": 0.5,
         "metallic": 0.8
     }
-    
+
     analysis_notes = []
-    
+
     # Material intelligence
     if any(material in prompt_lower for material in ["gold", "golden"]):
         material_properties["color"] = "#FFD700"
@@ -226,7 +225,7 @@ def generate_intelligent_response(prompt: str, scene_context: Dict[str, Any]) ->
         material_properties["roughness"] = 0.0
         material_properties["metallic"] = 0.1
         analysis_notes.append("Detected gemstone material - high clarity")
-    
+
     # Object type intelligence
     if any(jewelry in prompt_lower for jewelry in ["ring", "band"]):
         object_type = "ring"
@@ -237,11 +236,11 @@ def generate_intelligent_response(prompt: str, scene_context: Dict[str, Any]) ->
     elif any(jewelry in prompt_lower for jewelry in ["earring", "stud"]):
         object_type = "earring"
         analysis_notes.append("Identified earring geometry")
-    
+
     # Context awareness
     if scene_context["has_selection"] and any(word in prompt_lower for word in ["add", "attach", "mount", "set"]):
         analysis_notes.append(f"Context: Working with selected object '{scene_context['selected_object']['name']}'")
-    
+
     # Size intelligence
     size_scale = [1.0, 1.0, 1.0]
     if any(size in prompt_lower for size in ["small", "tiny", "delicate"]):
@@ -250,7 +249,7 @@ def generate_intelligent_response(prompt: str, scene_context: Dict[str, Any]) ->
     elif any(size in prompt_lower for size in ["large", "big", "bold"]):
         size_scale = [1.3, 1.3, 1.3]
         analysis_notes.append("Scaled for large/bold proportions")
-    
+
     return {
         "object_type": object_type,
         "material": material_properties,
@@ -260,6 +259,7 @@ def generate_intelligent_response(prompt: str, scene_context: Dict[str, Any]) ->
             "gold", "silver", "diamond", "ring", "necklace", "earring", "small", "large", "add", "create"
         ]]
     }
+
 
 def create_object_from_ai_response(ai_response: Dict[str, Any]) -> 'SceneObject':
     """Create a SceneObject from AI analysis."""
@@ -274,15 +274,16 @@ def create_object_from_ai_response(ai_response: Dict[str, Any]) -> 'SceneObject'
         "earring": ["Stud Earring", "Drop Earring", "Hoop Earring", "Chandelier Earring"],
         "mesh": ["Custom Jewelry", "Artisan Piece", "Designer Element", "Geometric Form"]
     }
-    
+
     import random
     object_name = random.choice(object_names.get(object_type, object_names["mesh"]))
-    
+
     new_object = SceneObject(object_name, object_type)
     new_object.material.update(material)
     new_object.transform["scale"] = scale
-    
+
     return new_object
+
 
 async def generate_3d_model(prompt: str, ai_response: Dict[str, Any], session_id: str) -> Dict[str, Any]:
     """
@@ -293,7 +294,7 @@ async def generate_3d_model(prompt: str, ai_response: Dict[str, Any], session_id
     """
     try:
         logger.info(f"Starting 3D model generation for prompt: {prompt}")
-        
+
         # Prepare generation parameters based on AI analysis
         generation_params = {
             "jewelry_type": ai_response.get("object_type", "ring"),
@@ -301,24 +302,23 @@ async def generate_3d_model(prompt: str, ai_response: Dict[str, Any], session_id
             "detail_level": "high",
             "style": extract_style_from_prompt(prompt)
         }
-        
+
         # Call AI orchestrator for generation
         from .ai_orchestrator import AiOrchestrator
-        
+
         orchestrator = AiOrchestrator()
         result = orchestrator.generate_jewelry(prompt, generation_params)
-        
+
         if result.get("success"):
             # Extract the generated model path
             final_results = result.get("final_results", {})
-            package_path = final_results.get("package_path")
-            
-            # In a real system, this would extract the GLB from the package
+
+            # In a real system, this would extract the GLB from the package path
             # For now, we'll use a placeholder path but mark it as AI-generated
             model_url = f"/3d_models/ai_generated_{session_id}.glb"
-            
+
             logger.info(f"3D model generated successfully: {model_url}")
-            
+
             return {
                 "success": True,
                 "model_url": model_url,
@@ -336,7 +336,7 @@ async def generate_3d_model(prompt: str, ai_response: Dict[str, Any], session_id
                 "error": result.get("error", "Generation failed"),
                 "model_url": None
             }
-            
+
     except Exception as e:
         logger.error(f"3D model generation exception: {e}")
         return {
@@ -345,10 +345,11 @@ async def generate_3d_model(prompt: str, ai_response: Dict[str, Any], session_id
             "model_url": None
         }
 
+
 def extract_material_from_response(ai_response: Dict[str, Any]) -> str:
     """Extract material type from AI response."""
     color = ai_response.get("material", {}).get("color", "#FFD700")
-    
+
     # Map color to material
     if color == "#FFD700":
         return "GOLD"
@@ -359,10 +360,11 @@ def extract_material_from_response(ai_response: Dict[str, Any]) -> str:
     else:
         return "GOLD"
 
+
 def extract_style_from_prompt(prompt: str) -> str:
     """Extract style classification from prompt."""
     prompt_lower = prompt.lower()
-    
+
     if any(word in prompt_lower for word in ["vintage", "antique", "classic"]):
         return "vintage"
     elif any(word in prompt_lower for word in ["modern", "contemporary", "minimal"]):
