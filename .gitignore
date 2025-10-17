@@ -87,6 +87,19 @@ system_control.log
 frontend/static/node_modules/
 frontend/static/.vite/
 frontend/static/dist/
+frontend/static/coverage/
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+coverage.xml
+*.cover
+
+# Logs
+logs/
+*.log
+.log
 
 # Keep folder structure but ignore content
 output/.gitkeep
