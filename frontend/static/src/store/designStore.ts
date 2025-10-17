@@ -26,6 +26,8 @@ export interface SceneObject {
     roughness: number
     metallic: number
   }
+  // URL for GLB models (AI-generated or loaded)
+  url?: string
   // New properties for GLB layers
   isLayer?: boolean
   parentModelId?: string
@@ -436,7 +438,12 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
           
           // Add the new object to scene
           if (data.object) {
-            get().actions.addObject(data.object)
+            // If it's a GLB model, add the URL property
+            const objectToAdd = data.object
+            if (data.object.type === 'glb_model' && data.model_url) {
+              objectToAdd.url = data.model_url
+            }
+            get().actions.addObject(objectToAdd)
           }
           
           // If modifications were made to existing objects, sync

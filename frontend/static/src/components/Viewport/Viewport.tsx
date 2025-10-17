@@ -3,13 +3,9 @@ import { Canvas, invalidate } from '@react-three/fiber'
 import {
   OrbitControls,
   Grid,
-  Environment,
   PerspectiveCamera,
   useProgress,
-  Html,
-  Sky,
-  Stars,
-  BakeShadows
+  Html
 } from '@react-three/drei'
 import * as THREE from 'three'
 import GLBModel from '../GLBModel/GLBModel'
@@ -217,32 +213,40 @@ export default function Viewport({
             console.warn('WebGL diagnostics collection failed:', err)
           }
         }}
-        shadows={!isEffectiveSafe}
-        gl={
-          isEffectiveSafe
-            ? { antialias: false, alpha: false, powerPreference: 'low-power', preserveDrawingBuffer: false, failIfMajorPerformanceCaveat: false, stencil: false, depth: true }
-            : { antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: false, failIfMajorPerformanceCaveat: false, stencil: false, depth: true }
-        }
-        dpr={1}
+        shadows={false}
+        gl={{
+          antialias: false,
+          alpha: false,
+          powerPreference: 'default',
+          preserveDrawingBuffer: false,
+          failIfMajorPerformanceCaveat: false,
+          stencil: false,
+          depth: true
+        }}
+        dpr={[1, 1.5]}
         frameloop="demand"
-        performance={{ min: 0.5 }}
+        performance={{ min: 0.5, max: 1 }}
       >
         <PerspectiveCamera makeDefault position={cameraPosition} fov={45} />
         <Suspense fallback={<Loader />}>
           <SceneLighting />
           <color attach="background" args={['#0f0f1e']} />
-          {!isEffectiveSafe && renderMode === 'realistic' && (<Environment preset="studio" background={false} />)}
-          {!isEffectiveSafe && renderMode === 'studio' && (<Environment preset="city" background={false} />)}
-          {!isEffectiveSafe && renderMode === 'night' && (<><Sky sunPosition={[0, -1, 0]} /><Stars radius={100} depth={50} count={5000} factor={4} fade speed={1} /></>)}
+          {/* Simplified environment - removed heavy presets that cause WebGL context loss */}
+          {!isEffectiveSafe && renderMode === 'realistic' && (<ambientLight intensity={0.3} />)}
+          {!isEffectiveSafe && renderMode === 'studio' && (<ambientLight intensity={0.4} />)}
+          {!isEffectiveSafe && renderMode === 'night' && (<ambientLight intensity={0.2} />)}
           <Grid args={[20, 20]} cellColor="#667eea" sectionColor="#764ba2" position={[0, -2, 0]} fadeDistance={30} fadeStrength={1} cellSize={0.5} sectionSize={2} infiniteGrid visible={showGrid} />
-          {glbModels.map(obj => (
-            <GLBModel key={obj.id} url={obj.url || '/3d_models/diamond_ring_example.glb'} parentModelId={obj.id} selectedLayerId={selectedObjectId} onLayerSelect={onLayerSelect} onLayersDetected={handleGLBLayersDetected} />
-          ))}
+          {glbModels.map(obj => {
+            // Use object's URL if available, otherwise use default example
+            const modelUrl = obj.url || '/3d_models/diamond_ring_example.glb'
+            return (
+              <GLBModel key={obj.id} url={modelUrl} parentModelId={obj.id} selectedLayerId={selectedObjectId} onLayerSelect={onLayerSelect} onLayersDetected={handleGLBLayersDetected} />
+            )
+          })}
           {regularObjects.map(obj => (
             <SceneObjectMesh key={obj.id} object={obj} isSelected={selectedObjectId === obj.id} onSelect={() => onObjectSelect(obj.id)} />
           ))}
           <OrbitControls makeDefault enablePan enableZoom enableRotate enableDamping dampingFactor={0.05} rotateSpeed={0.5} zoomSpeed={0.8} panSpeed={0.5} minDistance={2} maxDistance={20} maxPolarAngle={Math.PI / 2} target={[0, 0, 0]} />
-          {!isEffectiveSafe && <BakeShadows />}
         </Suspense>
       </Canvas>
       <div className="viewport-debug-overlay">
