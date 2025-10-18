@@ -1286,6 +1286,14 @@ if models_dir.exists():
 else:
     logger.warning(f"3D models directory not found: {models_dir}")
 
+# Mount the output directory for serving AI-generated files
+output_static_dir = Path(__file__).parent.parent / "output"
+if output_static_dir.exists():
+    app.mount("/output", StaticFiles(directory=str(output_static_dir)), name="output")
+    logger.info(f"Mounted output directory: {output_static_dir}")
+else:
+    logger.warning(f"Output directory not found: {output_static_dir}")
+
 # Serve the control panel HTML
 @app.get("/control-panel")
 async def serve_control_panel():
