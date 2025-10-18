@@ -1,142 +1,50 @@
+/* ============================================================================
+   AURA SENTIENT DESIGN STUDIO - OPTIMIZED INDEX.CSS
+   ============================================================================
+   
+   This file contains ONLY:
+   - Global resets and base styles
+   - Typography and theming
+   - Component content styles (NOT layout - layout is in fullpage-container.css)
+   - Reusable UI components and utilities
+   
+   IMPORTANT: Layout styles (grid, positioning) are in fullpage-container.css
+   ============================================================================ */
+
 @import './fullpage-container.css';
-/* Ensure grid-area assignment for main layout children */
-.design-studio > .header { grid-area: header; }
-.design-studio > .sidebar { grid-area: sidebar; }
-.design-studio > .main-viewport { grid-area: viewport; }
-.design-studio > .ai-chat-sidebar { grid-area: chat; }
-.design-studio > .sidebar.ai-chat-sidebar { grid-area: chat; }
-.design-studio > .properties-inspector { grid-area: properties; }
-/* Modern Professional Design Studio - Premium Dark Theme */
+
+/* ============================================================================
+   GLOBAL RESETS & BASE STYLES
+   ============================================================================ */
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html, body, #root {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 
+               'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
   color: #e4e4e7;
-  overflow: hidden;
-  height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
-#root {
-  height: 100vh;
-  width: 100vw;
-}
+/* ============================================================================
+   HEADER CONTENT STYLES
+   ============================================================================ */
 
-/* Enable hardware acceleration for smooth animations */
-.design-studio,
-.viewport,
-.sidebar,
-.ai-chat-sidebar,
-.properties-inspector,
-.header {
-  will-change: transform;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  perspective: 1000px;
-}
-
-/* Premium CAD Studio Layout - Glass Morphism Design */
-.design-studio {
-  display: grid;
-  grid-template-areas: 
-    "header header header"
-    "sidebar viewport chat"
-    "timeline viewport properties";
-  grid-template-columns: 320px 1fr 380px;
-  grid-template-rows: 70px 1fr 260px;
-  height: 100vh;
-  gap: 2px;
-  background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
-  transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Responsive breakpoints */
-@media (max-width: 1200px) {
-  .design-studio {
-    grid-template-columns: 220px 1fr 260px;
-    grid-template-rows: 60px 1fr 180px;
-  }
-}
-
-
-
-@media (max-width: 600px) {
-  .design-studio {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "header"
-      "viewport"
-      "properties";
-    grid-template-rows: 50px 1fr 120px;
-    height: 100vh;
-    min-width: 0;
-  }
-  .header {
-    font-size: 1rem;
-    padding: 0 8px;
-  }
-  .viewport {
-    min-width: 0;
-    min-height: 0;
-  }
-}
-
-body, #root {
-  width: 100vw;
-  height: 100vh;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-}
-
-/* Adaptive layout states */
-.design-studio.left-sidebar-hidden {
-  grid-template-columns: 0px 1fr 380px;
-  grid-template-areas: 
-    "header header header"
-    "viewport viewport chat"
-    "viewport viewport properties";
-}
-
-.design-studio.right-sidebar-hidden {
-  grid-template-columns: 320px 1fr 0px;
-  grid-template-areas: 
-    "header header header"
-    "sidebar viewport viewport"
-    "timeline viewport viewport";
-}
-
-.design-studio.left-sidebar-hidden.right-sidebar-hidden {
-  grid-template-columns: 0px 1fr 0px;
-  grid-template-areas: 
-    "header header header"
-    "viewport viewport viewport"
-    "viewport viewport viewport";
-}
-
-/* Premium Header - Glass Morphism */
-.header {
-  grid-area: header;
-  background: rgba(26, 26, 46, 0.8);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 28px;
-  z-index: 1000;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-}
-
-.header-left, .header-right {
+.header-left,
+.header-right {
   display: flex;
   align-items: center;
   gap: 20px;
@@ -146,7 +54,7 @@ body, #root {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
@@ -156,56 +64,31 @@ body, #root {
 }
 
 .header .logo span:first-child {
-  font-size: 28px;
-  filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.5));
+  font-size: 24px;
+  filter: drop-shadow(0 0 8px rgba(102, 126, 234, 0.4));
 }
 
 .header .status {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 8px 16px;
+  gap: 14px;
+  padding: 6px 14px;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.sidebar-toggle-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #e4e4e7;
-  padding: 10px 14px;
   border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  height: 44px;
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 13px;
 }
 
-.sidebar-toggle-btn:hover {
-  background: rgba(102, 126, 234, 0.15);
-  border-color: rgba(102, 126, 234, 0.3);
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-}
-
-.sidebar-toggle-btn:active {
-  transform: translateY(0) scale(0.98);
-  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* ============================================================================
+   STATUS INDICATORS
+   ============================================================================ */
 
 .status-indicator {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   position: relative;
-  box-shadow: 0 0 10px currentColor;
+  box-shadow: 0 0 8px currentColor;
 }
 
 .status-indicator::before {
@@ -218,16 +101,16 @@ body, #root {
   animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
-.status-online { 
+.status-online {
   background: #10b981;
 }
 
-.status-processing { 
+.status-processing {
   background: #f59e0b;
   animation: pulse 1.5s ease-in-out infinite;
 }
 
-.status-error { 
+.status-error {
   background: #ef4444;
 }
 
@@ -243,112 +126,77 @@ body, #root {
   }
 }
 
-/* Sidebar - Premium Glass Design */
-.sidebar {
-  grid-area: sidebar;
-  background: rgba(20, 20, 32, 0.7);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  overflow-y: auto;
-  overflow-x: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.2);
-}
+/* ============================================================================
+   SIDEBAR CONTENT STYLES
+   ============================================================================ */
 
-/* Smooth scrollbar styling */
-.sidebar::-webkit-scrollbar,
+/* Custom scrollbar for sidebars */
+.sidebar-left::-webkit-scrollbar,
+.sidebar-right::-webkit-scrollbar,
 .properties-inspector::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
-.sidebar::-webkit-scrollbar-track,
+.sidebar-left::-webkit-scrollbar-track,
+.sidebar-right::-webkit-scrollbar-track,
 .properties-inspector::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.2);
 }
 
-.sidebar::-webkit-scrollbar-thumb,
+.sidebar-left::-webkit-scrollbar-thumb,
+.sidebar-right::-webkit-scrollbar-thumb,
 .properties-inspector::-webkit-scrollbar-thumb {
   background: rgba(102, 126, 234, 0.3);
-  border-radius: 4px;
+  border-radius: 3px;
   transition: background 0.2s ease;
 }
 
-.sidebar::-webkit-scrollbar-thumb:hover,
+.sidebar-left::-webkit-scrollbar-thumb:hover,
+.sidebar-right::-webkit-scrollbar-thumb:hover,
 .properties-inspector::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.5);
 }
 
-/* Main Viewport */
-.viewport {
-  grid-area: viewport;
-  background: radial-gradient(ellipse at center, #1a1a2e 0%, #0f0f1e 100%);
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 2px;
-}
+/* ============================================================================
+   PANEL & SECTION TITLES
+   ============================================================================ */
 
-/* Chat Sidebar */
-.chat {
-  grid-area: chat;
-  background: rgba(20, 20, 32, 0.7);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  border-left: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: -4px 0 30px rgba(0, 0, 0, 0.2);
-}
-
-/* Properties Inspector */
-.properties {
-  grid-area: properties;
-  background: rgba(20, 20, 32, 0.7);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  border-left: 1px solid rgba(255, 255, 255, 0.05);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  overflow-y: auto;
-  overflow-x: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: -4px 4px 30px rgba(0, 0, 0, 0.2);
-}
-
-/* Premium UI Components - Modern Design System */
 .panel-title {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
   color: #a1a1aa;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  padding: 20px 24px 0;
+  letter-spacing: 1.2px;
+  padding: 16px 20px 0;
   position: relative;
 }
 
 .panel-title::after {
   content: '';
   position: absolute;
-  bottom: -10px;
-  left: 24px;
-  width: 40px;
-  height: 3px;
+  bottom: -8px;
+  left: 20px;
+  width: 32px;
+  height: 2px;
   background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-  border-radius: 2px;
+  border-radius: 1px;
 }
 
+/* ============================================================================
+   FORM CONTROLS
+   ============================================================================ */
+
 .control-group {
-  margin-bottom: 24px;
-  padding: 0 24px;
+  margin-bottom: 20px;
+  padding: 0 20px;
 }
 
 .control-label {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   color: #a1a1aa;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   font-weight: 600;
@@ -356,13 +204,13 @@ body, #root {
 
 .control-input {
   width: 100%;
-  padding: 12px 16px;
+  padding: 10px 14px;
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   color: #e4e4e7;
-  font-size: 14px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 13px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
 }
 
@@ -370,28 +218,32 @@ body, #root {
   outline: none;
   border-color: #667eea;
   background: rgba(0, 0, 0, 0.4);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.15);
 }
 
 .control-input::placeholder {
   color: #52525b;
 }
 
+/* ============================================================================
+   BUTTONS
+   ============================================================================ */
+
 .btn {
-  padding: 12px 20px;
+  padding: 10px 18px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   color: white;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 14px;
+  font-size: 13px;
   letter-spacing: 0.3px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 3px 12px rgba(102, 126, 234, 0.3);
+  font-family: inherit;
 }
 
 .btn::before {
@@ -411,7 +263,7 @@ body, #root {
 
 .btn:hover {
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
 }
 
 .btn:active {
@@ -421,18 +273,116 @@ body, #root {
 
 .btn-secondary {
   background: linear-gradient(135deg, #52525b 0%, #3f3f46 100%);
-  box-shadow: 0 4px 15px rgba(82, 82, 91, 0.3);
+  box-shadow: 0 3px 12px rgba(82, 82, 91, 0.3);
 }
 
 .btn-secondary:hover {
-  box-shadow: 0 6px 25px rgba(82, 82, 91, 0.4);
+  box-shadow: 0 5px 20px rgba(82, 82, 91, 0.4);
 }
 
 .btn-success {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 3px 12px rgba(16, 185, 129, 0.3);
 }
 
 .btn-success:hover {
-  box-shadow: 0 6px 25px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
 }
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 3px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+  box-shadow: 0 5px 20px rgba(239, 68, 68, 0.4);
+}
+
+/* ============================================================================
+   LOADING & SUSPENSE FALLBACK
+   ============================================================================ */
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+  color: #667eea;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.loading::after {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-left: 12px;
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================================
+   UTILITIES
+   ============================================================================ */
+
+.text-center {
+  text-align: center;
+}
+
+.mt-1 { margin-top: 8px; }
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 24px; }
+.mt-4 { margin-top: 32px; }
+
+.mb-1 { margin-bottom: 8px; }
+.mb-2 { margin-bottom: 16px; }
+.mb-3 { margin-bottom: 24px; }
+.mb-4 { margin-bottom: 32px; }
+
+.p-1 { padding: 8px; }
+.p-2 { padding: 16px; }
+.p-3 { padding: 24px; }
+.p-4 { padding: 32px; }
+
+/* ============================================================================
+   RESPONSIVE BREAKPOINTS
+   ============================================================================ */
+
+@media (max-width: 1200px) {
+  .header .logo {
+    font-size: 16px;
+  }
+  
+  .header .logo span:first-child {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 12px;
+  }
+  
+  .header .logo span:last-child {
+    display: none;
+  }
+  
+  .header .status {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+}
+
+/* ============================================================================
+   END OF FILE
+   ============================================================================ */

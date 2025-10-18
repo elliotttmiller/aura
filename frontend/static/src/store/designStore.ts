@@ -9,6 +9,7 @@
  */
 
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 
 // Core types for the design system
 export interface SceneObject {
@@ -110,7 +111,10 @@ interface DesignStoreState {
 // Base API URL for backend communication
 const API_BASE = '/api'
 
-export const useDesignStore = create<DesignStoreState>((set, get) => ({
+// Persist only the UI slice (sidebar visibility) to localStorage
+export const useDesignStore = create<DesignStoreState>()(
+  persist(
+    (set, get) => ({
   // Initial state
   session: {
     id: 'new-session',
@@ -410,7 +414,6 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
           system: { ...state.system, isGenerating: false }
         }))
         console.error('Cannot execute prompt: No valid session established.')
-        // Optionally, trigger a user-facing error here
         return
       }
 
@@ -419,14 +422,20 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
       }))
 
       try {
-        // ...existing code...
-        const response = await fetch(`${API_BASE}/session/${session.id}/execute_prompt`, {
+        // Use the NEW Enhanced AI Orchestrator endpoint
+        const response = await fetch(`${API_BASE}/ai/generate-3d-model`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             prompt,
-            current_scene: {
-              objects: session.objects,
+            complexity: 'moderate',  // Can be made dynamic based on prompt analysis
+            session_id: session.id,
+            context: {
+              existing_objects: Object.values(session.objects).map(obj => ({
+                id: obj.id,
+                name: obj.name,
+                type: obj.type
+              })),
               selected_object_id: session.selectedObjectId
             }
           })
@@ -434,28 +443,60 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
         
         if (response.ok) {
           const data = await response.json()
-          // ...existing code...
           
-          // Add the new object to scene
-          if (data.object) {
-            // If it's a GLB model, add the URL property
-            const objectToAdd = data.object
-            if (data.object.type === 'glb_model' && data.model_url) {
-              objectToAdd.url = data.model_url
+          if (data.success) {
+            // Create new object from AI generation result
+            const newObject: SceneObject = {
+              id: data.object_id || `ai-${Date.now()}`,
+              name: `AI: ${prompt.substring(0, 30)}...`,
+              type: 'glb_model',  // Use glb_model type so it renders as GLB file
+              visible: true,
+              transform: {
+                position: [0, 0, 0],
+                rotation: [0, 0, 0],
+                scale: [1, 1, 1]
+              },
+              material: {
+                color: data.material_specifications?.primary_material?.base_color || '#FFD700',
+                roughness: data.material_specifications?.primary_material?.roughness || 0.2,
+                metallic: data.material_specifications?.primary_material?.metallic || 0.8
+              },
+              // Store GLB file path if Blender executed successfully
+              url: data.model_url || data.glb_file
             }
-            get().actions.addObject(objectToAdd)
-          }
-          
-          // If modifications were made to existing objects, sync
-          if (data.modifications) {
-            await get().actions.loadSceneFromBackend()
+            
+            // Add the AI-generated object to the scene
+            get().actions.addObject(newObject)
+            
+            // eslint-disable-next-line no-console
+            console.log('✅ AI-generated object added:', newObject)
+            // eslint-disable-next-line no-console
+            console.log('📝 User prompt:', prompt)
+            // eslint-disable-next-line no-console
+            console.log('📦 Construction plan:', data.construction_plan)
+            // eslint-disable-next-line no-console
+            console.log('💎 Materials:', data.material_specifications)
+            if (data.blender_execution?.success) {
+              // eslint-disable-next-line no-console
+              console.log('🔨 Blender execution successful!')
+              // eslint-disable-next-line no-console
+              console.log('📁 GLB file:', data.glb_file)
+              // eslint-disable-next-line no-console
+              console.log('⏱️  Execution time:', data.blender_execution.execution_time, 's')
+            } else if (data.blender_execution) {
+              // eslint-disable-next-line no-console
+              console.warn('⚠️ Blender execution failed:', data.blender_execution.error)
+            }
+          } else {
+            throw new Error(data.error || 'AI generation failed')
           }
           
         } else {
-          throw new Error('AI prompt execution failed')
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+          throw new Error(errorData.error || 'AI prompt execution failed')
         }
       } catch (error) {
-        console.error('AI prompt failed:', error)
+        console.error('❌ AI prompt failed:', error)
         throw error
       } finally {
         set((state) => ({
@@ -538,7 +579,16 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
       URL.revokeObjectURL(url)
     }
   }
-}))
+    }),
+    {
+      name: 'aura-ui-v1',
+      version: 1,
+      storage: createJSONStorage(() => localStorage),
+      // Only persist the lightweight UI slice
+      partialize: (state) => ({ ui: state.ui })
+    }
+  )
+)
 
 // Convenience hooks for accessing specific parts of the store
 export const useSession = () => useDesignStore((state) => state.session)

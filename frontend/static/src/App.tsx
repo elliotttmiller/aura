@@ -5,7 +5,6 @@ import { useSession, useSystemState, useUIState, useActions } from './store/desi
 
 const Viewport = lazy(() => import('./components/Viewport/Viewport'));
 const SceneOutliner = lazy(() => import('./components/SceneOutliner/SceneOutliner'));
-const PropertiesInspector = lazy(() => import('./components/PropertiesInspector/PropertiesInspector'));
 const AIChatSidebar = lazy(() => import('./components/AIChatSidebar/AIChatSidebar'));
 const ViewportControls = lazy(() => import('./components/ViewportControls/ViewportControls'));
 
@@ -22,26 +21,20 @@ function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
-  const selectedObject = session.objects.find(obj => obj.id === session.selectedObjectId) || undefined;
 
-  const leftWidth = ui.isLeftSidebarVisible ? 280 : 0;
-  const rightWidth = ui.isRightSidebarVisible ? 340 : 0;
-  // Handle position offsets: handle width (28) + inner margin (8) = 36
-  const leftHandle = ui.isLeftSidebarVisible ? Math.max(8, leftWidth - 36) : 8;
-  const rightHandle = ui.isRightSidebarVisible ? Math.max(8, rightWidth - 36) : 8;
-
-  const gridStyle = {
-    '--left-width': `${leftWidth}px`,
-    '--right-width': `${rightWidth}px`,
-  } as React.CSSProperties & Record<'--left-width' | '--right-width', string>
+  // No inline styles: sidebar widths and handle positions are controlled via CSS classes/variables in fullpage-container.css
+  const gridClasses = [
+    'design-studio-grid',
+    ui.isLeftSidebarVisible ? 'left-open' : 'left-closed',
+    ui.isRightSidebarVisible ? 'right-open' : 'right-closed',
+  ].join(' ');
 
   return (
     <div className="fullpage-container">
       <Suspense fallback={<div className="loading">Loading...</div>}>
-        <div className="design-studio-grid" style={gridStyle}>
-          {/* Header */}
-          <div className="header" style={{ gridArea: 'header' }}>
+        <div className={gridClasses}>
+          {/* Header - spans all three columns */}
+          <header className="header">
             <div className="header-left">
               <div className="logo">
                 <span>💎</span>
@@ -55,20 +48,20 @@ function App() {
                 <ViewportControls />
               </div>
             </div>
-          </div>
+          </header>
 
-          {/* Left Sidebar (Scene Outliner) - always mounted for smooth close */}
-          <div className={`sidebar sidebar-left ${ui.isLeftSidebarVisible ? '' : 'closed'}`} style={{ gridArea: 'sidebar-left' }}>
+          {/* Left Sidebar (Scene Outliner) - MUST be second child to match grid order */}
+          <aside className={`sidebar sidebar-left ${ui.isLeftSidebarVisible ? '' : 'closed'}`}>
             <SceneOutliner 
               objects={session.objects}
               selectedObjectId={session.selectedObjectId}
               onObjectSelect={actions.selectObject}
               onObjectUpdate={(objectId: string, updates: Partial<import('./store/designStore').SceneObject>) => { void actions.updateObject(objectId, updates); }}
             />
-          </div>
+          </aside>
 
-          {/* Main 3D Viewport */}
-          <div className="main-viewport" style={{ gridArea: 'main' }}>
+          {/* Main 3D Viewport - MUST be third child to match grid order */}
+          <main className="main-viewport">
             <Viewport 
               objects={session.objects}
               selectedObjectId={session.selectedObjectId}
@@ -77,29 +70,19 @@ function App() {
               onGLBLayersDetected={actions.addGLBLayers}
               isGenerating={system.isGenerating}
             />
-          </div>
+          </main>
 
-          {/* AI Chat Sidebar (right sidebar) - always mounted for smooth close */}
-          <div className={`sidebar sidebar-right ai-chat-sidebar ${ui.isRightSidebarVisible ? '' : 'closed'}`} style={{ gridArea: 'sidebar-right' }}>
+          {/* Right Sidebar (AI Chat) - MUST be fourth child to match grid order */}
+          <aside className={`sidebar sidebar-right ai-chat-sidebar ${ui.isRightSidebarVisible ? '' : 'closed'}`}>
             <AIChatSidebar 
               onPromptSubmit={(prompt: string) => actions.executeAIPrompt(prompt)}
               isGenerating={system.isGenerating}
             />
-          </div>
+          </aside>
 
-          {/* Properties Inspector (only when object selected) */}
-          {selectedObject && (
-            <div className="properties-inspector">
-              <PropertiesInspector 
-                selectedObject={selectedObject}
-                onObjectUpdate={(objectId: string, updates: Partial<import('./store/designStore').SceneObject>) => actions.updateObject(objectId, updates)}
-              />
-            </div>
-          )}
-          {/* Floating handles */}
+          {/* Floating toggle handles */}
           <button
             className="sidebar-handle left"
-            style={{ left: `${leftHandle}px` }}
             onClick={actions.toggleLeftSidebar}
             aria-label="Toggle left panel"
             title="Toggle Scene Outliner"
@@ -109,7 +92,6 @@ function App() {
 
           <button
             className="sidebar-handle right"
-            style={{ right: `${rightHandle}px` }}
             onClick={actions.toggleRightSidebar}
             aria-label="Toggle right panel"
             title="Toggle AI Chat"

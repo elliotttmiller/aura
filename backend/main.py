@@ -95,6 +95,23 @@ else:
     enhanced_ai_orchestrator = None
 
 # ============================================================================
+# Blender Construction Executor Integration
+# ============================================================================
+try:
+    from backend.blender_construction_executor import create_executor
+    blender_executor = create_executor(BLENDER_PATH)
+    BLENDER_EXECUTOR_AVAILABLE = True
+    logger.info("✓ Blender Construction Executor available")
+except ImportError as e:
+    BLENDER_EXECUTOR_AVAILABLE = False
+    blender_executor = None
+    logger.warning(f"Blender Construction Executor not available: {e}")
+except Exception as e:
+    BLENDER_EXECUTOR_AVAILABLE = False
+    blender_executor = None
+    logger.error(f"Failed to initialize Blender Construction Executor: {e}")
+
+# ============================================================================
 # Scene State Management - Digital Twin Architecture
 # ============================================================================
 
@@ -885,6 +902,45 @@ async def generate_3d_model_enhanced(request: Request):
         
         logger.info(f"🚀 Enhanced AI 3D model generation request: {prompt}")
         
+        # --- MOCK MODE: skip OpenAI and Blender for local testing ---
+        import os
+        mock_mode = os.environ.get('AURA_MOCK_AI', '0') == '1' or request.query_params.get('mock', '0') == '1'
+        if mock_mode:
+            logger.info('🧪 MOCK MODE ENABLED: Returning hardcoded AI response')
+            # Hardcoded mock response
+            mock_result = {
+                "success": True,
+                "object_id": "ai_mock_12345",
+                "construction_plan": {
+                    "type": "jewelry_ring",
+                    "construction_steps": [
+                        {"operation": "create_shank", "parameters": {"profile": "round", "width": 2.0}},
+                        {"operation": "create_head", "parameters": {"type": "prong_setting"}},
+                        {"operation": "create_diamond", "parameters": {"shape": "round", "size": 1.0}}
+                    ]
+                },
+                "material_specifications": {
+                    "primary_material": {
+                        "name": "Gold",
+                        "base_color": "#FFD700",
+                        "roughness": 0.2,
+                        "metallic": 0.9
+                    }
+                },
+                "blender_execution": {
+                    "success": True,
+                    "blend_file": "output/ai_generated/ai_mock_12345.blend",
+                    "glb_file": "output/ai_generated/ai_mock_12345.glb",
+                    "render_file": "output/ai_generated/ai_mock_12345.png",
+                    "execution_time": 1.23
+                },
+                "model_url": "/output/ai_generated/ai_mock_12345.glb",
+                "glb_file": "output/ai_generated/ai_mock_12345.glb",
+                "blend_file": "output/ai_generated/ai_mock_12345.blend",
+                "render_file": "output/ai_generated/ai_mock_12345.png"
+            }
+            return JSONResponse(status_code=200, content=mock_result)
+        
         # Generate 3D model using enhanced orchestrator
         result = enhanced_ai_orchestrator.generate_3d_model(
             user_prompt=prompt,
@@ -892,6 +948,29 @@ async def generate_3d_model_enhanced(request: Request):
             context=context,
             progress_callback=None  # Could implement SSE for progress
         )
+        
+        # If successful and Blender executor available, build actual 3D model
+        if result.get('success', False) and BLENDER_EXECUTOR_AVAILABLE and blender_executor:
+            logger.info("🔨 Executing construction plan with Blender...")
+            
+            execution_result = blender_executor.execute_construction_plan(
+                construction_plan=result.get('construction_plan', []),
+                material_specs=result.get('material_specifications', {}),
+                presentation_plan=result.get('presentation_plan', {}),
+                user_prompt=prompt
+            )
+            
+            if execution_result.get('success'):
+                logger.info(f"✅ 3D model built successfully: {execution_result.get('glb_file')}")
+                result['blender_execution'] = execution_result
+                result['model_url'] = execution_result.get('model_url')
+                result['glb_file'] = execution_result.get('glb_file')
+                result['blend_file'] = execution_result.get('blend_file')
+                result['render_file'] = execution_result.get('render_file')
+            else:
+                logger.warning(f"⚠ Blender execution failed: {execution_result.get('error')}")
+                result['blender_execution'] = execution_result
+                result['blender_error'] = execution_result.get('error')
         
         # If session provided, add generated object to session
         if session_id and result.get('success', False):
@@ -915,8 +994,17 @@ async def generate_3d_model_enhanced(request: Request):
                 new_object.geometry_data = {
                     'construction_plan': result.get('construction_plan', []),
                     'presentation_plan': result.get('presentation_plan', {}),
-                    'ai_metadata': result.get('metadata', {})
+                    'ai_metadata': result.get('metadata', {}),
+                    'blender_files': {
+                        'glb': result.get('glb_file'),
+                        'blend': result.get('blend_file'),
+                        'render': result.get('render_file')
+                    }
                 }
+                
+                # Set model URL if available
+                if result.get('model_url'):
+                    new_object.url = result.get('model_url')
                 
                 # Add to session
                 session.objects[new_object.id] = new_object
