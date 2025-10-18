@@ -128,6 +128,8 @@ class BlenderConstructionExecutor:
                 cmd,
                 capture_output=True,
                 text=True,
+                encoding='utf-8',
+                errors='replace',  # Replace problematic characters instead of failing
                 timeout=300  # 5 minute timeout
             )
             
@@ -136,6 +138,24 @@ class BlenderConstructionExecutor:
             if result.returncode == 0:
                 logger.info(f"✅ Blender execution successful ({execution_time:.2f}s)")
                 
+                # Log Blender output for debugging
+                if result.stdout:
+                    logger.info("Blender output:")
+                    for line in result.stdout.split('\n')[:20]:  # First 20 lines
+                        if line.strip():
+                            logger.info(f"  {line}")
+                
+                # Check if GLB file was created
+                if output_glb.exists():
+                    file_size = output_glb.stat().st_size
+                    logger.info(f"✅ GLB file created: {output_glb.name} ({file_size} bytes)")
+                else:
+                    logger.error(f"❌ GLB file NOT created: {output_glb.as_posix()}")
+                    logger.error("Blender stderr:")
+                    for line in result.stderr.split('\n')[:20]:
+                        if line.strip():
+                            logger.error(f"  {line}")
+                
                 return {
                     "success": True,
                     "glb_file": output_glb.as_posix() if output_glb.exists() else None,
@@ -143,8 +163,10 @@ class BlenderConstructionExecutor:
                     "execution_time": execution_time,
                     "steps_executed": len(construction_plan),
                     "stdout": result.stdout,
+                    "stderr": result.stderr,
                     "model_url": f"/output/ai_generated/{output_glb.name}" if output_glb.exists() else None,
-                    "message": f"GLB model exported: {output_glb.name}" if output_glb.exists() else "GLB export may have failed"
+                    "message": f"GLB model exported: {output_glb.name}" if output_glb.exists() else "⚠️ GLB export failed - check Blender output",
+                    "script_path": str(script_path)  # Keep for debugging
                 }
             else:
                 logger.error(f"❌ Blender execution failed: {result.stderr}")
@@ -314,7 +336,6 @@ try:
         filepath="{output_glb}",
         export_format='GLB',
         export_materials='EXPORT',
-        export_colors=True,
         use_selection=False,
         export_apply=True
     )
