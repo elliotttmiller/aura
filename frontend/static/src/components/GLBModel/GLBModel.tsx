@@ -32,9 +32,9 @@ export default function GLBModel({ url, parentModelId, source, selectedLayerId, 
     if (scene && !isAutoFramed) {
       const box = new Box3().setFromObject(scene)
       const size = box.getSize(new Vector3())
-      const center = box.getCenter(new Vector3())
+  // const center = box.getCenter(new Vector3()) // original center (not needed after grounding)
       
-      // Calculate scale to fit model nicely in view
+  // Calculate scale to fit model nicely in view
       const maxDimension = Math.max(size.x, size.y, size.z)
       
       // Adaptive target size based on original model scale
@@ -72,9 +72,27 @@ export default function GLBModel({ url, parentModelId, source, selectedLayerId, 
       
       const scale = maxDimension > 0 ? targetSize / maxDimension : 1
       
-      // Apply scaling and centering
+      // Apply scaling first
       scene.scale.setScalar(scale)
-      scene.position.copy(center.negate().multiplyScalar(scale))
+
+      // Recalculate bounds after scaling, then center in XZ and elevate above ground
+      const scaledBox = new Box3().setFromObject(scene)
+      const scaledSize = scaledBox.getSize(new Vector3())
+      const scaledCenter = scaledBox.getCenter(new Vector3())
+      
+      // Calculate optimal elevation above grid (10% of model height minimum, 0.02 units minimum)
+      const elevationHeight = Math.max(scaledSize.y * 0.1, 0.02)
+      
+      // XZ to origin, Y elevated above ground
+      const elevatedY = -scaledBox.min.y + elevationHeight
+      const posX = -scaledCenter.x
+      const posZ = -scaledCenter.z
+      scene.position.set(posX, elevatedY, posZ)
+
+      // Store the visual center for camera/controls targeting
+      // This is where the model appears to be centered after elevation
+      const visualCenter = new Vector3(0, elevationHeight + scaledSize.y * 0.5, 0)
+      scene.userData.visualCenter = visualCenter
       
       setIsAutoFramed(true)
       
@@ -83,9 +101,11 @@ export default function GLBModel({ url, parentModelId, source, selectedLayerId, 
         // eslint-disable-next-line no-console
         console.log(`📏 Auto-framing [${scaleStrategy}]: original=${maxDimension.toFixed(4)} units, target=${targetSize}, scale=${scale.toFixed(4)}x`)
         // eslint-disable-next-line no-console
-        console.log(`   Dimensions: ${size.x.toFixed(4)} × ${size.y.toFixed(4)} × ${size.z.toFixed(4)}`)
+        console.log(`   Dimensions (pre-scale): ${size.x.toFixed(4)} × ${size.y.toFixed(4)} × ${size.z.toFixed(4)}`)
         // eslint-disable-next-line no-console
-        console.log(`   Final size: ${(size.x * scale).toFixed(4)} × ${(size.y * scale).toFixed(4)} × ${(size.z * scale).toFixed(4)}`)
+  const finalSize = scaledBox.getSize(new Vector3())
+  // eslint-disable-next-line no-console
+  console.log(`   Final size: ${finalSize.x.toFixed(4)} × ${finalSize.y.toFixed(4)} × ${finalSize.z.toFixed(4)} | elevated @ y=${elevationHeight.toFixed(4)}`)
       }
     }
   }, [scene, isAutoFramed])

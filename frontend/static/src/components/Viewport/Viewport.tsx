@@ -11,6 +11,7 @@ import {
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import GLBModel from '../GLBModel/GLBModel'
+import CollapsibleContainer from '../CollapsibleContainer/CollapsibleContainer'
 import './Viewport.css'
 import { useActions } from '../../store/designStore'
 import { featureFlags } from '../../config/featureFlags'
@@ -115,11 +116,16 @@ export default function Viewport({
     const box = new THREE.Box3().setFromObject(object)
     if (!box.isEmpty()) {
       const size = box.getSize(new THREE.Vector3())
-      const center = box.getCenter(new THREE.Vector3())
+      // Use visual center from userData if available, otherwise compute from box
+      let center = box.getCenter(new THREE.Vector3())
+      if (object.userData?.visualCenter) {
+        center = object.userData.visualCenter.clone()
+      }
+      
       const maxDim = Math.max(size.x, size.y, size.z)
       const padding = 1.2 // add some breathing room
       const fov = (camera.fov * Math.PI) / 180
-  const cameraZ = Math.abs((maxDim * padding) / (2 * Math.tan(fov / 2)))
+      const cameraZ = Math.abs((maxDim * padding) / (2 * Math.tan(fov / 2)))
       // Keep camera above ground slightly and off-axis for depth
       const offset = Math.max(maxDim * 0.5, 0.5)
       const newPos = new THREE.Vector3(center.x + offset, center.y + offset, center.z + cameraZ)
@@ -127,7 +133,7 @@ export default function Viewport({
       camera.near = Math.max(0.001, cameraZ / 1000)
       camera.far = Math.max(50, cameraZ * 10)
       camera.updateProjectionMatrix()
-      // Update orbit controls target if available
+      // Update orbit controls target to the visual center
       if (controlsRef.current) {
         controlsRef.current.target.copy(center)
         controlsRef.current.update()
@@ -139,7 +145,6 @@ export default function Viewport({
       }
     }
   }, [])
-
   const remountCanvas = useCallback(() => setCanvasKey((k) => k + 1), [])
 
   const handleCanvasClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
@@ -199,7 +204,9 @@ export default function Viewport({
         key={canvasKey}
         className="webgl-canvas"
         onClick={handleCanvasClick}
-        onCreated={({ gl }) => {
+        onCreated={({ gl, scene }) => {
+          // Explicitly disable any fog to avoid cloudy look
+          if (scene.fog) scene.fog = null
           const overlayId = 'webgl-lost-overlay'
           gl.domElement.addEventListener('webglcontextlost', (e) => {
             e.preventDefault()
@@ -304,12 +311,14 @@ export default function Viewport({
           {/* Studio Lighting Setup */}
           {renderMode === 'studio' && (
             <>
-              {/* HDRI Environment for realistic reflections */}
-              <Environment 
-                preset="studio"
-                background={false}
-                environmentIntensity={highFidelityLighting ? 1.0 : undefined}
-              />
+              {/* Optional environment reflections */}
+              {!featureFlags.disableEnvironmentHDRI && (
+                <Environment 
+                  preset="studio"
+                  background={false}
+                  environmentIntensity={highFidelityLighting ? 1.0 : undefined}
+                />
+              )}
               
               {/* Key light - main directional lighting with warmer temperature */}
               <directionalLight 
@@ -356,12 +365,14 @@ export default function Viewport({
           {/* Realistic Lighting Setup */}
           {renderMode === 'realistic' && (
             <>
-              {/* Natural environment mapping */}
-              <Environment 
-                preset="city"
-                background={false}
-                environmentIntensity={highFidelityLighting ? 1.2 : undefined}
-              />
+              {/* Optional environment mapping */}
+              {!featureFlags.disableEnvironmentHDRI && (
+                <Environment 
+                  preset="city"
+                  background={false}
+                  environmentIntensity={highFidelityLighting ? 1.2 : undefined}
+                />
+              )}
               
               {/* Natural key light */}
               <directionalLight 
@@ -404,12 +415,14 @@ export default function Viewport({
           {/* Night Mode Lighting Setup */}
           {renderMode === 'night' && (
             <>
-              {/* Dark environment for night mood */}
-              <Environment 
-                preset="night"
-                background={false}
-                environmentIntensity={highFidelityLighting ? 0.5 : undefined}
-              />
+              {/* Optional dark environment */}
+              {!featureFlags.disableEnvironmentHDRI && (
+                <Environment 
+                  preset="night"
+                  background={false}
+                  environmentIntensity={highFidelityLighting ? 0.5 : undefined}
+                />
+              )}
               
               {/* Moonlight key */}
               <directionalLight 
@@ -449,12 +462,16 @@ export default function Viewport({
           
           {/* Professional Grid - Adaptive to mode */}
           <Grid 
-            args={[20, 20]} 
-            cellColor={renderMode === 'night' ? '#2a2b35' : renderMode === 'realistic' ? '#3a3b45' : '#404155'} 
-            sectionColor={renderMode === 'night' ? '#404155' : renderMode === 'realistic' ? '#5a5b65' : '#6a6b75'} 
-            position={[0, -0.5, 0]} 
-            fadeDistance={8} 
-            fadeStrength={0.8} 
+            args={[30, 30]}
+            cellColor={featureFlags.enableBrightGrid
+              ? (renderMode === 'night' ? '#34364a' : renderMode === 'realistic' ? '#3b3e52' : '#444860')
+              : (renderMode === 'night' ? '#2a2b35' : renderMode === 'realistic' ? '#3a3b45' : '#404155')}
+            sectionColor={featureFlags.enableBrightGrid
+              ? (renderMode === 'night' ? '#5a5f78' : renderMode === 'realistic' ? '#6b7090' : '#747aa0')
+              : (renderMode === 'night' ? '#404155' : renderMode === 'realistic' ? '#5a5b65' : '#6a6b75')}
+            position={[0, 0, 0]} 
+            fadeDistance={featureFlags.enableBrightGrid ? 12 : 8} 
+            fadeStrength={featureFlags.enableBrightGrid ? 0.5 : 0.8}
             cellSize={0.1} 
             sectionSize={1.0} 
             infiniteGrid 
@@ -499,9 +516,8 @@ export default function Viewport({
             rotateSpeed={0.5} 
             zoomSpeed={1.2} 
             panSpeed={0.5} 
-            minDistance={0.05} 
-            maxDistance={50} 
-            maxPolarAngle={Math.PI / 2} 
+            minDistance={0.02} 
+            maxDistance={200} 
             target={[0, 0, 0]} 
           />
         </Suspense>
@@ -523,24 +539,29 @@ export default function Viewport({
         </div>
       )}
       <div className="viewport-controls">
-        <div className="controls-group">
-          <button className={`viewport-btn ${showWireframe ? 'active' : ''}`} onClick={handleToggleWireframe} title="Toggle Wireframe">▦ Wireframe</button>
-          <button className={`viewport-btn ${showGrid ? 'active' : ''}`} onClick={handleToggleGrid} title="Toggle Grid">⊞ Grid</button>
-          <button className="viewport-btn viewport-btn-trash" onClick={() => { void actions.initializeSession(); }} title="Delete current model and start new project">🗑️ New Project</button>
-          <button
-            className={`viewport-btn ${isEffectiveSafe ? 'active' : ''}`}
-            onClick={() => { if (!forcedSafe) { setRendererMode(m => m === 'safe' ? 'normal' : 'safe'); remountCanvas(); } }}
-            disabled={forcedSafe}
-            title={forcedSafe ? 'Safe mode forced via URL (?safe=1)' : 'Toggle Performance Mode (Safe)'}
-          >
-            ⚡ Performance
-          </button>
-        </div>
-        <div className="controls-group">
-          <button className={`viewport-btn ${renderMode === 'realistic' ? 'active' : ''}`} onClick={() => handleSetRenderMode('realistic')} title="Realistic Rendering">✨ Real</button>
-          <button className={`viewport-btn ${renderMode === 'studio' ? 'active' : ''}`} onClick={() => handleSetRenderMode('studio')} title="Studio Lighting">💡 Studio</button>
-          <button className={`viewport-btn ${renderMode === 'night' ? 'active' : ''}`} onClick={() => handleSetRenderMode('night')} title="Night Mode">🌙 Night</button>
-        </div>
+        <CollapsibleContainer title="Display Options" icon="👁️" defaultOpen={true} className="compact">
+          <div className="controls-group">
+            <button className={`viewport-btn ${showWireframe ? 'active' : ''}`} onClick={handleToggleWireframe} title="Toggle Wireframe">▦ Wireframe</button>
+            <button className={`viewport-btn ${showGrid ? 'active' : ''}`} onClick={handleToggleGrid} title="Toggle Grid">⊞ Grid</button>
+            <button className="viewport-btn viewport-btn-trash" onClick={() => { void actions.initializeSession(); }} title="Delete current model and start new project">🗑️ New Project</button>
+            <button
+              className={`viewport-btn ${isEffectiveSafe ? 'active' : ''}`}
+              onClick={() => { if (!forcedSafe) { setRendererMode(m => m === 'safe' ? 'normal' : 'safe'); remountCanvas(); } }}
+              disabled={forcedSafe}
+              title={forcedSafe ? 'Safe mode forced via URL (?safe=1)' : 'Toggle Performance Mode (Safe)'}
+            >
+              ⚡ Performance
+            </button>
+          </div>
+        </CollapsibleContainer>
+
+        <CollapsibleContainer title="Lighting Mode" icon="💡" defaultOpen={true} className="compact">
+          <div className="controls-group">
+            <button className={`viewport-btn ${renderMode === 'realistic' ? 'active' : ''}`} onClick={() => handleSetRenderMode('realistic')} title="Realistic Rendering">✨ Real</button>
+            <button className={`viewport-btn ${renderMode === 'studio' ? 'active' : ''}`} onClick={() => handleSetRenderMode('studio')} title="Studio Lighting">💡 Studio</button>
+            <button className={`viewport-btn ${renderMode === 'night' ? 'active' : ''}`} onClick={() => handleSetRenderMode('night')} title="Night Mode">🌙 Night</button>
+          </div>
+        </CollapsibleContainer>
       </div>
       <div className="performance-indicator"><div className="fps-badge"><span className="fps-label">Render:</span><span className="fps-value">60 FPS</span></div></div>
     </div>

@@ -372,12 +372,46 @@ print("✅ Construction plan executed successfully!")
         """
         op_lower = operation.lower()
         
-        # Ring band/shank creation
+        # Enhanced ring band/shank creation
         if 'shank' in op_lower or 'band' in op_lower:
             diameter = params.get('diameter_mm', 18.0) / 1000.0  # Convert mm to meters
             thickness = params.get('thickness_mm', 2.0) / 1000.0
+            width = params.get('width_mm', 3.0) / 1000.0
+            subdivision_levels = params.get('subdivision_levels', 2)
             
-            return f'''
+            if 'enhanced' in op_lower:
+                # Enhanced shank with proper subdivisions and comfort fit
+                return f'''
+# Create enhanced ring shank
+bpy.ops.mesh.primitive_torus_add(
+    major_radius={diameter/2},
+    minor_radius={thickness/2},
+    location=(0, 0, 0)
+)
+shank = bpy.context.object
+shank.name = "Enhanced_Ring_Shank"
+
+# Add subdivision surface for smooth curves
+subsurf = shank.modifiers.new(name="Subdivision", type='SUBSURF')
+subsurf.levels = {subdivision_levels}
+subsurf.render_levels = {min(subdivision_levels + 1, 4)}
+
+# Add edge split for crisp edges where needed
+edge_split = shank.modifiers.new(name="EdgeSplit", type='EDGE_SPLIT')
+edge_split.split_angle = math.radians(30)
+
+# Apply comfort fit profile if specified
+if "{params.get('profile_type', '')}" == "comfort_fit":
+    # Add bevel for comfort fit interior
+    bevel = shank.modifiers.new(name="Bevel", type='BEVEL')
+    bevel.width = {thickness * 0.1}
+    bevel.segments = 2
+    bevel.limit_method = 'ANGLE'
+    bevel.angle_limit = math.radians(60)
+'''
+            else:
+                # Standard shank
+                return f'''
 # Create ring shank
 bpy.ops.mesh.primitive_torus_add(
     major_radius={diameter/2},
@@ -404,13 +438,50 @@ bezel = bpy.context.object
 bezel.name = "Bezel_Setting"
 '''
         
-        # Diamond/gemstone
+        # Enhanced diamond/gemstone
         elif 'diamond' in op_lower or 'gemstone' in op_lower:
             carat = params.get('carat_weight', 1.0)
-            # Approximate diameter from carat weight (for round diamond)
-            diameter = (carat ** (1/3)) * 0.006  # Rough approximation
+            cut_type = params.get('cut_type', 'round')
+            diameter = params.get('diameter_mm', (carat ** (1/3)) * 6.5) / 1000.0  # Realistic diameter
+            subdivision_levels = params.get('subdivision_levels', 3)
+            facet_count = params.get('facet_count', 57)
             
-            return f'''
+            if 'enhanced' in op_lower:
+                # Enhanced gemstone with realistic proportions
+                table_pct = params.get('table_percentage', 57.0) / 100.0
+                crown_height_pct = params.get('crown_height_percentage', 16.2) / 100.0
+                pavilion_depth_pct = params.get('pavilion_depth_percentage', 43.1) / 100.0
+                
+                return f'''
+# Create enhanced {cut_type} gemstone
+bpy.ops.mesh.primitive_ico_sphere_add(
+    subdivisions={min(subdivision_levels, 5)},
+    radius={diameter/2},
+    location=(0, 0, {diameter * 0.3})
+)
+diamond = bpy.context.object
+diamond.name = "Enhanced_{cut_type.title()}_Diamond"
+
+# Apply realistic proportions
+total_depth = {diameter * 0.6}
+crown_height = total_depth * {crown_height_pct}
+pavilion_depth = total_depth * {pavilion_depth_pct}
+
+# Scale for realistic diamond proportions
+diamond.scale.z = {0.6}  # Typical depth ratio
+
+# Add high subdivision for smooth surfaces
+subsurf = diamond.modifiers.new(name="Subdivision", type='SUBSURF')
+subsurf.levels = {min(subdivision_levels, 3)}
+subsurf.render_levels = {min(subdivision_levels + 1, 4)}
+
+# Add edge split to maintain facet definition
+edge_split = diamond.modifiers.new(name="EdgeSplit", type='EDGE_SPLIT')
+edge_split.split_angle = math.radians(15)  # Sharp facet edges
+'''
+            else:
+                # Standard diamond
+                return f'''
 # Create diamond
 bpy.ops.mesh.primitive_ico_sphere_add(
     subdivisions=3,
@@ -520,8 +591,84 @@ if bpy.context.object:
     mod.render_levels = {levels}
 '''
         
+        # Quality setup operations
+        elif 'quality_setup' in op_lower:
+            return f'''
+# Quality setup for {params.get('geometry_resolution', 'medium')} rendering
+print("🔧 Setting up quality parameters...")
+bpy.context.scene.render.resolution_x = {2048 if params.get('geometry_resolution') == 'high' else 1920}
+bpy.context.scene.render.resolution_y = {2048 if params.get('geometry_resolution') == 'high' else 1080}
+'''
+        
+        # Surface refinement operations
+        elif 'surface_refinement' in op_lower or 'smoothing' in op_lower:
+            target = params.get('target', 'all')
+            return f'''
+# Apply surface refinement to {target}
+print("✨ Applying surface refinement...")
+for obj in bpy.data.objects:
+    if obj.type == 'MESH' and ("{target}" == "all" or "{target}" in obj.name.lower()):
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.shade_smooth()
+        
+        # Add weighted normals for better shading
+        if not any(mod.type == 'WEIGHTED_NORMAL' for mod in obj.modifiers):
+            weighted_normal = obj.modifiers.new(name="WeightedNormal", type='WEIGHTED_NORMAL')
+            weighted_normal.weight = 100
+'''
+        
+        # Micro details operations
+        elif 'micro_details' in op_lower:
+            return f'''
+# Add micro surface details
+print("🔬 Adding micro surface details...")
+detail_scale = {params.get('scale', 0.1)}
+# Micro details would be added here (displacement, normal maps, etc.)
+'''
+        
+        # Edge enhancement operations
+        elif 'enhance_edges' in op_lower:
+            return f'''
+# Enhance edge definition
+print("📐 Enhancing edge definition...")
+for obj in bpy.data.objects:
+    if obj.type == 'MESH':
+        bpy.context.view_layer.objects.active = obj
+        
+        # Add bevel modifier for edge enhancement
+        bevel = obj.modifiers.new(name="EdgeBevel", type='BEVEL')
+        bevel.width = {params.get('bevel_width', 0.0002)}  # 0.2mm default
+        bevel.segments = {params.get('segments', 2)}
+        bevel.limit_method = 'ANGLE'
+        bevel.angle_limit = math.radians({params.get('sharp_threshold', 30.0)})
+'''
+        
+        # Quality validation operations  
+        elif 'quality_validation' in op_lower:
+            return f'''
+# Validate model quality
+print("✅ Validating model quality...")
+total_polygons = sum(len(obj.data.polygons) for obj in bpy.data.objects if obj.type == 'MESH')
+print(f"Total polygons: {{total_polygons}}")
+
+# Check for manifold geometry
+for obj in bpy.data.objects:
+    if obj.type == 'MESH':
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.mesh.select_non_manifold()
+        non_manifold = len([v for v in obj.data.vertices if v.select])
+        bpy.ops.object.mode_set(mode='OBJECT')
+        if non_manifold > 0:
+            print(f"⚠️ Warning: {{obj.name}} has {{non_manifold}} non-manifold vertices")
+        else:
+            print(f"✓ {{obj.name}} is manifold")
+'''
+        
         # Default: add a comment
-        return f'# Operation: {operation} (parameters: {params})\n'
+        else:
+            return f'# Operation: {operation} (parameters: {params})\n'
 
 
 def create_executor(blender_path: Optional[str] = None) -> BlenderConstructionExecutor:

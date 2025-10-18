@@ -28,6 +28,7 @@ from typing import Dict, Any, Optional, List
 
 from backend.ai_3d_model_generator import AI3DModelGenerator, ModelComplexity
 from backend.ai_provider_manager import AIProviderManager, AIProvider
+from backend.construction_plan_optimizer import optimize_ai_construction_plan
 
 logger = logging.getLogger(__name__)
 
@@ -129,11 +130,23 @@ class EnhancedAIOrchestrator:
             self._report_progress(progress_callback, "Generating material specifications...", 50)
             material_specs = self._generate_material_specs(design_analysis)
             
-            # Phase 4: Validation and Enhancement
-            self._report_progress(progress_callback, "Validating and enhancing design...", 70)
-            validated_plan = self._validate_construction_plan(construction_result)
+            # Phase 4: Construction Plan Optimization
+            self._report_progress(progress_callback, "Optimizing construction plan for professional quality...", 60)
+            optimized_plan = optimize_ai_construction_plan(
+                construction_result.get('construction_plan', []),
+                quality_level=complexity,
+                jewelry_type=design_analysis.get('jewelry_type', 'ring'),
+                user_prompt=user_prompt
+            )
             
-            # Phase 5: Final Assembly
+            # Phase 5: Validation and Enhancement
+            self._report_progress(progress_callback, "Validating and enhancing design...", 70)
+            validated_plan = self._validate_construction_plan({
+                **construction_result,
+                'construction_plan': optimized_plan
+            })
+            
+            # Phase 6: Final Assembly
             self._report_progress(progress_callback, "Assembling final design package...", 90)
             final_result = self._assemble_final_package(
                 user_prompt,
