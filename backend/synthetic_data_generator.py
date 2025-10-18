@@ -250,16 +250,17 @@ class SyntheticDataGenerator:
             for param_name, param_value in parameters.items():
                 if isinstance(param_value, (int, float)):
                     if param_name in self.parameter_ranges:
-                        min_val, max_val = self.parameter_ranges[param_name]
-                        if isinstance(self.parameter_ranges[param_name], tuple):
+                        param_range = self.parameter_ranges[param_name]
+                        if isinstance(param_range, tuple):
                             # Continuous parameter
+                            min_val, max_val = param_range
                             variation = (max_val - min_val) * self.mutation_intensity * random.uniform(-1, 1)
                             new_value = max(min_val, min(max_val, param_value + variation))
                             parameters[param_name] = round(new_value, 2)
-                        else:
+                        elif isinstance(param_range, list):
                             # Discrete parameter
                             if random.random() < self.mutation_intensity:
-                                parameters[param_name] = random.choice(self.parameter_ranges[param_name])
+                                parameters[param_name] = random.choice(param_range)
                                 
                 # Mutate categorical parameters
                 elif isinstance(param_value, str):
