@@ -318,7 +318,16 @@ export const useDesignStore = create<DesignStoreState>()(
     // Add GLB Layers as individual objects
     // Layer ids must be globally unique: `${modelId}_layer_${child.uuid}`
   addGLBLayers: (modelId: string, layers: Array<{id: string, name: string, mesh: import('three').Mesh}>) => {
-      const layerObjects: SceneObject[] = layers.map(layer => ({
+      // Filter out any layers that already exist to prevent duplicates
+      const existingLayerIds = new Set(get().session.objects.filter(obj => obj.isLayer && obj.parentModelId === modelId).map(obj => obj.id))
+      const newLayers = layers.filter(layer => !existingLayerIds.has(layer.id))
+      
+      if (newLayers.length === 0) {
+        // No new layers to add, all already exist
+        return
+      }
+      
+      const layerObjects: SceneObject[] = newLayers.map(layer => ({
         id: layer.id, // already unique from GLBModel
         name: layer.name,
         type: 'glb_layer',
@@ -461,8 +470,23 @@ export const useDesignStore = create<DesignStoreState>()(
                 roughness: data.material_specifications?.primary_material?.roughness || 0.2,
                 metallic: data.material_specifications?.primary_material?.metallic || 0.8
               },
-              // Store GLB file path if Blender executed successfully
-              url: data.model_url || data.glb_file
+              // Convert full file path to relative URL for frontend serving
+              url: (() => {
+                if (data.model_url) {
+                  return data.model_url // Use provided URL directly
+                } else if (data.glb_file) {
+                  // Convert full file path to relative URL
+                  const fullPath = data.glb_file.replace(/\\/g, '/') // Normalize path separators
+                  const outputIndex = fullPath.indexOf('/output/')
+                  if (outputIndex !== -1) {
+                    return fullPath.substring(outputIndex) // Extract "/output/ai_generated/filename.glb"
+                  }
+                  // Fallback: try to extract just the filename and assume it's in ai_generated
+                  const filename = fullPath.split('/').pop()
+                  return `/output/ai_generated/${filename}`
+                }
+                return null
+              })()
             }
             
             // Add the AI-generated object to the scene

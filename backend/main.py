@@ -385,19 +385,14 @@ async def generate_3d_model(prompt: str, ai_response: Dict[str, Any], session_id
         else:
             logger.info("Blender not available, using fallback mode")
         
-        # Fallback mode: Use placeholder with intelligent properties
-        logger.info("Using fallback generation mode")
+        # If Blender is not available, return an error instead of using placeholder
+        logger.error("Cannot generate 3D model: Blender construction executor not available")
         
         return {
-            "success": True,
-            "model_url": "/3d_models/diamond_ring_example.glb",  # Use example GLB
-            "model_name": f"AI Analyzed {generation_params['jewelry_type'].title()}",
-            "details": {
-                "generation_time": 0.5,
-                "quality_score": 0.7,  # Lower score for fallback
-                "parameters": generation_params
-            },
-            "generation_method": "fallback",
+            "success": False,
+            "error": "3D model generation requires Blender",
+            "message": "The AI can analyze your request but cannot generate the 3D model without Blender support.",
+            "generation_method": "unavailable",
             "fallback_reason": "Blender not available or generation failed"
         }
 

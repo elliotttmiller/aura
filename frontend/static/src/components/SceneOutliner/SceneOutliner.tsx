@@ -55,6 +55,16 @@ const SceneOutliner = memo(function SceneOutliner({
     }
   })
 
+  // Debug: Check for duplicate IDs in development
+  if (process.env.NODE_ENV === 'development') {
+    const allIds = objects.map(obj => obj.id)
+    const duplicateIds = allIds.filter((id, index) => allIds.indexOf(id) !== index)
+    if (duplicateIds.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn('⚠️ SceneOutliner: Duplicate object IDs detected:', duplicateIds)
+    }
+  }
+
   return (
     <div className="sidebar">
       <div className="panel-title">Scene Outliner</div>
@@ -69,8 +79,8 @@ const SceneOutliner = memo(function SceneOutliner({
         ) : (
           <>
             {/* GLB Models with their layers */}
-            {glbModels.map(model => (
-              <div key={model.id} className="model-group">
+            {glbModels.map((model, index) => (
+              <div key={`${model.id}_${index}`} className="model-group"> {/* Use both ID and index to guarantee uniqueness */}
                 <div 
                   className={`scene-object model-header ${model.id === selectedObjectId ? 'selected' : ''}`}
                   onClick={() => onObjectSelect(model.id)}
@@ -98,9 +108,9 @@ const SceneOutliner = memo(function SceneOutliner({
                 {/* Model layers */}
                 {layersGroupedByModel[model.id] && (
                   <div className="layer-group">
-                    {layersGroupedByModel[model.id].map(layer => (
+                    {layersGroupedByModel[model.id].map((layer, index) => (
                       <div 
-                        key={layer.id}
+                        key={`${layer.id}_${index}`} // Use both ID and index to guarantee uniqueness
                         className={`scene-object layer ${layer.id === selectedObjectId ? 'selected' : ''}`}
                         onClick={() => onObjectSelect(layer.id)}
                       >
@@ -130,9 +140,9 @@ const SceneOutliner = memo(function SceneOutliner({
             ))}
 
             {/* Regular objects */}
-            {regularObjects.map(object => (
+            {regularObjects.map((object, index) => (
               <div 
-                key={object.id}
+                key={`${object.id}_${index}`} // Use both ID and index to guarantee uniqueness
                 className={`scene-object ${object.id === selectedObjectId ? 'selected' : ''}`}
                 onClick={() => onObjectSelect(object.id)}
               >

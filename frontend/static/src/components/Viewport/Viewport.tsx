@@ -237,12 +237,22 @@ export default function Viewport({
           {!isEffectiveSafe && renderMode === 'night' && (<ambientLight intensity={0.2} />)}
           <Grid args={[20, 20]} cellColor="#667eea" sectionColor="#764ba2" position={[0, -2, 0]} fadeDistance={30} fadeStrength={1} cellSize={0.5} sectionSize={2} infiniteGrid visible={showGrid} />
           {glbModels.map(obj => {
-            // Use object's URL if available, otherwise use default example
-            const modelUrl = obj.url || '/3d_models/diamond_ring_example.glb'
+            // Only render AI-generated models with valid URLs
+            if (!obj.url) {
+              console.warn(`⚠️ GLB model ${obj.id} has no URL, skipping render`)
+              return null
+            }
+            
+            // Ensure URL starts with /output (AI-generated) - no static models allowed
+            if (!obj.url.startsWith('/output/')) {
+              console.warn(`⚠️ GLB model ${obj.id} URL ${obj.url} is not an AI-generated model, skipping render`)
+              return null
+            }
+            
             return (
-              <GLBModel key={obj.id} url={modelUrl} parentModelId={obj.id} selectedLayerId={selectedObjectId} onLayerSelect={onLayerSelect} onLayersDetected={handleGLBLayersDetected} />
+              <GLBModel key={obj.id} url={obj.url} parentModelId={obj.id} selectedLayerId={selectedObjectId} onLayerSelect={onLayerSelect} onLayersDetected={handleGLBLayersDetected} />
             )
-          })}
+          }).filter(Boolean)}
           {regularObjects.map(obj => (
             <SceneObjectMesh key={obj.id} object={obj} isSelected={selectedObjectId === obj.id} onSelect={() => onObjectSelect(obj.id)} />
           ))}
