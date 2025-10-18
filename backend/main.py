@@ -760,15 +760,28 @@ async def serve_ai_generated_file(filename: str):
             logger.error(f"Rejected AI file request: {filename} (invalid extension)")
             return Response(status_code=400)
         
-        file_path = os.path.join(OUTPUT_DIR, "ai_generated", filename)
-        if os.path.exists(file_path):
+        # Some deployments set OUTPUT_DIR to the ai_generated folder already
+        # (e.g. 'output/ai_generated'). Handle both cases to avoid a doubled
+        # path like .../output/ai_generated/ai_generated/<file> which causes 404s.
+        candidate_paths = [
+            os.path.join(OUTPUT_DIR, filename),
+            os.path.join(OUTPUT_DIR, "ai_generated", filename),
+        ]
+
+        file_path = None
+        for p in candidate_paths:
+            if os.path.exists(p):
+                file_path = p
+                break
+
+        if file_path:
             logger.info(f"Serving AI file from output dir: {file_path}")
-            
             # Set appropriate media type based on extension
             media_type = "model/gltf-binary" if filename.lower().endswith('.glb') else "application/octet-stream"
             return FileResponse(file_path, media_type=media_type)
         else:
-            logger.error(f"AI file not found in output dir: {filename}")
+            logger.error(f"AI file not found in output dir (checked candidate paths): {filename}")
+            logger.debug(f"Checked paths: {candidate_paths}")
             return Response(status_code=404)
     except Exception as e:
         logger.exception('Exception serving AI-generated file')
