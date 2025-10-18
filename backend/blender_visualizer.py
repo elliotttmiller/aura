@@ -73,35 +73,60 @@ class BlenderVisualizationEngine:
         logger.info("🎬 Professional jewelry scene configured")
 
     def _setup_studio_lighting(self):
-        """Create professional studio lighting setup for jewelry."""
-        # Key light (main illumination)
+        """Create professional studio lighting setup for jewelry photography."""
+        # Professional 3-point lighting setup with enhanced intensity for jewelry
+        
+        # Key light (main illumination) - Warm, strong directional light
         bpy.ops.object.light_add(type='AREA', location=(0.05, -0.05, 0.08))
         key_light = bpy.context.active_object
         key_light.name = "Key_Light"
-        key_light.data.energy = 50
-        key_light.data.size = 0.02
-        key_light.data.color = (1.0, 0.95, 0.9)  # Warm white
+        key_light.data.energy = 80  # Increased for better metal reflections
+        key_light.data.size = 0.025
+        key_light.data.color = (1.0, 0.96, 0.88)  # Warm white (5000K)
+        key_light.rotation_euler = (0.785, 0, -0.785)  # 45-degree angle
 
-        # Fill light (soften shadows)
-        bpy.ops.object.light_add(type='AREA', location=(-0.03, -0.03, 0.05))
+        # Fill light (soften shadows) - Cool, softer light
+        bpy.ops.object.light_add(type='AREA', location=(-0.04, -0.04, 0.06))
         fill_light = bpy.context.active_object
         fill_light.name = "Fill_Light"
-        fill_light.data.energy = 20
-        fill_light.data.size = 0.03
-        fill_light.data.color = (0.9, 0.95, 1.0)  # Cool white
+        fill_light.data.energy = 35  # Increased for better shadow fill
+        fill_light.data.size = 0.04  # Larger for softer shadows
+        fill_light.data.color = (0.88, 0.92, 1.0)  # Cool white (6500K)
 
-        # Rim light (edge definition)
-        bpy.ops.object.light_add(type='SPOT', location=(0, 0.04, 0.06))
+        # Rim light (edge definition and material separation)
+        bpy.ops.object.light_add(type='SPOT', location=(0, 0.05, 0.07))
         rim_light = bpy.context.active_object
         rim_light.name = "Rim_Light"
-        rim_light.data.energy = 30
-        rim_light.data.spot_size = 1.2
+        rim_light.data.energy = 45  # Increased for better edge highlights
+        rim_light.data.spot_size = 1.0
+        rim_light.data.spot_blend = 0.3
+        rim_light.data.color = (1.0, 0.98, 0.92)  # Neutral warm
+        
+        # Additional accent lights for jewelry sparkle
+        # Top accent (for gemstone brilliance)
+        bpy.ops.object.light_add(type='POINT', location=(0, 0, 0.1))
+        top_accent = bpy.context.active_object
+        top_accent.name = "Top_Accent"
+        top_accent.data.energy = 25
+        top_accent.data.color = (1.0, 1.0, 1.0)  # Pure white for sparkle
+        
+        # Side accent (for metal highlights)
+        bpy.ops.object.light_add(type='POINT', location=(0.06, 0, 0.04))
+        side_accent = bpy.context.active_object
+        side_accent.name = "Side_Accent"
+        side_accent.data.energy = 20
+        side_accent.data.color = (1.0, 0.98, 0.95)  # Warm highlight
+        
+        # Enable shadows for all lights that support it
+        for light_obj in [key_light, rim_light]:
+            if hasattr(light_obj.data, 'use_shadow'):
+                light_obj.data.use_shadow = True
 
-        logger.info("🎬 Studio lighting configured")
+        logger.info("🎬 Professional jewelry studio lighting configured (5-light setup)")
 
     def _setup_jewelry_camera(self):
-        """Setup professional camera for jewelry photography."""
-        # Add camera
+        """Setup professional camera for jewelry photography with cinematic depth of field."""
+        # Add camera with professional positioning
         bpy.ops.object.camera_add(location=(0.03, -0.04, 0.02))
         camera = bpy.context.active_object
         camera.name = "Jewelry_Camera"
@@ -110,40 +135,76 @@ class BlenderVisualizationEngine:
         direction = Vector((0, 0, 0)) - camera.location
         camera.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
 
-        # Professional camera settings
-        camera.data.lens = 85  # Portrait lens equivalent
+        # Professional camera settings for jewelry photography
+        camera.data.lens = 85  # Portrait lens equivalent (85mm)
         camera.data.dof.use_dof = True
         camera.data.dof.focus_distance = (camera.location - Vector((0, 0, 0))).length
-        camera.data.dof.aperture_fstop = 5.6
+        camera.data.dof.aperture_fstop = 2.8  # Wider aperture for shallow depth of field
+        camera.data.dof.aperture_blades = 9  # More blades for rounder bokeh
+        camera.data.dof.aperture_rotation = 0
+        camera.data.dof.aperture_ratio = 1.0
+        
+        # Sensor settings for full-frame equivalent
+        camera.data.sensor_width = 36  # Full-frame sensor
+        camera.data.sensor_height = 24
+        camera.data.sensor_fit = 'AUTO'
 
         # Set as active camera
         bpy.context.scene.camera = camera
 
-        logger.info("🎬 Professional jewelry camera configured")
+        logger.info("🎬 Professional jewelry camera configured (85mm f/2.8)")
 
     def _setup_cycles_rendering(self):
-        """Configure Cycles for high-quality jewelry rendering."""
+        """Configure Cycles for high-quality professional jewelry rendering."""
         # Set Cycles as rendering engine
         bpy.context.scene.render.engine = 'CYCLES'
 
-        # Professional quality settings
-        bpy.context.scene.cycles.samples = 512  # High quality samples
-        bpy.context.scene.cycles.preview_samples = 128
+        # Professional quality settings - enhanced for jewelry
+        bpy.context.scene.cycles.samples = 1024  # Higher samples for cleaner metals
+        bpy.context.scene.cycles.preview_samples = 256  # Better viewport preview
+        bpy.context.scene.cycles.use_adaptive_sampling = True
+        bpy.context.scene.cycles.adaptive_threshold = 0.01  # Tighter threshold
 
-        # Denoising for clean results
+        # Advanced denoising for ultra-clean results
         bpy.context.scene.cycles.use_denoising = True
         bpy.context.view_layer.cycles.use_denoising = True
+        bpy.context.view_layer.cycles.denoising_store_passes = True
+        
+        # Light paths for realistic caustics and reflections
+        bpy.context.scene.cycles.max_bounces = 12  # More bounces for metals
+        bpy.context.scene.cycles.diffuse_bounces = 4
+        bpy.context.scene.cycles.glossy_bounces = 8  # Important for jewelry
+        bpy.context.scene.cycles.transmission_bounces = 12  # For diamonds
+        bpy.context.scene.cycles.volume_bounces = 0
+        bpy.context.scene.cycles.transparent_max_bounces = 8
+        
+        # Caustics for realistic gemstone light behavior
+        bpy.context.scene.cycles.caustics_reflective = True
+        bpy.context.scene.cycles.caustics_refractive = True
+        bpy.context.scene.cycles.blur_glossy = 0.5
 
-        # Professional rendering resolution
-        bpy.context.scene.render.resolution_x = 3840  # 4K
+        # Professional rendering resolution (4K)
+        bpy.context.scene.render.resolution_x = 3840
         bpy.context.scene.render.resolution_y = 2160
         bpy.context.scene.render.resolution_percentage = 100
+        
+        # Film settings for professional output
+        bpy.context.scene.render.film_transparent = False
+        bpy.context.scene.cycles.film_exposure = 1.0
+        bpy.context.scene.cycles.pixel_filter_type = 'BLACKMAN_HARRIS'  # Sharp filter
 
-        # Color management for jewelry
-        bpy.context.scene.view_settings.view_transform = 'Standard'
-        bpy.context.scene.view_settings.look = 'Medium High Contrast'
+        # Color management for jewelry - ACES workflow
+        bpy.context.scene.view_settings.view_transform = 'Filmic'
+        bpy.context.scene.view_settings.look = 'High Contrast'
+        bpy.context.scene.sequencer_colorspace_settings.name = 'sRGB'
+        
+        # Output format settings
+        bpy.context.scene.render.image_settings.file_format = 'PNG'
+        bpy.context.scene.render.image_settings.color_mode = 'RGBA'
+        bpy.context.scene.render.image_settings.color_depth = '16'  # 16-bit for more color data
+        bpy.context.scene.render.image_settings.compression = 15
 
-        logger.info("🎬 Cycles rendering engine configured for jewelry quality")
+        logger.info("🎬 Cycles rendering engine configured for professional jewelry quality (1024 samples, caustics enabled)")
 
     def import_nurbs_geometry(self, file_path: str) -> Dict[str, Any]:
         """
@@ -222,54 +283,194 @@ class BlenderVisualizationEngine:
         return created_objects
 
     def _create_professional_gold_material(self) -> bpy.types.Material:
-        """Create professional 18K gold material with PBR properties."""
-        material = bpy.data.materials.new(name="18K_Gold")
+        """Create professional 18K gold material with advanced PBR properties."""
+        material = bpy.data.materials.new(name="18K_Gold_Professional")
         material.use_nodes = True
         nodes = material.node_tree.nodes
+        links = material.node_tree.links
         nodes.clear()
 
-        # Material nodes
+        # Create shader nodes for professional gold
         principled = nodes.new(type='ShaderNodeBsdfPrincipled')
+        principled.location = (0, 0)
         output = nodes.new(type='ShaderNodeOutputMaterial')
+        output.location = (300, 0)
 
-        # Gold properties
-        principled.inputs['Base Color'].default_value = (1.0, 0.766, 0.336, 1.0)  # Gold color
-        principled.inputs['Metallic'].default_value = 1.0
-        principled.inputs['Roughness'].default_value = 0.1  # Very reflective
-        principled.inputs['IOR'].default_value = 0.47  # Gold IOR
+        # Professional 18K yellow gold properties (physically accurate)
+        # Base color based on real gold spectral reflectance
+        principled.inputs['Base Color'].default_value = (1.0, 0.766, 0.336, 1.0)
+        principled.inputs['Metallic'].default_value = 1.0  # Pure metallic
+        principled.inputs['Roughness'].default_value = 0.08  # Polished gold (very low roughness)
+        principled.inputs['Specular IOR Level'].default_value = 0.5
+        principled.inputs['Anisotropic'].default_value = 0.0  # Isotropic for polished gold
+        
+        # Advanced subsurface parameters for realistic metal appearance
+        principled.inputs['Sheen Weight'].default_value = 0.0
+        principled.inputs['Coat Weight'].default_value = 0.0
+        
+        # Transmission settings (metals don't transmit light)
+        principled.inputs['Transmission Weight'].default_value = 0.0
+        
+        # Add subtle texture variation for realism
+        tex_coord = nodes.new(type='ShaderNodeTexCoord')
+        tex_coord.location = (-600, 0)
+        
+        noise_texture = nodes.new(type='ShaderNodeTexNoise')
+        noise_texture.location = (-400, -200)
+        noise_texture.inputs['Scale'].default_value = 500.0  # Very fine texture
+        noise_texture.inputs['Detail'].default_value = 8.0
+        noise_texture.inputs['Roughness'].default_value = 0.5
+        
+        color_ramp = nodes.new(type='ShaderNodeValToRGB')
+        color_ramp.location = (-200, -200)
+        color_ramp.color_ramp.elements[0].position = 0.48
+        color_ramp.color_ramp.elements[1].position = 0.52
+        
+        # Connect subtle texture to roughness for micro-surface detail
+        links.new(tex_coord.outputs['Object'], noise_texture.inputs['Vector'])
+        links.new(noise_texture.outputs['Fac'], color_ramp.inputs['Fac'])
+        
+        # Mix subtle variation with base roughness
+        mix_node = nodes.new(type='ShaderNodeMix')
+        mix_node.location = (-100, -100)
+        mix_node.data_type = 'FLOAT'
+        mix_node.inputs[0].default_value = 0.05  # Very subtle effect
+        mix_node.inputs[2].default_value = 0.08  # Base roughness
+        links.new(color_ramp.outputs['Color'], mix_node.inputs[3])
+        links.new(mix_node.outputs[1], principled.inputs['Roughness'])
 
-        # Connect nodes
-        material.node_tree.links.new(principled.outputs['BSDF'], output.inputs['Surface'])
+        # Connect to output
+        links.new(principled.outputs['BSDF'], output.inputs['Surface'])
 
-        logger.info("🎬 Professional gold material created")
+        logger.info("🎬 Professional 18K gold material created (physically accurate PBR)")
         return material
 
     def _create_professional_diamond_material(self) -> bpy.types.Material:
-        """Create professional diamond material with correct optical properties."""
-        material = bpy.data.materials.new(name="Diamond")
+        """Create professional diamond material with physically accurate optical properties."""
+        material = bpy.data.materials.new(name="Diamond_Professional")
         material.use_nodes = True
         nodes = material.node_tree.nodes
+        links = material.node_tree.links
         nodes.clear()
 
-        # Material nodes
+        # Create shader nodes for professional diamond
         principled = nodes.new(type='ShaderNodeBsdfPrincipled')
+        principled.location = (0, 0)
         output = nodes.new(type='ShaderNodeOutputMaterial')
+        output.location = (300, 0)
 
-        # Diamond properties
-        principled.inputs['Base Color'].default_value = (1.0, 1.0, 1.0, 1.0)  # Clear
-        principled.inputs['Metallic'].default_value = 0.0
+        # Professional diamond optical properties (Type IIa diamond)
+        principled.inputs['Base Color'].default_value = (1.0, 1.0, 1.0, 1.0)  # Pure white
+        principled.inputs['Metallic'].default_value = 0.0  # Dielectric material
         principled.inputs['Roughness'].default_value = 0.0  # Perfect polish
-        principled.inputs['IOR'].default_value = 2.42  # Diamond IOR
-        principled.inputs['Transmission'].default_value = 0.95  # High transmission
-        principled.inputs['Alpha'].default_value = 0.1  # Mostly transparent
+        principled.inputs['IOR'].default_value = 2.417  # Diamond's refractive index
+        principled.inputs['Transmission Weight'].default_value = 1.0  # Full transmission
+        principled.inputs['Specular IOR Level'].default_value = 0.5
+        
+        # Advanced diamond properties
+        principled.inputs['Alpha'].default_value = 1.0  # Full opacity for Cycles
+        principled.inputs['Sheen Weight'].default_value = 0.0
+        principled.inputs['Coat Weight'].default_value = 0.0
+        
+        # Dispersion for realistic prismatic effects (if supported)
+        # Note: Cycles doesn't have built-in dispersion, but transmission handles it
+        
+        # Add Fresnel effect for realistic edge reflections
+        layer_weight = nodes.new(type='ShaderNodeLayerWeight')
+        layer_weight.location = (-400, 200)
+        layer_weight.inputs['Blend'].default_value = 0.5
+        
+        color_ramp_fresnel = nodes.new(type='ShaderNodeValToRGB')
+        color_ramp_fresnel.location = (-200, 200)
+        color_ramp_fresnel.color_ramp.elements[0].position = 0.0
+        color_ramp_fresnel.color_ramp.elements[1].position = 0.3
+        
+        links.new(layer_weight.outputs['Facing'], color_ramp_fresnel.inputs['Fac'])
+        
+        # Slight absorption for realistic depth (very subtle blue tint in thick areas)
+        absorption_color = nodes.new(type='ShaderNodeRGB')
+        absorption_color.location = (-400, -200)
+        absorption_color.outputs[0].default_value = (0.998, 0.999, 1.0, 1.0)  # Extremely subtle blue
+        
+        # Volume absorption for realistic diamond depth
+        volume_absorption = nodes.new(type='ShaderNodeVolumeAbsorption')
+        volume_absorption.location = (0, -200)
+        volume_absorption.inputs['Density'].default_value = 0.001  # Very low absorption
+        links.new(absorption_color.outputs['Color'], volume_absorption.inputs['Color'])
 
-        # Enable transparency
-        material.blend_method = 'BLEND'
+        # Enable transparency for proper rendering
+        material.blend_method = 'OPAQUE'  # Use OPAQUE for Cycles path tracing
+        material.shadow_method = 'NONE'  # Diamonds cast caustic shadows
+        material.use_screen_refraction = True  # Enable screen-space refraction
+        material.refraction_depth = 0.1  # Refraction depth
 
         # Connect nodes
-        material.node_tree.links.new(principled.outputs['BSDF'], output.inputs['Surface'])
+        links.new(principled.outputs['BSDF'], output.inputs['Surface'])
+        # Volume is optional but adds realism for thick diamonds
+        # links.new(volume_absorption.outputs['Volume'], output.inputs['Volume'])
 
-        logger.info("🎬 Professional diamond material created")
+        logger.info("🎬 Professional diamond material created (IOR 2.417, full transmission)")
+        return material
+    
+    def _create_professional_platinum_material(self) -> bpy.types.Material:
+        """Create professional platinum material with advanced PBR properties."""
+        material = bpy.data.materials.new(name="Platinum_Professional")
+        material.use_nodes = True
+        nodes = material.node_tree.nodes
+        links = material.node_tree.links
+        nodes.clear()
+
+        # Create shader nodes for professional platinum
+        principled = nodes.new(type='ShaderNodeBsdfPrincipled')
+        principled.location = (0, 0)
+        output = nodes.new(type='ShaderNodeOutputMaterial')
+        output.location = (300, 0)
+
+        # Professional platinum properties (physically accurate)
+        # Platinum has a cooler, more neutral tone than gold
+        principled.inputs['Base Color'].default_value = (0.85, 0.88, 0.90, 1.0)  # Cool white metal
+        principled.inputs['Metallic'].default_value = 1.0  # Pure metallic
+        principled.inputs['Roughness'].default_value = 0.12  # Slightly less polished than gold
+        principled.inputs['Specular IOR Level'].default_value = 0.5
+        principled.inputs['Anisotropic'].default_value = 0.0
+        
+        # Advanced subsurface parameters
+        principled.inputs['Sheen Weight'].default_value = 0.0
+        principled.inputs['Coat Weight'].default_value = 0.0
+        principled.inputs['Transmission Weight'].default_value = 0.0
+        
+        # Add subtle texture variation for brushed finish option
+        tex_coord = nodes.new(type='ShaderNodeTexCoord')
+        tex_coord.location = (-600, 0)
+        
+        noise_texture = nodes.new(type='ShaderNodeTexNoise')
+        noise_texture.location = (-400, -200)
+        noise_texture.inputs['Scale'].default_value = 400.0  # Fine texture
+        noise_texture.inputs['Detail'].default_value = 6.0
+        noise_texture.inputs['Roughness'].default_value = 0.6
+        
+        color_ramp = nodes.new(type='ShaderNodeValToRGB')
+        color_ramp.location = (-200, -200)
+        color_ramp.color_ramp.elements[0].position = 0.45
+        color_ramp.color_ramp.elements[1].position = 0.55
+        
+        # Connect subtle texture to roughness
+        links.new(tex_coord.outputs['Object'], noise_texture.inputs['Vector'])
+        links.new(noise_texture.outputs['Fac'], color_ramp.inputs['Fac'])
+        
+        # Mix subtle variation with base roughness
+        mix_node = nodes.new(type='ShaderNodeMix')
+        mix_node.location = (-100, -100)
+        mix_node.data_type = 'FLOAT'
+        mix_node.inputs[0].default_value = 0.08  # Subtle effect
+        mix_node.inputs[2].default_value = 0.12  # Base roughness
+        links.new(color_ramp.outputs['Color'], mix_node.inputs[3])
+        links.new(mix_node.outputs[1], principled.inputs['Roughness'])
+
+        # Connect to output
+        links.new(principled.outputs['BSDF'], output.inputs['Surface'])
+
+        logger.info("🎬 Professional platinum material created (physically accurate PBR)")
         return material
 
     def setup_dynamic_camera_framing(self) -> Dict[str, Any]:
