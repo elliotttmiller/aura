@@ -8,6 +8,7 @@ import {
   Html,
   Environment
 } from '@react-three/drei'
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import GLBModel from '../GLBModel/GLBModel'
 import './Viewport.css'
@@ -103,6 +104,42 @@ export default function Viewport({
     antialias?: boolean
   }>({})
 
+  // Refs to camera and controls for programmatic framing
+  const controlsRef = useRef<OrbitControlsImpl | null>(null)
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
+
+  // Compute a camera position and target so that the object fits the view
+  const frameObjectToView = useCallback((object: THREE.Object3D | null) => {
+    if (!object || !cameraRef.current) return
+    const camera = cameraRef.current
+    const box = new THREE.Box3().setFromObject(object)
+    if (!box.isEmpty()) {
+      const size = box.getSize(new THREE.Vector3())
+      const center = box.getCenter(new THREE.Vector3())
+      const maxDim = Math.max(size.x, size.y, size.z)
+      const padding = 1.2 // add some breathing room
+      const fov = (camera.fov * Math.PI) / 180
+  const cameraZ = Math.abs((maxDim * padding) / (2 * Math.tan(fov / 2)))
+      // Keep camera above ground slightly and off-axis for depth
+      const offset = Math.max(maxDim * 0.5, 0.5)
+      const newPos = new THREE.Vector3(center.x + offset, center.y + offset, center.z + cameraZ)
+      camera.position.copy(newPos)
+      camera.near = Math.max(0.001, cameraZ / 1000)
+      camera.far = Math.max(50, cameraZ * 10)
+      camera.updateProjectionMatrix()
+      // Update orbit controls target if available
+      if (controlsRef.current) {
+        controlsRef.current.target.copy(center)
+        controlsRef.current.update()
+      }
+      invalidate()
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('[Viewport] Auto-framed camera:', { maxDim: maxDim.toFixed(4), near: camera.near.toFixed(4), far: camera.far.toFixed(2), pos: camera.position.toArray(), target: center.toArray() })
+      }
+    }
+  }, [])
+
   const remountCanvas = useCallback(() => setCanvasKey((k) => k + 1), [])
 
   const handleCanvasClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
@@ -116,8 +153,20 @@ export default function Viewport({
     const glbModel = objects.find(obj => obj.type === 'glb_model')
     if (glbModel) {
       onGLBLayersDetected(glbModel.id, layers)
+      // Auto-frame to the group of detected layers (first mesh as proxy)
+      if (featureFlags.enableAutoFrameOnModelLoad && layers.length > 0) {
+        // Create a temporary group to compute bounding box across all layer meshes
+        const tempGroup = new THREE.Group()
+        layers.forEach(l => tempGroup.add(l.mesh))
+        // Use a microtask to ensure scene graph updates are applied before measuring
+        queueMicrotask(() => {
+          frameObjectToView(tempGroup)
+          // Detach to avoid mutating the scene graph
+          tempGroup.clear()
+        })
+      }
     }
-  }, [objects, onGLBLayersDetected])
+  }, [objects, onGLBLayersDetected, frameObjectToView])
 
   const handleToggleWireframe = useCallback(() => {
     setShowWireframe(prev => {
@@ -233,7 +282,19 @@ export default function Viewport({
         performance={{ min: 0.5, max: 1 }}
         camera={{ position: cameraPosition, fov: 35, near: 0.01, far: 100 }}
       >
-        <PerspectiveCamera makeDefault position={cameraPosition} fov={35} near={0.01} far={50} />
+        <PerspectiveCamera 
+          makeDefault 
+          position={cameraPosition} 
+          fov={35} 
+          near={0.01} 
+          far={50}
+          // capture underlying THREE.PerspectiveCamera instance
+          ref={(node) => {
+            // Drei forwards the underlying Three camera
+            // node can be null during unmount
+            cameraRef.current = (node as unknown as THREE.PerspectiveCamera) || null
+          }}
+        />
         <Suspense fallback={<Loader />}>
           {/* Professional Dark Studio Environment - Eye-friendly */}
           {renderMode === 'studio' && <color attach="background" args={['#1a1b23']} />}
@@ -429,6 +490,7 @@ export default function Viewport({
           ))}
           <OrbitControls 
             makeDefault 
+            ref={(node) => { controlsRef.current = node }}
             enablePan 
             enableZoom 
             enableRotate 
@@ -437,8 +499,8 @@ export default function Viewport({
             rotateSpeed={0.5} 
             zoomSpeed={1.2} 
             panSpeed={0.5} 
-            minDistance={0.1} 
-            maxDistance={5} 
+            minDistance={0.05} 
+            maxDistance={50} 
             maxPolarAngle={Math.PI / 2} 
             target={[0, 0, 0]} 
           />

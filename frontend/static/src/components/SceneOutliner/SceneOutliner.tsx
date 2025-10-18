@@ -90,7 +90,7 @@ const SceneOutliner = memo(function SceneOutliner({
                   onClick={() => onObjectSelect(model.id)}
                 >
                   <div className="object-info">
-                    <span className="object-icon">{source === 'uploaded' ? '�' : '🤖'}</span>
+                    <span className="object-icon">{source === 'uploaded' ? '📁' : '🤖'}</span>
                     <span className="object-name">{model.name}</span>
                     <span className={`source-badge ${source === 'uploaded' ? 'uploaded' : 'ai'}`}>
                       {source === 'uploaded' ? 'Uploaded' : 'AI'}

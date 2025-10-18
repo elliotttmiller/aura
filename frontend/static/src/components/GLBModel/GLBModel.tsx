@@ -34,9 +34,42 @@ export default function GLBModel({ url, parentModelId, source, selectedLayerId, 
       const size = box.getSize(new Vector3())
       const center = box.getCenter(new Vector3())
       
-      // Calculate scale to fit model nicely in view (target size around 0.5 units for better initial zoom)
+      // Calculate scale to fit model nicely in view
       const maxDimension = Math.max(size.x, size.y, size.z)
-      const targetSize = 0.5  // Reduced from 0.8 to 0.5 for less zoom
+      
+      // Adaptive target size based on original model scale
+      // Professional jewelry models are often in real-world units (mm/cm)
+      // AI models might be in arbitrary units
+      let targetSize = 0.5  // Default visible size in viewport
+      let scaleStrategy = 'default'
+      
+      if (maxDimension < 0.001) {
+        // Extremely tiny (likely modeling error or microns)
+        targetSize = 0.7
+        scaleStrategy = 'micro'
+      } else if (maxDimension < 0.1) {
+        // Small models - likely jewelry in real-world mm/cm scale
+        // These need significant scale-up to be visible
+        targetSize = 0.6
+        scaleStrategy = 'jewelry-realworld'
+      } else if (maxDimension > 1000) {
+        // Extremely large (likely modeling error or wrong units)
+        targetSize = 0.3
+        scaleStrategy = 'macro'
+      } else if (maxDimension > 100) {
+        // Large models - scale down significantly  
+        targetSize = 0.35
+        scaleStrategy = 'large'
+      } else if (maxDimension > 10) {
+        // Medium-large models
+        targetSize = 0.45
+        scaleStrategy = 'medium-large'
+      } else {
+        // Normal range (1-10 units)
+        targetSize = 0.5
+        scaleStrategy = 'normal'
+      }
+      
       const scale = maxDimension > 0 ? targetSize / maxDimension : 1
       
       // Apply scaling and centering
@@ -45,10 +78,14 @@ export default function GLBModel({ url, parentModelId, source, selectedLayerId, 
       
       setIsAutoFramed(true)
       
-      // Log auto-framing info in development
+      // Enhanced logging for debugging scale issues
       if (process.env.NODE_ENV === 'development') {
         // eslint-disable-next-line no-console
-        console.log(`📏 Auto-framed GLB model: size=${size.x.toFixed(3)}, ${size.y.toFixed(3)}, ${size.z.toFixed(3)}, scale=${scale.toFixed(3)}`)
+        console.log(`📏 Auto-framing [${scaleStrategy}]: original=${maxDimension.toFixed(4)} units, target=${targetSize}, scale=${scale.toFixed(4)}x`)
+        // eslint-disable-next-line no-console
+        console.log(`   Dimensions: ${size.x.toFixed(4)} × ${size.y.toFixed(4)} × ${size.z.toFixed(4)}`)
+        // eslint-disable-next-line no-console
+        console.log(`   Final size: ${(size.x * scale).toFixed(4)} × ${(size.y * scale).toFixed(4)} × ${(size.z * scale).toFixed(4)}`)
       }
     }
   }, [scene, isAutoFramed])

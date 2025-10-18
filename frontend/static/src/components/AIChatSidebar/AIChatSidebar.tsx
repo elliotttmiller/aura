@@ -96,11 +96,12 @@ export default function AIChatSidebar({ onPromptSubmit, isGenerating }: AIChatSi
   }
 
   const handleUploadSuccess = (modelUrl: string, modelName: string) => {
+    // Add uploaded model to scene with explicit 'uploaded' source
     actions.loadGLBModel(modelUrl, modelName, 'uploaded')
     setMessages(prev => [...prev, {
       id: `upload-success-${Date.now()}`,
       type: 'ai',
-      content: `✨ “${modelName}” is ready in the viewport. Adjust it in the scene outliner when you’re ready.`,
+      content: `✨ "${modelName}" is ready in the viewport. Adjust it in the scene outliner when you're ready.`,
       timestamp: new Date()
     }])
     setShowUploader(false)

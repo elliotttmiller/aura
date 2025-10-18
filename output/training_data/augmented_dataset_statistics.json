@@ -1,0 +1,24 @@
+{
+  "total_entries": 1000,
+  "data_sources": {
+    "original_seed": 2,
+    "mutations": 30,
+    "novel_ai_generated": 968
+  },
+  "jewelry_types": {
+    "pendant": 194,
+    "ring": 806
+  },
+  "materials": {
+    "GOLD": 334,
+    "PLATINUM": 351,
+    "SILVER": 315
+  },
+  "construction_complexity": {
+    "complex": 341,
+    "medium": 468,
+    "simple": 191
+  },
+  "creation_timestamp": "2025-10-18T06:02:43.092769",
+  "output_path": "C:\\Users\\AMD\\aura\\output\\training_data\\augmented_dataset.jsonl"
+}

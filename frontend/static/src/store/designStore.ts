@@ -281,7 +281,8 @@ export const useDesignStore = create<DesignStoreState>()(
     },
 
     // Load GLB Model - create a parent model object
-    loadGLBModel: (modelPath, modelName, sourceOverride) => {
+    // Backward compatible: accepts optional modelPath and source
+    loadGLBModel: (modelPath?, modelName?, sourceOverride?) => {
       // Use crypto.randomUUID for unique model IDs; fallback to Date.now if unavailable
       let modelId: string
       if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -290,7 +291,14 @@ export const useDesignStore = create<DesignStoreState>()(
         modelId = `model_${Date.now()}_${Math.floor(Math.random() * 1e9)}`
       }
       const resolvedName = modelName || 'GLB Model'
-      const resolvedSource: SceneObject['source'] = sourceOverride ?? (modelPath && modelPath.includes('/uploaded/') ? 'uploaded' : 'ai')
+      // Smart source resolution: explicit override > path detection > default 'ai'
+      let resolvedSource: SceneObject['source'] = 'ai'
+      if (sourceOverride) {
+        resolvedSource = sourceOverride
+      } else if (modelPath && modelPath.includes('/uploaded/')) {
+        resolvedSource = 'uploaded'
+      }
+      
       const modelObject: SceneObject = {
         id: modelId,
         name: resolvedName,
