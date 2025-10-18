@@ -322,12 +322,10 @@ print(f"   Output .blend: {output_blend}")
 print(f"   Output .glb: {output_glb}")
 '''
         
-        # Format the script with actual file paths
-        script = script.format(
-            output_blend=output_blend,
-            output_glb=output_glb,
-            output_render=output_render
-        )
+        # Replace file path placeholders with actual paths
+        script = script.replace("{output_blend}", output_blend)
+        script = script.replace("{output_glb}", output_glb)
+        script = script.replace("{output_render}", output_render)
         
         return script
     
