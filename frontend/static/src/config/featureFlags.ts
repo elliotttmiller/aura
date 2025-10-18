@@ -1,14 +1,14 @@
 // Frontend feature toggles for viewport and material enhancements.
-// Flags default to conservative settings to avoid regressions when new integrations land.
+// Professional rendering features enabled for high-quality 3D model visualization.
 export const featureFlags = {
-  enableJewelryMaterialEnhancements: false,
-  enableHighFidelityViewportLighting: false,
+  enableJewelryMaterialEnhancements: true,
+  enableHighFidelityViewportLighting: true,
   // Automatically frame camera to fit newly loaded models
   enableAutoFrameOnModelLoad: true,
   // Brighter, higher-contrast grid with gentler fade
   enableBrightGrid: true,
-  // Disable HDRI environment to reduce cloudy/foggy reflections on metals
-  disableEnvironmentHDRI: true
+  // Enable HDRI environment for professional reflections on metals
+  disableEnvironmentHDRI: false
 } as const
 
 export type FeatureFlags = typeof featureFlags
