@@ -1,0 +1,38 @@
+{
+  "pipeline_version": "1.0_enhanced",
+  "creation_timestamp": "2025-10-18T03:47:04.779589",
+  "total_examples": 1227,
+  "dataset_path": "/home/runner/work/aura/aura/output/training_data/unified_training_dataset.jsonl",
+  "configuration": {
+    "professional_samples_weight": 0.4,
+    "synthetic_variations_weight": 0.6,
+    "target_dataset_size": 2000,
+    "quality_threshold": 0.7
+  },
+  "data_sources": {
+    "professional_samples": 27,
+    "synthetic_variations": 1200
+  },
+  "categories": {
+    "unknown": 1200,
+    "necklace": 12,
+    "ring": 15
+  },
+  "materials": {
+    "PLATINUM": 395,
+    "SILVER": 392,
+    "GOLD": 431,
+    "DIAMOND": 9
+  },
+  "styles": {
+    "contemporary": 27
+  },
+  "complexities": {
+    "moderate": 27
+  },
+  "quality_distribution": {
+    "high": 952,
+    "medium": 275,
+    "acceptable": 0
+  }
+}

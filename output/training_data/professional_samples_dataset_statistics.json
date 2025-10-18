@@ -1,0 +1,22 @@
+{
+  "total_examples": 681,
+  "categories": {
+    "necklace": 12,
+    "ring": 15,
+    "gemstone": 315,
+    "other": 174,
+    "gemstone_cut": 165
+  },
+  "styles": {
+    "contemporary": 624,
+    "art_deco": 57
+  },
+  "complexities": {
+    "moderate": 681
+  },
+  "materials": {
+    "GOLD": 666,
+    "DIAMOND": 15
+  },
+  "output_path": "/home/runner/work/aura/aura/output/training_data/professional_samples_dataset.jsonl"
+}
