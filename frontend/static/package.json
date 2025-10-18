@@ -28,20 +28,23 @@
   "author": "Aura AI Design Assistant",
   "license": "MIT",
   "dependencies": {
-    "@react-three/drei": "^10.7.5",
-    "@react-three/fiber": "^9.3.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "@react-three/fiber": "^8.0.0",
+    "@react-three/drei": "^9.0.0",
     "three": "^0.180.0",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "@copilotkit/react-ui": "^1.10.6",
+    "@copilotkit/react-core": "^1.10.6",
+    "@copilotkit/runtime-client-gql": "^1.10.6"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.0",
     "@testing-library/react": "^15.0.0",
     "@testing-library/user-event": "^14.5.0",
     "@types/node": "^24.3.1",
-    "@types/react": "^19.1.12",
-    "@types/react-dom": "^19.1.9",
+    "@types/react": "^18.2.44",
+    "@types/react-dom": "^18.2.17",
     "@types/three": "^0.180.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
@@ -53,8 +56,8 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "jsdom": "^23.0.0",
     "prettier": "^3.0.0",
-    "typescript": "^5.9.2",
-    "vite": "^7.1.5",
+    "typescript": "^5.2.2",
+    "vite": "^4.4.9",
     "vitest": "^3.2.4"
   }
 }

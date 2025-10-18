@@ -28,19 +28,19 @@ function App() {
   return (
     <div className="fullpage-container">
       <Suspense fallback={<div className="loading">Loading...</div>}>
-        <div className={`design-studio ${!ui.isLeftSidebarVisible ? 'left-sidebar-hidden' : ''} ${!ui.isRightSidebarVisible ? 'right-sidebar-hidden' : ''}`}>
+        <div className="design-studio-grid">
           {/* Header */}
-          <div className="header">
+          <div className="header" style={{ gridArea: 'header' }}>
             <div className="header-left">
               <button 
                 className="sidebar-toggle-btn"
                 onClick={actions.toggleLeftSidebar}
                 title="Toggle Scene Outliner"
               >
-                📋
+                4cb
               </button>
               <div className="logo">
-                <span>💎</span>
+                <span>48e</span>
                 <span>Aura Sentient Design Studio</span>
               </div>
             </div>
@@ -55,14 +55,14 @@ function App() {
                 onClick={actions.toggleRightSidebar}
                 title="Toggle Properties & Chat"
               >
-                🔧
+                527
               </button>
             </div>
           </div>
 
           {/* Left Sidebar (Scene Outliner) */}
           {ui.isLeftSidebarVisible && (
-            <div className="sidebar">
+            <div className="sidebar sidebar-left" style={{ gridArea: 'sidebar-left' }}>
               <SceneOutliner 
                 objects={session.objects}
                 selectedObjectId={session.selectedObjectId}
@@ -73,7 +73,7 @@ function App() {
           )}
 
           {/* Main 3D Viewport */}
-          <div className="main-viewport">
+          <div className="main-viewport" style={{ gridArea: 'main' }}>
             <Viewport 
               objects={session.objects}
               selectedObjectId={session.selectedObjectId}
@@ -84,9 +84,9 @@ function App() {
             />
           </div>
 
-          {/* AI Chat Sidebar (right sidebar, styled like left sidebar) */}
+          {/* AI Chat Sidebar (right sidebar) */}
           {ui.isRightSidebarVisible && (
-            <div className="sidebar ai-chat-sidebar">
+            <div className="sidebar sidebar-right ai-chat-sidebar" style={{ gridArea: 'sidebar-right' }}>
               <AIChatSidebar 
                 onPromptSubmit={(prompt: string) => actions.executeAIPrompt(prompt)}
                 isGenerating={system.isGenerating}
