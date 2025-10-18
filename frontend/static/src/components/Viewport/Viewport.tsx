@@ -148,6 +148,13 @@ export default function Viewport({
         className="webgl-canvas"
         onClick={handleCanvasClick}
         onCreated={({ gl }) => {
+          // Enhanced render settings for better quality
+          gl.toneMapping = THREE.ACESFilmicToneMapping
+          gl.toneMappingExposure = 1.0
+          gl.outputColorSpace = THREE.SRGBColorSpace
+          gl.shadowMap.enabled = true
+          gl.shadowMap.type = THREE.PCFSoftShadowMap
+          
           const overlayId = 'webgl-lost-overlay'
           gl.domElement.addEventListener('webglcontextlost', (e) => {
             e.preventDefault()
@@ -212,9 +219,9 @@ export default function Viewport({
           powerPreference: 'high-performance',
           preserveDrawingBuffer: false,
           failIfMajorPerformanceCaveat: false,
-          stencil: false,
+          stencil: true,
           depth: true,
-          logarithmicDepthBuffer: true
+          logarithmicDepthBuffer: true,
         }}
         dpr={[1, 2]}
         frameloop="demand"
@@ -228,119 +235,154 @@ export default function Viewport({
           {renderMode === 'realistic' && <color attach="background" args={['#242530']} />}
           {renderMode === 'night' && <color attach="background" args={['#0f0f14']} />}
           
-          {/* Studio Lighting Setup */}
+          {/* Studio Lighting Setup - Professional 3-Point Setup */}
           {renderMode === 'studio' && (
             <>
-              {/* HDRI Environment for realistic reflections */}
+              {/* HDRI Environment for realistic reflections and global illumination */}
               <Environment 
                 preset="studio"
                 background={false}
+                environmentIntensity={1.0}
               />
               
-              {/* Key light - main directional lighting with warmer temperature */}
+              {/* Key Light - Main directional lighting with proper color temperature (5500K - daylight) */}
               <directionalLight 
-                position={[3, 5, 2]} 
-                intensity={1.2} 
-                color="#fff8e7"
+                position={[5, 6, 3]} 
+                intensity={2.5} 
+                color="#fff5e6"
                 castShadow
-                shadow-mapSize-width={2048}
-                shadow-mapSize-height={2048}
-                shadow-camera-far={30}
+                shadow-mapSize-width={4096}
+                shadow-mapSize-height={4096}
+                shadow-camera-far={50}
+                shadow-camera-left={-10}
+                shadow-camera-right={10}
+                shadow-camera-top={10}
+                shadow-camera-bottom={-10}
+                shadow-bias={-0.00005}
+                shadow-normalBias={0.02}
+                shadow-radius={2}
+              />
+              
+              {/* Fill Light - Softer, cooler secondary lighting (6500K - cool daylight) */}
+              <directionalLight 
+                position={[-3, 4, 2]} 
+                intensity={1.0} 
+                color="#e3f2ff"
+              />
+              
+              {/* Back/Rim Light - Edge definition and material separation (4000K - warm) */}
+              <directionalLight 
+                position={[0, 3, -4]} 
+                intensity={0.8} 
+                color="#ffeedd"
+              />
+              
+              {/* Ambient light for shadow fill - subtle blue sky color */}
+              <ambientLight intensity={0.25} color="#b3c8dc" />
+              
+              {/* Additional accent lights for jewelry highlights */}
+              <pointLight position={[2, 2, 2]} intensity={0.5} color="#ffffff" distance={5} decay={2} />
+              <pointLight position={[-2, 2, 2]} intensity={0.3} color="#fff8f0" distance={5} decay={2} />
+            </>
+          )}
+          
+          {/* Realistic Lighting Setup - Natural outdoor lighting with global illumination */}
+          {renderMode === 'realistic' && (
+            <>
+              {/* Natural HDRI environment for global illumination and accurate reflections */}
+              <Environment 
+                preset="city"
+                background={false}
+                environmentIntensity={1.2}
+              />
+              
+              {/* Sun Light - Natural key light (5800K - natural sunlight) */}
+              <directionalLight 
+                position={[6, 8, 4]} 
+                intensity={2.0} 
+                color="#fffaf0"
+                castShadow
+                shadow-mapSize-width={4096}
+                shadow-mapSize-height={4096}
+                shadow-camera-far={40}
                 shadow-camera-left={-8}
                 shadow-camera-right={8}
                 shadow-camera-top={8}
                 shadow-camera-bottom={-8}
-                shadow-bias={-0.0001}
+                shadow-bias={-0.00005}
+                shadow-normalBias={0.02}
+                shadow-radius={1.5}
               />
               
-              {/* Fill light - cooler secondary lighting */}
+              {/* Sky Light - Environmental fill from sky (7500K - clear sky) */}
               <directionalLight 
-                position={[-2, 3, 1]} 
-                intensity={0.4} 
-                color="#e8f2ff"
+                position={[-2, 5, 3]} 
+                intensity={0.8} 
+                color="#e6f2ff"
               />
               
-              {/* Rim light for edge definition and material separation */}
-              <directionalLight 
-                position={[0, 2, -3]} 
-                intensity={0.3} 
-                color="#ddeeff"
-              />
+              {/* Ambient environmental lighting - indirect light bounces */}
+              <ambientLight intensity={0.4} color="#c8dce8" />
               
-              {/* Ambient light for shadow fill */}
-              <ambientLight intensity={0.15} color="#7c8db5" />
+              {/* Soft area light for additional fill */}
+              <rectAreaLight 
+                position={[0, 4, 0]} 
+                intensity={0.5} 
+                color="#ffffff"
+                width={10}
+                height={10}
+              />
             </>
           )}
           
-          {/* Realistic Lighting Setup */}
-          {renderMode === 'realistic' && (
+          {/* Night Mode Lighting Setup - Cinematic moonlight with volumetric feel */}
+          {renderMode === 'night' && (
             <>
-              {/* Natural environment mapping */}
+              {/* Dark environment for night mood with subtle starlight */}
               <Environment 
-                preset="city"
+                preset="night"
                 background={false}
+                environmentIntensity={0.5}
               />
               
-              {/* Natural key light */}
+              {/* Moonlight Key - Cool, dramatic main light (4100K - moonlight) */}
               <directionalLight 
-                position={[4, 6, 3]} 
-                intensity={1.0} 
-                color="#ffffff"
+                position={[3, 10, 2]} 
+                intensity={1.5} 
+                color="#c0d8ff"
                 castShadow
                 shadow-mapSize-width={2048}
                 shadow-mapSize-height={2048}
-                shadow-camera-far={25}
+                shadow-camera-far={30}
                 shadow-camera-left={-6}
                 shadow-camera-right={6}
                 shadow-camera-top={6}
                 shadow-camera-bottom={-6}
+                shadow-bias={-0.00005}
+                shadow-normalBias={0.02}
+                shadow-radius={2}
               />
               
-              {/* Environmental fill */}
+              {/* Subtle atmospheric fill - night sky ambient */}
               <directionalLight 
-                position={[-1, 4, 2]} 
-                intensity={0.35} 
-                color="#f0f4ff"
+                position={[-2, 3, 3]} 
+                intensity={0.4} 
+                color="#a0b8e0"
               />
               
-              {/* Ambient environmental lighting */}
-              <ambientLight intensity={0.25} color="#b8c5e0" />
-            </>
-          )}
-          
-          {/* Night Mode Lighting Setup */}
-          {renderMode === 'night' && (
-            <>
-              {/* Dark environment for night mood */}
-              <Environment 
-                preset="night"
-                background={false}
-              />
+              {/* Minimal ambient - deep night atmosphere */}
+              <ambientLight intensity={0.15} color="#6080a8" />
               
-              {/* Moonlight key */}
-              <directionalLight 
-                position={[2, 8, 1]} 
-                intensity={0.8} 
-                color="#c8d4ff"
-                castShadow
-                shadow-mapSize-width={1024}
-                shadow-mapSize-height={1024}
-                shadow-camera-far={20}
-                shadow-camera-left={-5}
-                shadow-camera-right={5}
-                shadow-camera-top={5}
-                shadow-camera-bottom={-5}
+              {/* Accent rim light for cinematic edge definition */}
+              <spotLight 
+                position={[0, 5, -5]} 
+                intensity={0.6} 
+                color="#d0e0ff"
+                angle={0.6}
+                penumbra={0.5}
+                distance={10}
+                decay={2}
               />
-              
-              {/* Subtle fill */}
-              <directionalLight 
-                position={[-1, 2, 2]} 
-                intensity={0.2} 
-                color="#a8b8ff"
-              />
-              
-              {/* Minimal ambient */}
-              <ambientLight intensity={0.08} color="#6272a4" />
             </>
           )}
           

@@ -64,9 +64,22 @@ export default function GLBModel({ url, parentModelId, selectedLayerId, onLayerS
           // Enable shadows for all meshes
           child.castShadow = true
           child.receiveShadow = true
-          // Enhance material properties for jewelry
+          // Enhance material properties for jewelry with professional PBR values
           if (child.material instanceof MeshStandardMaterial) {
-            child.material.envMapIntensity = 1.5
+            // Increase environment map intensity for better reflections
+            child.material.envMapIntensity = 2.0
+            // Ensure proper metallic workflow
+            if (child.material.metalness === undefined || child.material.metalness === 0) {
+              child.material.metalness = 0.8 // Default metallic for jewelry
+            }
+            // Ensure proper roughness
+            if (child.material.roughness === undefined) {
+              child.material.roughness = 0.2 // Smooth for jewelry
+            }
+            // Enable clearcoat for extra shine on jewelry (using type assertion for Three.js extended properties)
+            const material = child.material as MeshStandardMaterial & { clearcoat?: number; clearcoatRoughness?: number }
+            material.clearcoat = 0.3
+            material.clearcoatRoughness = 0.1
             child.material.needsUpdate = true
           }
           // Use stable ID without timestamp to prevent re-processing
