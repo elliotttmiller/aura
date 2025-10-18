@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
+import ModelUploader from '../ModelUploader/ModelUploader'
+import { useActions } from '../../store/designStore'
 import './AIChatSidebar.css'
 
 interface ChatMessage {
@@ -23,7 +25,9 @@ export default function AIChatSidebar({ onPromptSubmit, isGenerating }: AIChatSi
     }
   ])
   const [currentPrompt, setCurrentPrompt] = useState('')
+  const [showUploader, setShowUploader] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const actions = useActions()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -91,12 +95,58 @@ export default function AIChatSidebar({ onPromptSubmit, isGenerating }: AIChatSi
     setCurrentPrompt(prompt)
   }
 
+  const handleUploadSuccess = (modelUrl: string, modelName: string) => {
+    // Add uploaded model to scene
+    actions.loadGLBModel(modelUrl, modelName)
+    
+    // Add success message
+    setMessages(prev => [...prev, {
+      id: `upload-success-${Date.now()}`,
+      type: 'ai',
+      content: `✨ Successfully uploaded "${modelName}"! You can now see it in the 3D viewport.`,
+      timestamp: new Date()
+    }])
+    
+    // Hide uploader
+    setShowUploader(false)
+  }
+
+  const handleUploadError = (error: string) => {
+    // Add error message
+    setMessages(prev => [...prev, {
+      id: `upload-error-${Date.now()}`,
+      type: 'ai',
+      content: `❌ Upload failed: ${error}`,
+      timestamp: new Date()
+    }])
+  }
+
   return (
     <div className="chat">
       <div className="panel-title">AI Design Collaborator</div>
       
+      {/* Upload button */}
+      <div className="upload-section">
+        <button 
+          className="upload-toggle-btn"
+          onClick={() => setShowUploader(!showUploader)}
+        >
+          {showUploader ? '🤖 AI Generate' : '📁 Upload Model'}
+        </button>
+      </div>
+
+      {/* Model uploader (conditionally shown) */}
+      {showUploader && (
+        <ModelUploader 
+          onUploadSuccess={handleUploadSuccess}
+          onUploadError={handleUploadError}
+        />
+      )}
+
       {/* Chat messages */}
-      <div className="chat-messages">
+      {!showUploader && (
+        <>
+          <div className="chat-messages">
         {messages.map(message => (
           <div key={message.id} className={`message ${message.type}`}>
             <div className="message-content">
@@ -162,6 +212,8 @@ export default function AIChatSidebar({ onPromptSubmit, isGenerating }: AIChatSi
           {isGenerating ? 'AI is creating your design...' : 'Press Enter to send, Shift+Enter for new line'}
         </div>
       </form>
+      </>
+      )}
     </div>
   )
 }

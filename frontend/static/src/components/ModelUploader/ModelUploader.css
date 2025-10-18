@@ -1,0 +1,116 @@
+/* Model Uploader Styles */
+.model-uploader {
+  width: 100%;
+  padding: 1rem;
+}
+
+.upload-dropzone {
+  border: 2px dashed #667eea;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  background: rgba(102, 126, 234, 0.05);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-dropzone:hover {
+  background: rgba(102, 126, 234, 0.1);
+  border-color: #764ba2;
+}
+
+.upload-dropzone.drag-over {
+  background: rgba(102, 126, 234, 0.2);
+  border-color: #764ba2;
+  border-style: solid;
+  transform: scale(1.02);
+}
+
+.upload-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.upload-text {
+  color: #e0e0e0;
+}
+
+.upload-text strong {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+}
+
+.upload-text p {
+  font-size: 0.9rem;
+  color: #a0a0a0;
+  margin: 0;
+}
+
+/* Upload Progress */
+.upload-progress {
+  width: 100%;
+}
+
+.progress-filename {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #ffffff;
+  word-break: break-word;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.3s ease;
+}
+
+.progress-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.progress-status.success {
+  background: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+}
+
+.progress-status.error {
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+}
+
+/* Spinner for processing state */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

@@ -279,7 +279,7 @@ export const useDesignStore = create<DesignStoreState>()(
     },
 
     // Load GLB Model - create a parent model object
-    loadGLBModel: (_modelPath: string, modelName: string) => {
+    loadGLBModel: (modelPath: string, modelName: string) => {
       // Use crypto.randomUUID for unique model IDs; fallback to Date.now if unavailable
       let modelId: string
       if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -292,6 +292,7 @@ export const useDesignStore = create<DesignStoreState>()(
         name: modelName,
         type: 'glb_model',
         visible: true,
+        url: modelPath, // Add the model URL
         transform: {
           position: [0, 0, 0],
           rotation: [0, 0, 0],
