@@ -20,6 +20,10 @@ interface SceneObject {
   isLayer?: boolean
   parentModelId?: string
   meshData?: import('three').Mesh // THREE.Mesh reference for GLB layers
+  // URL for GLB models (AI-generated or uploaded)
+  url?: string
+  // Source indicator: 'ai' for AI-generated, 'uploaded' for user uploads
+  source?: 'ai' | 'uploaded'
 }
 
 interface SceneOutlinerProps {
@@ -82,12 +86,13 @@ const SceneOutliner = memo(function SceneOutliner({
             {glbModels.map((model, index) => (
               <div key={`${model.id}_${index}`} className="model-group"> {/* Use both ID and index to guarantee uniqueness */}
                 <div 
-                  className={`scene-object model-header ${model.id === selectedObjectId ? 'selected' : ''}`}
+                  className={`scene-object model-header ${model.id === selectedObjectId ? 'selected' : ''} ${model.source === 'uploaded' ? 'uploaded-model' : 'ai-model'}`}
                   onClick={() => onObjectSelect(model.id)}
                 >
                   <div className="object-info">
-                    <span className="object-icon">📁</span>
+                    <span className="object-icon">{model.source === 'uploaded' ? '📁' : '🤖'}</span>
                     <span className="object-name">{model.name}</span>
+                    <span className="source-badge">{model.source === 'uploaded' ? 'Uploaded' : 'AI'}</span>
                     <span className="object-type">({layersGroupedByModel[model.id]?.length || 0} layers)</span>
                   </div>
                   

@@ -33,6 +33,8 @@ export interface SceneObject {
   isLayer?: boolean
   parentModelId?: string
   meshData?: import('three').Mesh // THREE.Mesh reference for GLB layers
+  // Source indicator: 'ai' for AI-generated, 'uploaded' for user uploads
+  source?: 'ai' | 'uploaded'
 }
 
 export interface DesignSession {
@@ -287,12 +289,17 @@ export const useDesignStore = create<DesignStoreState>()(
       } else {
         modelId = `model_${Date.now()}_${Math.floor(Math.random() * 1e9)}`
       }
+      
+      // Determine if this is an uploaded model or AI-generated based on URL
+      const isUploaded = modelPath.includes('/uploaded/')
+      
       const modelObject: SceneObject = {
         id: modelId,
         name: modelName,
         type: 'glb_model',
         visible: true,
         url: modelPath, // Add the model URL
+        source: isUploaded ? 'uploaded' : 'ai', // Set source based on URL
         transform: {
           position: [0, 0, 0],
           rotation: [0, 0, 0],
@@ -461,6 +468,7 @@ export const useDesignStore = create<DesignStoreState>()(
               name: `AI: ${prompt.substring(0, 30)}...`,
               type: 'glb_model',  // Use glb_model type so it renders as GLB file
               visible: true,
+              source: 'ai', // Mark as AI-generated
               transform: {
                 position: [0, 0, 0],
                 rotation: [0, 0, 0],
