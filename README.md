@@ -6,6 +6,38 @@
 
 ---
 
+## 🚀 **NEW: Enhanced AI-Driven 3D Model Generation** ✨
+
+Aura now features state-of-the-art **OpenAI GPT-4/GPT-4o integration** for sophisticated 3D model design and generation!
+
+### Key Features:
+- 🧠 **Advanced AI Design Analysis** - Intelligent interpretation of natural language descriptions
+- 🏗️ **Sophisticated Construction Planning** - AI-generated step-by-step build instructions
+- 🎨 **Professional Material Specifications** - PBR-based material generation
+- 🔄 **Iterative Design Refinement** - AI-powered design modifications
+- 🎯 **Batch Variation Generation** - Explore multiple design interpretations
+- ⚡ **Multi-Provider Support** - OpenAI, LM Studio, Ollama, and more
+
+### Quick Start:
+```bash
+# 1. Configure your OpenAI API key
+cp .env.example .env
+# Edit .env and add: OPENAI_API_KEY=your-key-here
+
+# 2. Start the backend
+cd backend && uvicorn main:app --reload
+
+# 3. Start the frontend
+cd frontend/static && npm run dev
+
+# 4. Try it out!
+# Visit http://localhost:5173 and describe your design
+```
+
+📚 **Documentation:** [Quick Start Guide](QUICKSTART.md) | [Full Documentation](docs/ENHANCED_AI_SYSTEM.md) | [Implementation Report](docs/IMPLEMENTATION_REPORT.md)
+
+---
+
 ## 🌟 V32 ADAPTIVE STUDIO - LATEST BREAKTHROUGH ✅
 
 **AURA-STUDIO-FINAL V32** - The **Ultimate Adaptive Interface** has been achieved! Building upon the V31 Sentient Interface foundation, the studio now features:
