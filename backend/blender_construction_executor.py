@@ -322,6 +322,13 @@ print(f"   Output .blend: {output_blend}")
 print(f"   Output .glb: {output_glb}")
 '''
         
+        # Format the script with actual file paths
+        script = script.format(
+            output_blend=output_blend,
+            output_glb=output_glb,
+            output_render=output_render
+        )
+        
         return script
     
     def _translate_operation(self, operation: str, params: Dict[str, Any], step_num: int) -> str:
