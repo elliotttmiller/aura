@@ -14,7 +14,7 @@ Part of the Professional Integration.
 from backend.config_init import ensure_config_loaded, validate_critical_config
 ensure_config_loaded(verbose=True)
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,6 +23,8 @@ import logging
 import time
 from typing import Dict, Any, Optional
 import uuid
+import shutil
+from pathlib import Path
 
 # Use centralized configuration
 from config import config, get_lm_studio_url, get_ai_server_config, is_sandbox_mode, get_blender_path
@@ -1286,6 +1288,148 @@ async def get_ai_status():
             status["openai_model"] = enhanced_ai_orchestrator.ai_3d_generator.model
     
     return JSONResponse(status)
+
+# ============================================================================
+# Model Upload Infrastructure
+# ============================================================================
+
+# Create upload directory structure
+UPLOAD_DIR = os.path.join(OUTPUT_DIR, "uploaded")
+UPLOAD_ORIGINAL_DIR = os.path.join(UPLOAD_DIR, "original")
+UPLOAD_PROCESSED_DIR = os.path.join(UPLOAD_DIR, "processed")
+UPLOAD_THUMBNAILS_DIR = os.path.join(UPLOAD_DIR, "thumbnails")
+UPLOAD_METADATA_DIR = os.path.join(UPLOAD_DIR, "metadata")
+
+# Ensure upload directories exist
+for directory in [UPLOAD_ORIGINAL_DIR, UPLOAD_PROCESSED_DIR, UPLOAD_THUMBNAILS_DIR, UPLOAD_METADATA_DIR]:
+    os.makedirs(directory, exist_ok=True)
+
+@api_router.post("/upload/model")
+async def upload_model(file: UploadFile = File(...)):
+    """
+    Upload a 3D model file (GLB, GLTF, OBJ, STL, 3DM, PLY).
+    
+    The file will be validated, stored, and optionally converted to GLB format.
+    Returns metadata about the uploaded model.
+    """
+    from backend.security import SecurityConfig, InputValidator
+    
+    try:
+        # Validate file type
+        file_ext = os.path.splitext(file.filename)[1].lower() if file.filename else ''
+        if file_ext not in SecurityConfig.ALLOWED_FILE_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid file type. Allowed types: {', '.join(SecurityConfig.ALLOWED_FILE_TYPES)}"
+            )
+        
+        # Generate unique ID for this upload
+        upload_id = str(uuid.uuid4())
+        safe_filename = SecurityConfig.sanitize_filename(file.filename or 'model')
+        filename_base = os.path.splitext(safe_filename)[0]
+        
+        # Save original file
+        original_path = os.path.join(UPLOAD_ORIGINAL_DIR, f"{upload_id}_{safe_filename}")
+        
+        # Read and validate file size
+        contents = await file.read()
+        file_size_mb = len(contents) / (1024 * 1024)
+        
+        if file_size_mb > SecurityConfig.MAX_FILE_SIZE_MB:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large. Maximum size: {SecurityConfig.MAX_FILE_SIZE_MB}MB"
+            )
+        
+        # Write original file
+        with open(original_path, 'wb') as f:
+            f.write(contents)
+        
+        logger.info(f"Uploaded model saved: {original_path} ({file_size_mb:.2f}MB)")
+        
+        # Prepare metadata
+        metadata = {
+            "upload_id": upload_id,
+            "original_filename": safe_filename,
+            "file_type": file_ext,
+            "file_size_mb": file_size_mb,
+            "upload_time": time.time(),
+            "original_path": original_path,
+            "status": "uploaded"
+        }
+        
+        # For GLB files, we can use them directly
+        if file_ext == '.glb':
+            processed_path = os.path.join(UPLOAD_PROCESSED_DIR, f"{upload_id}.glb")
+            shutil.copy(original_path, processed_path)
+            metadata["processed_path"] = processed_path
+            metadata["model_url"] = f"/output/uploaded/processed/{upload_id}.glb"
+            metadata["status"] = "ready"
+            logger.info(f"GLB file ready: {metadata['model_url']}")
+        else:
+            # Mark for processing (conversion will be implemented later)
+            metadata["status"] = "pending_conversion"
+            metadata["needs_conversion"] = True
+            logger.info(f"Model {file_ext} uploaded, conversion to GLB needed")
+        
+        # Save metadata
+        metadata_path = os.path.join(UPLOAD_METADATA_DIR, f"{upload_id}.json")
+        import json
+        with open(metadata_path, 'w') as f:
+            json.dump(metadata, f, indent=2)
+        
+        return JSONResponse(content={
+            "success": True,
+            "upload_id": upload_id,
+            "filename": safe_filename,
+            "file_type": file_ext,
+            "file_size_mb": round(file_size_mb, 2),
+            "status": metadata["status"],
+            "model_url": metadata.get("model_url"),
+            "message": "Model uploaded successfully" if metadata["status"] == "ready" else "Model uploaded, conversion pending"
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Model upload failed")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+
+@api_router.get("/upload/models")
+async def list_uploaded_models():
+    """
+    List all uploaded models with their metadata.
+    """
+    import json
+    
+    try:
+        uploaded_models = []
+        
+        # Read all metadata files
+        for metadata_file in os.listdir(UPLOAD_METADATA_DIR):
+            if metadata_file.endswith('.json'):
+                metadata_path = os.path.join(UPLOAD_METADATA_DIR, metadata_file)
+                with open(metadata_path, 'r') as f:
+                    metadata = json.load(f)
+                    uploaded_models.append(metadata)
+        
+        # Sort by upload time (newest first)
+        uploaded_models.sort(key=lambda x: x.get('upload_time', 0), reverse=True)
+        
+        return JSONResponse(content={
+            "success": True,
+            "count": len(uploaded_models),
+            "models": uploaded_models
+        })
+        
+    except Exception as e:
+        logger.exception("Failed to list uploaded models")
+        return JSONResponse(status_code=500, content={
+            "success": False,
+            "error": str(e)
+        })
+
 
 @app.get("/")
 async def root():
