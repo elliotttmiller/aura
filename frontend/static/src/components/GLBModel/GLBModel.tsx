@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { Group, Mesh, Material, MeshStandardMaterial, Object3D } from 'three'
+import { Group, Mesh, Material, MeshStandardMaterial, Object3D, Box3, Vector3 } from 'three'
 import { ThreeEvent } from '@react-three/fiber'
 
 
@@ -18,10 +18,38 @@ export default function GLBModel({ url, parentModelId, selectedLayerId, onLayerS
   const [layers, setLayers] = useState<Array<{id: string, name: string, mesh: Mesh, originalMaterial: Material | Material[]}>>([])
   const [hoverLayerId, setHoverLayerId] = useState<string | null>(null)
   const [layersProcessed, setLayersProcessed] = useState(false) // Prevent re-processing
+  const [isAutoFramed, setIsAutoFramed] = useState(false) // Prevent re-framing
+  // const { camera } = useThree() // Get camera for auto-framing (future use)
 
   // Always call useGLTF hook - let Three.js handle loading errors
   const gltf = useGLTF(url);
   const scene = gltf?.scene;
+
+  // Auto-frame the model when it loads
+  useEffect(() => {
+    if (scene && !isAutoFramed) {
+      const box = new Box3().setFromObject(scene)
+      const size = box.getSize(new Vector3())
+      const center = box.getCenter(new Vector3())
+      
+      // Calculate scale to fit model nicely in view (target size around 0.8 units)
+      const maxDimension = Math.max(size.x, size.y, size.z)
+      const targetSize = 0.8
+      const scale = maxDimension > 0 ? targetSize / maxDimension : 1
+      
+      // Apply scaling and centering
+      scene.scale.setScalar(scale)
+      scene.position.copy(center.negate().multiplyScalar(scale))
+      
+      setIsAutoFramed(true)
+      
+      // Log auto-framing info in development
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.log(`📏 Auto-framed GLB model: size=${size.x.toFixed(3)}, ${size.y.toFixed(3)}, ${size.z.toFixed(3)}, scale=${scale.toFixed(3)}`)
+      }
+    }
+  }, [scene, isAutoFramed])
 
   useEffect(() => {
     if (scene && !layersProcessed) {

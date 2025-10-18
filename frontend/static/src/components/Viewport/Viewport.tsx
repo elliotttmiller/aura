@@ -92,7 +92,7 @@ export default function Viewport({
   isGenerating
 }: ViewportProps) {
   const actions = useActions()
-  const [cameraPosition] = useState<[number, number, number]>([5, 5, 5])
+  const [cameraPosition, _setCameraPosition] = useState<[number, number, number]>([0.8, 0.8, 0.8])
   const [showWireframe, setShowWireframe] = useState(false)
   const [showGrid, setShowGrid] = useState(true)
   const [renderMode, setRenderMode] = useState<'realistic' | 'studio' | 'night'>('realistic')
@@ -227,7 +227,7 @@ export default function Viewport({
         frameloop="demand"
         performance={{ min: 0.5, max: 1 }}
       >
-        <PerspectiveCamera makeDefault position={cameraPosition} fov={45} />
+        <PerspectiveCamera makeDefault position={cameraPosition} fov={35} near={0.01} far={50} />
         <Suspense fallback={<Loader />}>
           <SceneLighting />
           <color attach="background" args={['#0f0f1e']} />
@@ -235,7 +235,7 @@ export default function Viewport({
           {!isEffectiveSafe && renderMode === 'realistic' && (<ambientLight intensity={0.3} />)}
           {!isEffectiveSafe && renderMode === 'studio' && (<ambientLight intensity={0.4} />)}
           {!isEffectiveSafe && renderMode === 'night' && (<ambientLight intensity={0.2} />)}
-          <Grid args={[20, 20]} cellColor="#667eea" sectionColor="#764ba2" position={[0, -2, 0]} fadeDistance={30} fadeStrength={1} cellSize={0.5} sectionSize={2} infiniteGrid visible={showGrid} />
+          <Grid args={[10, 10]} cellColor="#667eea" sectionColor="#764ba2" position={[0, -0.5, 0]} fadeDistance={5} fadeStrength={1} cellSize={0.1} sectionSize={0.5} infiniteGrid visible={showGrid} />
           {glbModels.map(obj => {
             // Only render AI-generated models with valid URLs
             if (!obj.url) {
@@ -256,7 +256,21 @@ export default function Viewport({
           {regularObjects.map(obj => (
             <SceneObjectMesh key={obj.id} object={obj} isSelected={selectedObjectId === obj.id} onSelect={() => onObjectSelect(obj.id)} />
           ))}
-          <OrbitControls makeDefault enablePan enableZoom enableRotate enableDamping dampingFactor={0.05} rotateSpeed={0.5} zoomSpeed={0.8} panSpeed={0.5} minDistance={2} maxDistance={20} maxPolarAngle={Math.PI / 2} target={[0, 0, 0]} />
+          <OrbitControls 
+            makeDefault 
+            enablePan 
+            enableZoom 
+            enableRotate 
+            enableDamping 
+            dampingFactor={0.05} 
+            rotateSpeed={0.5} 
+            zoomSpeed={1.2} 
+            panSpeed={0.5} 
+            minDistance={0.1} 
+            maxDistance={5} 
+            maxPolarAngle={Math.PI / 2} 
+            target={[0, 0, 0]} 
+          />
         </Suspense>
       </Canvas>
       <div className="viewport-debug-overlay">
