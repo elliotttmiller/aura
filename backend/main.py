@@ -749,6 +749,31 @@ async def serve_stl(filename: str):
         logger.exception('Exception serving STL file')
         return Response(content=str(e), status_code=500)
 
+@api_router.get("/output/ai_generated/{filename}")
+async def serve_ai_generated_file(filename: str):
+    """Serve AI-generated GLB and other files."""
+    logger.debug('Received AI-generated file request: %s', filename)
+    try:
+        # Allow GLB, BLEND, and PNG files from AI generation
+        allowed_extensions = ['.glb', '.blend', '.png']
+        if not any(filename.lower().endswith(ext) for ext in allowed_extensions):
+            logger.error(f"Rejected AI file request: {filename} (invalid extension)")
+            return Response(status_code=400)
+        
+        file_path = os.path.join(OUTPUT_DIR, "ai_generated", filename)
+        if os.path.exists(file_path):
+            logger.info(f"Serving AI file from output dir: {file_path}")
+            
+            # Set appropriate media type based on extension
+            media_type = "model/gltf-binary" if filename.lower().endswith('.glb') else "application/octet-stream"
+            return FileResponse(file_path, media_type=media_type)
+        else:
+            logger.error(f"AI file not found in output dir: {filename}")
+            return Response(status_code=404)
+    except Exception as e:
+        logger.exception('Exception serving AI-generated file')
+        return Response(content=str(e), status_code=500)
+
 @api_router.get("/health")
 async def health_check():
     """Enhanced health check endpoint with Blender and AI provider status."""
