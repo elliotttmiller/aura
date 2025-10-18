@@ -94,7 +94,7 @@ class BlenderConstructionExecutor:
             # Always use the time module, never a variable
             output_name = f"ai_{safe_name}_{int(__import__('time').time())}"
         
-        output_blend = self.output_dir / f"{output_name}.blend"
+        # PRIMARY OUTPUT: GLB file only
         output_glb = self.output_dir / f"{output_name}.glb"
         output_render = self.output_dir / f"{output_name}_render.png"
         
@@ -103,7 +103,6 @@ class BlenderConstructionExecutor:
             construction_plan,
             material_specs,
             presentation_plan,
-            output_blend.as_posix(),
             output_glb.as_posix(),
             output_render.as_posix()
         )
@@ -139,13 +138,13 @@ class BlenderConstructionExecutor:
                 
                 return {
                     "success": True,
-                    "blend_file": output_blend.as_posix(),
                     "glb_file": output_glb.as_posix() if output_glb.exists() else None,
                     "render_file": output_render.as_posix() if output_render.exists() else None,
                     "execution_time": execution_time,
                     "steps_executed": len(construction_plan),
                     "stdout": result.stdout,
-                    "model_url": f"/output/ai_generated/{output_glb.name}" if output_glb.exists() else None
+                    "model_url": f"/output/ai_generated/{output_glb.name}" if output_glb.exists() else None,
+                    "message": f"GLB model exported: {output_glb.name}" if output_glb.exists() else "GLB export may have failed"
                 }
             else:
                 logger.error(f"❌ Blender execution failed: {result.stderr}")
@@ -178,7 +177,6 @@ class BlenderConstructionExecutor:
         construction_plan: List[Dict[str, Any]],
         material_specs: Dict[str, Any],
         presentation_plan: Dict[str, Any],
-        output_blend: str,
         output_glb: str,
         output_render: str
     ) -> str:
@@ -298,32 +296,47 @@ camera = bpy.context.object
 camera.rotation_euler = (math.radians(60), 0, 0)
 bpy.context.scene.camera = camera
 
-# Set render settings
+# Set render settings for preview (optional)
 bpy.context.scene.render.engine = 'CYCLES'
 bpy.context.scene.render.resolution_x = 1920
 bpy.context.scene.render.resolution_y = 1080
-bpy.context.scene.render.filepath = "{output_render}"
 
-# Save blend file
-print("💾 Saving .blend file...")
-bpy.ops.wm.save_as_mainfile(filepath="{output_blend}")
+# Verify scene has objects
+print(f"Scene objects: {{len(bpy.data.objects)}}")
+for obj in bpy.data.objects:
+    print(f"  - {{obj.name}} ({{obj.type}})")
 
-# Export GLB
-print("📦 Exporting GLB...")
-bpy.ops.export_scene.gltf(
-    filepath="{output_glb}",
-    export_format='GLB',
-    export_materials='EXPORT',
-    export_colors=True
-)
+# Export GLB - PRIMARY OUTPUT
+print("📦 Exporting GLB model...")
+print(f"Export path: {{'{output_glb}'}}")
+try:
+    bpy.ops.export_scene.gltf(
+        filepath="{output_glb}",
+        export_format='GLB',
+        export_materials='EXPORT',
+        export_colors=True,
+        use_selection=False,
+        export_apply=True
+    )
+    print(f"✅ GLB exported successfully!")
+    
+    # Verify file exists
+    import os
+    if os.path.exists("{output_glb}"):
+        file_size = os.path.getsize("{output_glb}")
+        print(f"✅ GLB file verified: {{file_size}} bytes")
+    else:
+        print("❌ GLB file not found after export!")
+except Exception as e:
+    print(f"❌ GLB export failed: {{e}}")
+    import traceback
+    traceback.print_exc()
+    raise
 
 print("✅ Construction plan executed successfully!")
-print(f"   Output .blend: {output_blend}")
-print(f"   Output .glb: {output_glb}")
 '''
         
         # Replace file path placeholders with actual paths
-        script = script.replace("{output_blend}", output_blend)
         script = script.replace("{output_glb}", output_glb)
         script = script.replace("{output_render}", output_render)
         
