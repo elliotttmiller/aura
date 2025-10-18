@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { Group, Mesh, Material, MeshStandardMaterial } from 'three'
+import { Group, Mesh, Material, MeshStandardMaterial, Object3D } from 'three'
 import { ThreeEvent } from '@react-three/fiber'
 
 
@@ -14,28 +14,22 @@ interface GLBModelProps {
 }
 
 export default function GLBModel({ url, parentModelId, selectedLayerId, onLayerSelect, onLayersDetected }: GLBModelProps) {
-  let scene: Group | undefined;
-  let error: Error | undefined;
-  
-  try {
-    const gltf = useGLTF(url);
-    scene = gltf.scene;
-  } catch (loadError) {
-    error = loadError as Error;
-    console.error(`❌ Failed to load AI-generated GLB model: ${url}`, loadError);
-  }
-  
   const groupRef = useRef<Group>(null)
   const [layers, setLayers] = useState<Array<{id: string, name: string, mesh: Mesh, originalMaterial: Material | Material[]}>>([])
   const [hoverLayerId, setHoverLayerId] = useState<string | null>(null)
+  const [layersProcessed, setLayersProcessed] = useState(false) // Prevent re-processing
+
+  // Always call useGLTF hook - let Three.js handle loading errors
+  const gltf = useGLTF(url);
+  const scene = gltf?.scene;
 
   useEffect(() => {
-    if (scene && !error) {
+    if (scene && !layersProcessed) {
       // Extract all meshes from the scene and enhance materials
       const meshes: Array<{id: string, name: string, mesh: Mesh, originalMaterial: Material | Material[]}> = []
       let layerIndex = 0 // Track layer index for guaranteed uniqueness
       
-      scene.traverse((child: any) => {
+      scene.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           // Store original material for restoration
           const originalMaterial = Array.isArray(child.material) ? child.material : child.material
@@ -47,9 +41,8 @@ export default function GLBModel({ url, parentModelId, selectedLayerId, onLayerS
             child.material.envMapIntensity = 1.5
             child.material.needsUpdate = true
           }
-          // Use parentModelId + timestamp + index to guarantee absolute uniqueness
-          // This prevents duplicate keys even if the same model is loaded multiple times
-          const uniqueId = `${parentModelId}_layer_${layerIndex}_${child.uuid}_${Date.now()}`
+          // Use stable ID without timestamp to prevent re-processing
+          const uniqueId = `${parentModelId}_layer_${layerIndex}_${child.uuid}`
           meshes.push({
             id: uniqueId,
             name: child.name || `Layer ${layerIndex + 1}`,
@@ -61,6 +54,7 @@ export default function GLBModel({ url, parentModelId, selectedLayerId, onLayerS
       })
       
       setLayers(meshes)
+      setLayersProcessed(true) // Mark as processed
       
       // Debug: Log layer detection in development
       if (process.env.NODE_ENV === 'development') {
@@ -71,7 +65,7 @@ export default function GLBModel({ url, parentModelId, selectedLayerId, onLayerS
   // Notify parent of detected layers
   onLayersDetected(meshes.map(({ id, name, mesh }) => ({ id, name, mesh })))
     }
-  }, [scene, onLayersDetected, parentModelId])
+  }, [scene, onLayersDetected, parentModelId, layersProcessed])
 
   useEffect(() => {
     // Apply selection and hover highlighting
@@ -147,9 +141,9 @@ export default function GLBModel({ url, parentModelId, selectedLayerId, onLayerS
     document.body.style.cursor = 'default'
   }
 
-  // Don't render if there's an error or no scene
-  if (error || !scene) {
-    console.warn(`⚠️ GLBModel cannot render: ${error ? 'Load error' : 'No scene'} for ${url}`)
+  // Don't render if no scene is available
+  if (!scene) {
+    console.warn(`⚠️ GLBModel cannot render: No scene loaded for ${url}`)
     return null
   }
 

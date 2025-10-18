@@ -86,7 +86,8 @@ interface DesignStoreState {
     
     // GLB Model management
     loadGLBModel: (modelPath: string, modelName: string) => void
-  addGLBLayers: (modelId: string, layers: Array<{id: string, name: string, mesh: import('three').Mesh}>) => void
+    clearGLBModelLayers: (modelId: string) => void
+    addGLBLayers: (modelId: string, layers: Array<{id: string, name: string, mesh: import('three').Mesh}>) => void
     selectLayer: (layerId: string | null) => void
     
     // AI integration
@@ -318,16 +319,15 @@ export const useDesignStore = create<DesignStoreState>()(
     // Add GLB Layers as individual objects
     // Layer ids must be globally unique: `${modelId}_layer_${child.uuid}`
   addGLBLayers: (modelId: string, layers: Array<{id: string, name: string, mesh: import('three').Mesh}>) => {
-      // Filter out any layers that already exist to prevent duplicates
-      const existingLayerIds = new Set(get().session.objects.filter(obj => obj.isLayer && obj.parentModelId === modelId).map(obj => obj.id))
-      const newLayers = layers.filter(layer => !existingLayerIds.has(layer.id))
+      // Clear any existing layers for this model to prevent accumulation
+      get().actions.clearGLBModelLayers(modelId)
       
-      if (newLayers.length === 0) {
-        // No new layers to add, all already exist
+      if (layers.length === 0) {
+        // No layers to add
         return
       }
       
-      const layerObjects: SceneObject[] = newLayers.map(layer => ({
+      const layerObjects: SceneObject[] = layers.map(layer => ({
         id: layer.id, // already unique from GLBModel
         name: layer.name,
         type: 'glb_layer',
@@ -601,6 +601,17 @@ export const useDesignStore = create<DesignStoreState>()(
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
+    },
+
+    // Clear GLB model layers for a specific model
+    clearGLBModelLayers: (modelId: string) => {
+      set((state) => ({
+        session: {
+          ...state.session,
+          objects: state.session.objects.filter(obj => !(obj.isLayer && obj.parentModelId === modelId)),
+          lastModified: Date.now()
+        }
+      }))
     }
   }
     }),

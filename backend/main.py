@@ -16,6 +16,7 @@ ensure_config_loaded(verbose=True)
 
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import logging
@@ -36,6 +37,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files for AI-generated GLB models with correct MIME types
+output_dir = os.path.join(os.path.dirname(__file__), "..", "output")
+
+@app.get("/output/{file_path:path}")
+async def serve_output_file(file_path: str):
+    """Serve output files with correct MIME types for GLB files."""
+    file_full_path = os.path.join(output_dir, file_path)
+    
+    # Security check: ensure file is within output directory
+    if not os.path.abspath(file_full_path).startswith(os.path.abspath(output_dir)):
+        return Response(status_code=403, content="Access denied")
+    
+    if not os.path.exists(file_full_path):
+        return Response(status_code=404, content="File not found")
+    
+    # Determine MIME type based on file extension
+    if file_path.endswith('.glb'):
+        media_type = "model/gltf-binary"
+    elif file_path.endswith('.gltf'):
+        media_type = "model/gltf+json"
+    else:
+        media_type = "application/octet-stream"
+    
+    return FileResponse(file_full_path, media_type=media_type)
 
 # Add API router with /api prefix for frontend compatibility
 from fastapi import APIRouter
@@ -1294,13 +1320,7 @@ if models_dir.exists():
 else:
     logger.warning(f"3D models directory not found: {models_dir}")
 
-# Mount the output directory for serving AI-generated files
-output_static_dir = Path(__file__).parent.parent / "output"
-if output_static_dir.exists():
-    app.mount("/output", StaticFiles(directory=str(output_static_dir)), name="output")
-    logger.info(f"Mounted output directory: {output_static_dir}")
-else:
-    logger.warning(f"Output directory not found: {output_static_dir}")
+# Output directory is served by custom endpoint above for proper GLB MIME types
 
 # Serve the control panel HTML
 @app.get("/control-panel")

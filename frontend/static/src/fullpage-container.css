@@ -48,11 +48,17 @@ html, body, #root {
   transition: grid-template-columns 200ms cubic-bezier(.4,0,.2,1);
 }
 
-/* Toggle classes to control sidebar widths via CSS variables (no inline styles) */
-.design-studio-grid.left-open { --left-width: 240px; }
+/* Toggle classes to control sidebar visibility (widths managed by useResizablePanels hook) */
 .design-studio-grid.left-closed { --left-width: 0px; }
-.design-studio-grid.right-open { --right-width: 280px; }
 .design-studio-grid.right-closed { --right-width: 0px; }
+
+/* Minimum and maximum widths for resizing */
+:root {
+  --left-min-width: 200px;
+  --left-max-width: 500px;
+  --right-min-width: 250px;
+  --right-max-width: 600px;
+}
 
 /* Header spans all three columns */
 .header {
@@ -87,6 +93,7 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   transition: opacity 150ms cubic-bezier(.4,0,.2,1), transform 150ms cubic-bezier(.4,0,.2,1);
+  position: relative;
 }
 
 /* Right sidebar (AI Chat) */
@@ -103,6 +110,73 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   transition: opacity 150ms cubic-bezier(.4,0,.2,1), transform 150ms cubic-bezier(.4,0,.2,1);
+  position: relative;
+}
+
+/* Resize handles */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 30;
+  transition: background-color 200ms ease;
+  border-radius: 2px;
+}
+
+.resize-handle:hover {
+  background: rgba(100, 105, 180, 0.4);
+  box-shadow: 0 0 8px rgba(100, 105, 180, 0.3);
+}
+
+.resize-handle:active {
+  background: rgba(100, 105, 180, 0.7);
+  box-shadow: 0 0 12px rgba(100, 105, 180, 0.5);
+}
+
+/* Left resize handle (on right edge of left sidebar) */
+.resize-handle-left {
+  right: -2px;
+}
+
+/* Right resize handle (on left edge of right sidebar) */
+.resize-handle-right {
+  left: -2px;
+}
+
+/* Add a subtle visual indicator for resize handles */
+.resize-handle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.resize-handle:hover::before {
+  opacity: 1;
+}
+
+/* Visual indicator when dragging */
+.resizing {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  cursor: col-resize !important;
+}
+
+.resizing * {
+  cursor: col-resize !important;
+  pointer-events: none;
 }
 
 /* Main viewport (3D Canvas) */
@@ -176,7 +250,7 @@ html, body, #root {
 }
 
 .design-studio-grid.left-open .sidebar-handle.left { 
-  left: 240px;
+  left: var(--left-width, 320px);
 }
 
 /* Right handle positioning */
@@ -186,7 +260,7 @@ html, body, #root {
 }
 
 .design-studio-grid.right-open .sidebar-handle.right { 
-  right: 280px;
+  right: var(--right-width, 350px);
 }
 
 /* Icon style inside handle */
@@ -197,5 +271,87 @@ html, body, #root {
   min-width: 0;
   min-height: 0;
   box-sizing: border-box;
+}
+
+/* Responsive behavior for smaller screens */
+@media (max-width: 1024px) {
+  /* Reduce default sidebar widths on tablets */
+  .design-studio-grid.left-open { --left-width: 280px; }
+  .design-studio-grid.right-open { --right-width: 300px; }
+  
+  :root {
+    --left-max-width: 400px;
+    --right-max-width: 450px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* On mobile, sidebars should be smaller and overlay */
+  .design-studio-grid.left-open { --left-width: 250px; }
+  .design-studio-grid.right-open { --right-width: 280px; }
+  
+  :root {
+    --left-max-width: 300px;
+    --right-max-width: 350px;
+  }
+  
+  /* Make sidebars overlay on mobile */
+  .sidebar-left, .sidebar-right {
+    position: fixed;
+    top: 60px;
+    bottom: 0;
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+  
+  .sidebar-left {
+    left: 0;
+  }
+  
+  .sidebar-right {
+    right: 0;
+  }
+}
+
+/* Resize Handles */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: transparent;
+  cursor: col-resize;
+  z-index: 1000;
+  transition: background-color 0.2s ease;
+}
+
+.resize-handle:hover {
+  background: rgba(59, 130, 246, 0.5);
+}
+
+.resize-handle-left {
+  right: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.resize-handle-right {
+  left: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Active resizing state */
+.resizing {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: col-resize;
+}
+
+.resizing .resize-handle {
+  background: rgba(59, 130, 246, 0.8);
+}
+
+/* Ensure sidebars have relative positioning for resize handles */
+.sidebar {
+  position: relative;
 }
 

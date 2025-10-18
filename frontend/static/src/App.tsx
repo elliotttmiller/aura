@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import './App.css';
 import './fullpage-container.css';
 import { useSession, useSystemState, useUIState, useActions } from './store/designStore';
+import { useResizablePanels } from './hooks/useResizablePanels';
 
 const Viewport = lazy(() => import('./components/Viewport/Viewport'));
 const SceneOutliner = lazy(() => import('./components/SceneOutliner/SceneOutliner'));
@@ -13,6 +14,24 @@ function App() {
   const system = useSystemState();
   const session = useSession();
   const actions = useActions();
+  
+  // Resizable panels configuration
+  const {
+    leftWidth: _leftWidth,  // Used internally by hook to set CSS variables
+    rightWidth: _rightWidth, // Used internally by hook to set CSS variables
+    handleLeftResize,
+    handleRightResize,
+    isResizing
+  } = useResizablePanels({
+    leftMinWidth: 200,
+    leftMaxWidth: 500,
+    leftDefaultWidth: 320,
+    rightMinWidth: 250,
+    rightMaxWidth: 600,
+    rightDefaultWidth: 350,
+    isLeftOpen: ui.isLeftSidebarVisible,
+    isRightOpen: ui.isRightSidebarVisible
+  });
   
   // Ensure a valid session is always initialized on mount
   useEffect(() => {
@@ -27,6 +46,7 @@ function App() {
     'design-studio-grid',
     ui.isLeftSidebarVisible ? 'left-open' : 'left-closed',
     ui.isRightSidebarVisible ? 'right-open' : 'right-closed',
+    isResizing ? 'resizing' : ''
   ].join(' ');
 
   return (
@@ -58,6 +78,14 @@ function App() {
               onObjectSelect={actions.selectObject}
               onObjectUpdate={(objectId: string, updates: Partial<import('./store/designStore').SceneObject>) => { void actions.updateObject(objectId, updates); }}
             />
+            {/* Resize handle for left sidebar */}
+            {ui.isLeftSidebarVisible && (
+              <div 
+                className="resize-handle resize-handle-left"
+                onMouseDown={handleLeftResize}
+                title="Drag to resize Scene Outliner"
+              />
+            )}
           </aside>
 
           {/* Main 3D Viewport - MUST be third child to match grid order */}
@@ -74,6 +102,14 @@ function App() {
 
           {/* Right Sidebar (AI Chat) - MUST be fourth child to match grid order */}
           <aside className={`sidebar sidebar-right ai-chat-sidebar ${ui.isRightSidebarVisible ? '' : 'closed'}`}>
+            {/* Resize handle for right sidebar */}
+            {ui.isRightSidebarVisible && (
+              <div 
+                className="resize-handle resize-handle-right"
+                onMouseDown={handleRightResize}
+                title="Drag to resize AI Chat"
+              />
+            )}
             <AIChatSidebar 
               onPromptSubmit={(prompt: string) => actions.executeAIPrompt(prompt)}
               isGenerating={system.isGenerating}
