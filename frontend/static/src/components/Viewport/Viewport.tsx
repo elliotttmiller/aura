@@ -12,6 +12,7 @@ import * as THREE from 'three'
 import GLBModel from '../GLBModel/GLBModel'
 import './Viewport.css'
 import { useActions } from '../../store/designStore'
+import { featureFlags } from '../../config/featureFlags'
 
 interface SceneObject {
   id: string
@@ -32,6 +33,7 @@ interface SceneObject {
   isLayer?: boolean
   parentModelId?: string
   meshData?: THREE.Mesh
+  source?: 'ai' | 'uploaded'
 }
 
 interface ViewportProps {
@@ -140,6 +142,7 @@ export default function Viewport({
 
   const glbModels = objects.filter(obj => obj.type === 'glb_model')
   const regularObjects = objects.filter(obj => obj.type !== 'glb_model' && !obj.isLayer)
+  const highFidelityLighting = featureFlags.enableHighFidelityViewportLighting
 
   return (
     <div className="viewport">
@@ -204,6 +207,15 @@ export default function Viewport({
             // eslint-disable-next-line no-console
             console.warn('WebGL diagnostics collection failed:', err)
           }
+
+          if (featureFlags.enableHighFidelityViewportLighting) {
+            const renderer = gl as THREE.WebGLRenderer
+            renderer.toneMapping = THREE.ACESFilmicToneMapping
+            renderer.toneMappingExposure = 1.0
+            renderer.outputColorSpace = THREE.SRGBColorSpace
+            renderer.shadowMap.enabled = true
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap
+          }
         }}
         shadows={true}
         gl={{
@@ -235,40 +247,48 @@ export default function Viewport({
               <Environment 
                 preset="studio"
                 background={false}
+                environmentIntensity={highFidelityLighting ? 1.0 : undefined}
               />
               
               {/* Key light - main directional lighting with warmer temperature */}
               <directionalLight 
-                position={[3, 5, 2]} 
-                intensity={1.2} 
-                color="#fff8e7"
+                position={highFidelityLighting ? [5, 6, 3] : [3, 5, 2]} 
+                intensity={highFidelityLighting ? 2.5 : 1.2} 
+                color={highFidelityLighting ? '#fff5e6' : '#fff8e7'}
                 castShadow
-                shadow-mapSize-width={2048}
-                shadow-mapSize-height={2048}
-                shadow-camera-far={30}
-                shadow-camera-left={-8}
-                shadow-camera-right={8}
-                shadow-camera-top={8}
-                shadow-camera-bottom={-8}
-                shadow-bias={-0.0001}
+                shadow-mapSize-width={highFidelityLighting ? 4096 : 2048}
+                shadow-mapSize-height={highFidelityLighting ? 4096 : 2048}
+                shadow-camera-far={highFidelityLighting ? 50 : 30}
+                shadow-camera-left={highFidelityLighting ? -10 : -8}
+                shadow-camera-right={highFidelityLighting ? 10 : 8}
+                shadow-camera-top={highFidelityLighting ? 10 : 8}
+                shadow-camera-bottom={highFidelityLighting ? -10 : -8}
+                shadow-bias={highFidelityLighting ? -0.00005 : -0.0001}
               />
               
               {/* Fill light - cooler secondary lighting */}
               <directionalLight 
-                position={[-2, 3, 1]} 
-                intensity={0.4} 
-                color="#e8f2ff"
+                position={highFidelityLighting ? [-3, 4, 2] : [-2, 3, 1]} 
+                intensity={highFidelityLighting ? 1.0 : 0.4} 
+                color={highFidelityLighting ? '#e3f2ff' : '#e8f2ff'}
               />
               
               {/* Rim light for edge definition and material separation */}
               <directionalLight 
-                position={[0, 2, -3]} 
-                intensity={0.3} 
-                color="#ddeeff"
+                position={highFidelityLighting ? [0, 3, -4] : [0, 2, -3]} 
+                intensity={highFidelityLighting ? 0.8 : 0.3} 
+                color={highFidelityLighting ? '#ffeedd' : '#ddeeff'}
               />
               
               {/* Ambient light for shadow fill */}
-              <ambientLight intensity={0.15} color="#7c8db5" />
+              <ambientLight intensity={highFidelityLighting ? 0.25 : 0.15} color={highFidelityLighting ? '#b3c8dc' : '#7c8db5'} />
+
+              {highFidelityLighting && (
+                <>
+                  <pointLight position={[2, 2, 2]} intensity={0.5} color="#ffffff" />
+                  <pointLight position={[-2, 2, 2]} intensity={0.3} color="#fff8f0" />
+                </>
+              )}
             </>
           )}
           
@@ -279,32 +299,44 @@ export default function Viewport({
               <Environment 
                 preset="city"
                 background={false}
+                environmentIntensity={highFidelityLighting ? 1.2 : undefined}
               />
               
               {/* Natural key light */}
               <directionalLight 
-                position={[4, 6, 3]} 
-                intensity={1.0} 
-                color="#ffffff"
+                position={highFidelityLighting ? [6, 8, 4] : [4, 6, 3]} 
+                intensity={highFidelityLighting ? 2.0 : 1.0} 
+                color={highFidelityLighting ? '#fffaf0' : '#ffffff'}
                 castShadow
-                shadow-mapSize-width={2048}
-                shadow-mapSize-height={2048}
-                shadow-camera-far={25}
-                shadow-camera-left={-6}
-                shadow-camera-right={6}
-                shadow-camera-top={6}
-                shadow-camera-bottom={-6}
+                shadow-mapSize-width={highFidelityLighting ? 4096 : 2048}
+                shadow-mapSize-height={highFidelityLighting ? 4096 : 2048}
+                shadow-camera-far={highFidelityLighting ? 40 : 25}
+                shadow-camera-left={highFidelityLighting ? -8 : -6}
+                shadow-camera-right={highFidelityLighting ? 8 : 6}
+                shadow-camera-top={highFidelityLighting ? 8 : 6}
+                shadow-camera-bottom={highFidelityLighting ? -8 : -6}
+                shadow-bias={highFidelityLighting ? -0.00005 : undefined}
               />
               
               {/* Environmental fill */}
               <directionalLight 
-                position={[-1, 4, 2]} 
-                intensity={0.35} 
-                color="#f0f4ff"
+                position={highFidelityLighting ? [-2, 5, 3] : [-1, 4, 2]} 
+                intensity={highFidelityLighting ? 0.8 : 0.35} 
+                color={highFidelityLighting ? '#e6f2ff' : '#f0f4ff'}
               />
               
               {/* Ambient environmental lighting */}
-              <ambientLight intensity={0.25} color="#b8c5e0" />
+              <ambientLight intensity={highFidelityLighting ? 0.4 : 0.25} color={highFidelityLighting ? '#c8dce8' : '#b8c5e0'} />
+
+              {highFidelityLighting && (
+                <rectAreaLight 
+                  position={[0, 4, 0]} 
+                  intensity={0.5} 
+                  color="#ffffff"
+                  width={10}
+                  height={10}
+                />
+              )}
             </>
           )}
           
@@ -315,32 +347,42 @@ export default function Viewport({
               <Environment 
                 preset="night"
                 background={false}
+                environmentIntensity={highFidelityLighting ? 0.5 : undefined}
               />
               
               {/* Moonlight key */}
               <directionalLight 
-                position={[2, 8, 1]} 
-                intensity={0.8} 
-                color="#c8d4ff"
+                position={highFidelityLighting ? [3, 10, 2] : [2, 8, 1]} 
+                intensity={highFidelityLighting ? 1.5 : 0.8} 
+                color={highFidelityLighting ? '#c0d8ff' : '#c8d4ff'}
                 castShadow
-                shadow-mapSize-width={1024}
-                shadow-mapSize-height={1024}
-                shadow-camera-far={20}
-                shadow-camera-left={-5}
-                shadow-camera-right={5}
-                shadow-camera-top={5}
-                shadow-camera-bottom={-5}
+                shadow-mapSize-width={highFidelityLighting ? 2048 : 1024}
+                shadow-mapSize-height={highFidelityLighting ? 2048 : 1024}
+                shadow-camera-far={highFidelityLighting ? 30 : 20}
+                shadow-camera-left={highFidelityLighting ? -6 : -5}
+                shadow-camera-right={highFidelityLighting ? 6 : 5}
+                shadow-camera-top={highFidelityLighting ? 6 : 5}
+                shadow-camera-bottom={highFidelityLighting ? -6 : -5}
+                shadow-bias={highFidelityLighting ? -0.00005 : undefined}
               />
               
               {/* Subtle fill */}
               <directionalLight 
-                position={[-1, 2, 2]} 
-                intensity={0.2} 
-                color="#a8b8ff"
+                position={highFidelityLighting ? [-2, 3, 3] : [-1, 2, 2]} 
+                intensity={highFidelityLighting ? 0.4 : 0.2} 
+                color={highFidelityLighting ? '#a0b8e0' : '#a8b8ff'}
               />
               
               {/* Minimal ambient */}
-              <ambientLight intensity={0.08} color="#6272a4" />
+              <ambientLight intensity={highFidelityLighting ? 0.15 : 0.08} color={highFidelityLighting ? '#6080a8' : '#6272a4'} />
+
+              {highFidelityLighting && (
+                <spotLight 
+                  position={[0, 5, -5]} 
+                  intensity={0.6} 
+                  color="#d0e0ff"
+                />
+              )}
             </>
           )}
           
@@ -365,13 +407,21 @@ export default function Viewport({
             }
             
             // Ensure URL starts with /output (AI-generated) - no static models allowed
-            if (!obj.url.startsWith('/output/')) {
-              console.warn(`⚠️ GLB model ${obj.id} URL ${obj.url} is not an AI-generated model, skipping render`)
+            if (!(obj.url.startsWith('/output/') || obj.url.startsWith('/uploads/'))) {
+              console.warn(`⚠️ GLB model ${obj.id} URL ${obj.url} is not a recognized model source, skipping render`)
               return null
             }
             
             return (
-              <GLBModel key={obj.id} url={obj.url} parentModelId={obj.id} selectedLayerId={selectedObjectId} onLayerSelect={onLayerSelect} onLayersDetected={handleGLBLayersDetected} />
+              <GLBModel 
+                key={obj.id} 
+                url={obj.url} 
+                parentModelId={obj.id} 
+                source={obj.source}
+                selectedLayerId={selectedObjectId} 
+                onLayerSelect={onLayerSelect} 
+                onLayersDetected={handleGLBLayersDetected} 
+              />
             )
           }).filter(Boolean)}
           {regularObjects.map(obj => (

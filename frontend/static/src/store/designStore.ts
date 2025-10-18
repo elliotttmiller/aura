@@ -29,6 +29,8 @@ export interface SceneObject {
   }
   // URL for GLB models (AI-generated or loaded)
   url?: string
+  // Source indicator for scene provenance
+  source?: 'ai' | 'uploaded'
   // New properties for GLB layers
   isLayer?: boolean
   parentModelId?: string
@@ -85,7 +87,7 @@ interface DesignStoreState {
   redo: () => void
     
     // GLB Model management
-    loadGLBModel: (modelPath: string, modelName: string) => void
+  loadGLBModel: (modelPath?: string | null, modelName?: string, source?: 'ai' | 'uploaded') => void
     clearGLBModelLayers: (modelId: string) => void
     addGLBLayers: (modelId: string, layers: Array<{id: string, name: string, mesh: import('three').Mesh}>) => void
     selectLayer: (layerId: string | null) => void
@@ -279,7 +281,7 @@ export const useDesignStore = create<DesignStoreState>()(
     },
 
     // Load GLB Model - create a parent model object
-    loadGLBModel: (_modelPath: string, modelName: string) => {
+    loadGLBModel: (modelPath, modelName, sourceOverride) => {
       // Use crypto.randomUUID for unique model IDs; fallback to Date.now if unavailable
       let modelId: string
       if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -287,11 +289,15 @@ export const useDesignStore = create<DesignStoreState>()(
       } else {
         modelId = `model_${Date.now()}_${Math.floor(Math.random() * 1e9)}`
       }
+      const resolvedName = modelName || 'GLB Model'
+      const resolvedSource: SceneObject['source'] = sourceOverride ?? (modelPath && modelPath.includes('/uploaded/') ? 'uploaded' : 'ai')
       const modelObject: SceneObject = {
         id: modelId,
-        name: modelName,
+        name: resolvedName,
         type: 'glb_model',
         visible: true,
+        url: modelPath ?? undefined,
+        source: resolvedSource,
         transform: {
           position: [0, 0, 0],
           rotation: [0, 0, 0],
@@ -470,6 +476,7 @@ export const useDesignStore = create<DesignStoreState>()(
                 roughness: data.material_specifications?.primary_material?.roughness || 0.2,
                 metallic: data.material_specifications?.primary_material?.metallic || 0.8
               },
+              source: 'ai',
               // Convert full file path to relative URL for frontend serving
               url: (() => {
                 if (data.model_url) {

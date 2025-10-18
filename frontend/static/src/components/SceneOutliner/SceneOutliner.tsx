@@ -16,10 +16,12 @@ interface SceneObject {
     roughness: number
     metallic: number
   }
+  url?: string
   // New properties for GLB layers
   isLayer?: boolean
   parentModelId?: string
   meshData?: import('three').Mesh // THREE.Mesh reference for GLB layers
+  source?: 'ai' | 'uploaded'
 }
 
 interface SceneOutlinerProps {
@@ -79,15 +81,20 @@ const SceneOutliner = memo(function SceneOutliner({
         ) : (
           <>
             {/* GLB Models with their layers */}
-            {glbModels.map((model, index) => (
+            {glbModels.map((model, index) => {
+              const source = model.source ?? (model.url?.includes('/uploaded/') ? 'uploaded' : 'ai')
+              return (
               <div key={`${model.id}_${index}`} className="model-group"> {/* Use both ID and index to guarantee uniqueness */}
                 <div 
-                  className={`scene-object model-header ${model.id === selectedObjectId ? 'selected' : ''}`}
+                  className={`scene-object model-header ${model.id === selectedObjectId ? 'selected' : ''} ${source === 'uploaded' ? 'uploaded-model' : 'ai-model'}`}
                   onClick={() => onObjectSelect(model.id)}
                 >
                   <div className="object-info">
-                    <span className="object-icon">📁</span>
+                    <span className="object-icon">{source === 'uploaded' ? '�' : '🤖'}</span>
                     <span className="object-name">{model.name}</span>
+                    <span className={`source-badge ${source === 'uploaded' ? 'uploaded' : 'ai'}`}>
+                      {source === 'uploaded' ? 'Uploaded' : 'AI'}
+                    </span>
                     <span className="object-type">({layersGroupedByModel[model.id]?.length || 0} layers)</span>
                   </div>
                   
@@ -137,7 +144,7 @@ const SceneOutliner = memo(function SceneOutliner({
                   </div>
                 )}
               </div>
-            ))}
+            )})}
 
             {/* Regular objects */}
             {regularObjects.map((object, index) => (

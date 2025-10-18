@@ -3,17 +3,19 @@ import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { Group, Mesh, Material, MeshStandardMaterial, Object3D, Box3, Vector3 } from 'three'
 import { ThreeEvent } from '@react-three/fiber'
+import { featureFlags } from '../../config/featureFlags'
 
 
 interface GLBModelProps {
   url: string
   parentModelId: string
+  source?: 'ai' | 'uploaded'
   selectedLayerId: string | null
   onLayerSelect: (layerId: string) => void
   onLayersDetected: (layers: Array<{id: string, name: string, mesh: import('three').Mesh}>) => void
 }
 
-export default function GLBModel({ url, parentModelId, selectedLayerId, onLayerSelect, onLayersDetected }: GLBModelProps) {
+export default function GLBModel({ url, parentModelId, source, selectedLayerId, onLayerSelect, onLayersDetected }: GLBModelProps) {
   const groupRef = useRef<Group>(null)
   const [layers, setLayers] = useState<Array<{id: string, name: string, mesh: Mesh, originalMaterial: Material | Material[]}>>([])
   const [hoverLayerId, setHoverLayerId] = useState<string | null>(null)
@@ -66,8 +68,22 @@ export default function GLBModel({ url, parentModelId, selectedLayerId, onLayerS
           child.receiveShadow = true
           // Enhance material properties for jewelry
           if (child.material instanceof MeshStandardMaterial) {
-            child.material.envMapIntensity = 1.5
-            child.material.needsUpdate = true
+            const shouldEnhanceMaterials = featureFlags.enableJewelryMaterialEnhancements && source === 'uploaded'
+            const material = child.material as MeshStandardMaterial & { clearcoat?: number; clearcoatRoughness?: number }
+            material.envMapIntensity = shouldEnhanceMaterials ? 2.0 : 1.5
+
+            if (shouldEnhanceMaterials) {
+              if (material.metalness === undefined || material.metalness === 0) {
+                material.metalness = 0.8
+              }
+              if (material.roughness === undefined) {
+                material.roughness = 0.2
+              }
+              material.clearcoat = 0.35
+              material.clearcoatRoughness = 0.1
+            }
+
+            material.needsUpdate = true
           }
           // Use stable ID without timestamp to prevent re-processing
           const uniqueId = `${parentModelId}_layer_${layerIndex}_${child.uuid}`
@@ -93,7 +109,7 @@ export default function GLBModel({ url, parentModelId, selectedLayerId, onLayerS
   // Notify parent of detected layers
   onLayersDetected(meshes.map(({ id, name, mesh }) => ({ id, name, mesh })))
     }
-  }, [scene, onLayersDetected, parentModelId, layersProcessed])
+  }, [scene, onLayersDetected, parentModelId, layersProcessed, source])
 
   useEffect(() => {
     // Apply selection and hover highlighting

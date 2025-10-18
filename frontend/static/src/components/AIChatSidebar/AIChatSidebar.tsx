@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import './AIChatSidebar.css'
+import ModelUploader from '../ModelUploader/ModelUploader'
+import { useActions } from '../../store/designStore'
 
 interface ChatMessage {
   id: string
@@ -23,7 +25,9 @@ export default function AIChatSidebar({ onPromptSubmit, isGenerating }: AIChatSi
     }
   ])
   const [currentPrompt, setCurrentPrompt] = useState('')
+  const [showUploader, setShowUploader] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const actions = useActions()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -91,9 +95,45 @@ export default function AIChatSidebar({ onPromptSubmit, isGenerating }: AIChatSi
     setCurrentPrompt(prompt)
   }
 
+  const handleUploadSuccess = (modelUrl: string, modelName: string) => {
+    actions.loadGLBModel(modelUrl, modelName, 'uploaded')
+    setMessages(prev => [...prev, {
+      id: `upload-success-${Date.now()}`,
+      type: 'ai',
+      content: `✨ “${modelName}” is ready in the viewport. Adjust it in the scene outliner when you’re ready.`,
+      timestamp: new Date()
+    }])
+    setShowUploader(false)
+  }
+
+  const handleUploadError = (errorMessage: string) => {
+    setMessages(prev => [...prev, {
+      id: `upload-error-${Date.now()}`,
+      type: 'ai',
+      content: `⚠️ Upload issue: ${errorMessage}`,
+      timestamp: new Date()
+    }])
+  }
+
   return (
     <div className="chat">
       <div className="panel-title">AI Design Collaborator</div>
+
+      <div className="upload-section">
+        <button 
+          className="upload-toggle-btn"
+          type="button"
+          onClick={() => setShowUploader(prev => !prev)}
+        >
+          {showUploader ? 'Close Upload' : '📁 Upload Model'}
+        </button>
+        {showUploader && (
+          <ModelUploader 
+            onUploadSuccess={handleUploadSuccess}
+            onUploadError={handleUploadError}
+          />
+        )}
+      </div>
       
       {/* Chat messages */}
       <div className="chat-messages">

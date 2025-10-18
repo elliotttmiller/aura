@@ -1,0 +1,91 @@
+/* Lightweight uploader styling that complements the chat panel */
+.model-uploader {
+  width: 100%;
+}
+
+.upload-dropzone {
+  border: 2px dashed rgba(102, 126, 234, 0.6);
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+  background: rgba(102, 126, 234, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.upload-dropzone:hover {
+  background: rgba(102, 126, 234, 0.12);
+  border-color: rgba(118, 75, 162, 0.8);
+  transform: translateY(-1px);
+}
+
+.upload-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.upload-text strong {
+  display: block;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.upload-text p {
+  margin: 0;
+  color: #c7c7d1;
+  font-size: 0.85rem;
+}
+
+.upload-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 10px;
+  color: #ffffff;
+}
+
+.upload-status.uploading,
+.upload-status.processing {
+  background: rgba(102, 126, 234, 0.15);
+}
+
+.upload-status.success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #d1fae5;
+}
+
+.upload-status.error {
+  background: rgba(248, 113, 113, 0.15);
+  color: #fee2e2;
+  flex-wrap: wrap;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+.retry-btn {
+  margin-left: auto;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.retry-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

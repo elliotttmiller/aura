@@ -207,8 +207,10 @@ describe('Design Store', () => {
       
       const { session } = useDesignStore.getState()
       expect(session.objects).toHaveLength(1)
-      expect(session.objects[0].name).toBe('Test Model')
-      expect(session.objects[0].type).toBe('glb-model')
+  expect(session.objects[0].name).toBe('Test Model')
+  expect(session.objects[0].type).toBe('glb_model')
+  expect(session.objects[0].url).toBe('/models/test.glb')
+  expect(session.objects[0].source).toBe('ai')
     })
 
     it('should add GLB layers', () => {
