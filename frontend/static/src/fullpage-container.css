@@ -33,10 +33,12 @@ html, body, #root {
 .design-studio-grid {
   flex: 1 1 auto;
   display: grid;
+  position: relative;
   grid-template-areas:
     "header header header"
     "sidebar-left main sidebar-right";
-  grid-template-columns: minmax(0, 280px) 1fr minmax(0, 340px);
+  /* Sidebar widths are driven by CSS variables so we can animate smoothly */
+  grid-template-columns: var(--left-width, 0px) 1fr var(--right-width, 0px);
   grid-template-rows: auto 1fr;
   height: 100%;
   width: 100%;
@@ -44,6 +46,7 @@ html, body, #root {
   min-width: 0;
   box-sizing: border-box;
   overflow: hidden;
+  transition: grid-template-columns 200ms ease;
 }
 
 .sidebar-left {
@@ -54,7 +57,8 @@ html, body, #root {
   height: 100%;
   background: #20213a;
   z-index: 2;
-  transition: width 0.3s;
+  overflow: hidden;
+  transition: opacity 150ms ease, transform 150ms ease;
 }
 
 .sidebar-right {
@@ -65,7 +69,8 @@ html, body, #root {
   height: 100%;
   background: #20213a;
   z-index: 2;
-  transition: width 0.3s;
+  overflow: hidden;
+  transition: opacity 150ms ease, transform 150ms ease;
 }
 
 .main-viewport {
@@ -76,7 +81,7 @@ html, body, #root {
   min-height: 0;
   background: #18192a;
   z-index: 1;
-  transition: width 0.3s;
+  transition: width 200ms ease;
 }
 
 .header {
@@ -88,19 +93,41 @@ html, body, #root {
   z-index: 3;
 }
 
-/* Hide left sidebar if not visible */
-.design-studio-grid .sidebar-left {
-  display: none;
+/* When closed, disable interactions and fade/slide slightly */
+.sidebar.closed { pointer-events: none; opacity: 0; }
+.sidebar-left.closed { transform: translateX(-8px); }
+.sidebar-right.closed { transform: translateX(8px); }
+
+/* Floating sidebar handles (toggle buttons) */
+.sidebar-handle {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(42, 43, 74, 0.6);
+  border: 1px solid rgba(53, 54, 91, 0.6);
+  border-radius: 12px;
+  color: #cfd3ff;
+  cursor: pointer;
+  z-index: 4;
+  transition: left 200ms ease, right 200ms ease, background 150ms ease, transform 150ms ease, opacity 150ms ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
-.design-studio-grid .sidebar-right {
-  display: none;
-}
-.design-studio-grid .sidebar-left[style*='grid-area: sidebar-left'] {
-  display: block;
-}
-.design-studio-grid .sidebar-right[style*='grid-area: sidebar-right'] {
-  display: block;
-}
+.sidebar-handle:hover { background: rgba(50, 52, 99, 0.7); }
+.sidebar-handle:active { transform: translateY(-50%) scale(0.98); }
+
+/* Position handles relative to current sidebar widths */
+.sidebar-handle.left { left: calc(var(--left-width, 0px) + 8px); }
+.sidebar-handle.right { right: calc(var(--right-width, 0px) + 8px); }
+
+/* Icon style inside handle */
+.sidebar-handle .icon { font-size: 14px; line-height: 1; }
 
 /* Ensure children (header, main, sidebars, etc.) are responsive */
 .design-studio > * {
