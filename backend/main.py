@@ -73,6 +73,28 @@ BLENDER_SIM_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), "bl
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ============================================================================
+# Enhanced AI Integration
+# ============================================================================
+try:
+    from backend.enhanced_ai_orchestrator import create_enhanced_orchestrator
+    ENHANCED_AI_AVAILABLE = True
+    logger.info("✓ Enhanced AI Orchestrator available")
+except ImportError as e:
+    ENHANCED_AI_AVAILABLE = False
+    logger.warning(f"Enhanced AI Orchestrator not available: {e}")
+
+# Initialize enhanced AI orchestrator
+if ENHANCED_AI_AVAILABLE:
+    try:
+        enhanced_ai_orchestrator = create_enhanced_orchestrator()
+        logger.info("✓ Enhanced AI Orchestrator initialized")
+    except Exception as e:
+        logger.error(f"Failed to initialize Enhanced AI Orchestrator: {e}")
+        enhanced_ai_orchestrator = None
+else:
+    enhanced_ai_orchestrator = None
+
+# ============================================================================
 # Scene State Management - Digital Twin Architecture
 # ============================================================================
 
@@ -818,6 +840,305 @@ async def switch_ai_provider(request: Request):
             "success": False,
             "error": str(e)
         })
+
+
+# ============================================================================
+# Enhanced AI 3D Model Generation Endpoints
+# ============================================================================
+
+@api_router.post("/ai/generate-3d-model")
+async def generate_3d_model_enhanced(request: Request):
+    """
+    Generate a complete 3D model using advanced AI orchestration.
+    
+    This endpoint uses OpenAI GPT-4/GPT-4o for sophisticated design planning
+    and construction plan generation.
+    
+    Request Body:
+        - prompt: Natural language design description
+        - complexity: simple, moderate, complex, or hyper_realistic
+        - session_id: Optional session ID for context
+        - context: Optional scene context
+    
+    Returns:
+        Complete 3D model generation results with construction plan
+    """
+    if not ENHANCED_AI_AVAILABLE or enhanced_ai_orchestrator is None:
+        return JSONResponse(status_code=503, content={
+            "success": False,
+            "error": "Enhanced AI orchestration not available",
+            "message": "Please ensure OpenAI API key is configured"
+        })
+    
+    try:
+        data = await request.json()
+        prompt = data.get('prompt', '')
+        complexity = data.get('complexity', 'moderate')
+        session_id = data.get('session_id')
+        context = data.get('context')
+        
+        if not prompt:
+            return JSONResponse(status_code=400, content={
+                "success": False,
+                "error": "Prompt is required"
+            })
+        
+        logger.info(f"🚀 Enhanced AI 3D model generation request: {prompt}")
+        
+        # Generate 3D model using enhanced orchestrator
+        result = enhanced_ai_orchestrator.generate_3d_model(
+            user_prompt=prompt,
+            complexity=complexity,
+            context=context,
+            progress_callback=None  # Could implement SSE for progress
+        )
+        
+        # If session provided, add generated object to session
+        if session_id and result.get('success', False):
+            session = active_sessions.get(session_id)
+            if session:
+                # Create scene object from AI result
+                new_object = SceneObject(
+                    name=f"AI: {prompt[:40]}...",
+                    obj_type="ai_generated"
+                )
+                
+                # Apply material specs from AI
+                material_specs = result.get('material_specifications', {})
+                primary_material = material_specs.get('primary_material', {})
+                if primary_material:
+                    new_object.material['color'] = primary_material.get('base_color', '#FFD700')
+                    new_object.material['roughness'] = primary_material.get('roughness', 0.2)
+                    new_object.material['metallic'] = primary_material.get('metallic', 0.8)
+                
+                # Store construction plan in object
+                new_object.geometry_data = {
+                    'construction_plan': result.get('construction_plan', []),
+                    'presentation_plan': result.get('presentation_plan', {}),
+                    'ai_metadata': result.get('metadata', {})
+                }
+                
+                # Add to session
+                session.objects[new_object.id] = new_object
+                logger.info(f"Added AI-generated object {new_object.id} to session {session_id}")
+                
+                result['object_id'] = new_object.id
+                result['session_id'] = session_id
+        
+        return JSONResponse(result)
+        
+    except Exception as e:
+        logger.exception('Enhanced AI 3D model generation failed')
+        return JSONResponse(status_code=500, content={
+            "success": False,
+            "error": str(e),
+            "message": "Enhanced AI generation failed"
+        })
+
+
+@api_router.post("/ai/refine-design")
+async def refine_design(request: Request):
+    """
+    Refine an existing 3D design based on user feedback.
+    
+    Request Body:
+        - session_id: Session ID
+        - object_id: Object ID to refine
+        - refinement_request: User's refinement instructions
+    
+    Returns:
+        Refined design with updated construction plan
+    """
+    if not ENHANCED_AI_AVAILABLE or enhanced_ai_orchestrator is None:
+        return JSONResponse(status_code=503, content={
+            "success": False,
+            "error": "Enhanced AI orchestration not available"
+        })
+    
+    try:
+        data = await request.json()
+        session_id = data.get('session_id')
+        object_id = data.get('object_id')
+        refinement_request = data.get('refinement_request', '')
+        
+        if not all([session_id, object_id, refinement_request]):
+            return JSONResponse(status_code=400, content={
+                "success": False,
+                "error": "session_id, object_id, and refinement_request are required"
+            })
+        
+        # Get session and object
+        session = active_sessions.get(session_id)
+        if not session:
+            return JSONResponse(status_code=404, content={
+                "success": False,
+                "error": "Session not found"
+            })
+        
+        scene_object = session.objects.get(object_id)
+        if not scene_object:
+            return JSONResponse(status_code=404, content={
+                "success": False,
+                "error": "Object not found in session"
+            })
+        
+        # Get current design from object
+        current_design = scene_object.geometry_data or {}
+        
+        logger.info(f"🔄 Refining design for object {object_id}: {refinement_request}")
+        
+        # Refine using enhanced orchestrator
+        result = enhanced_ai_orchestrator.refine_existing_model(
+            current_design=current_design,
+            refinement_request=refinement_request
+        )
+        
+        # Update object with refined design
+        if result.get('success', False):
+            refined_design = result.get('refined_design', {})
+            scene_object.geometry_data = refined_design
+            
+            # Update materials if changed
+            if 'presentation_plan' in refined_design:
+                material_style = refined_design['presentation_plan'].get('material_style', '')
+                if 'Gold' in material_style:
+                    scene_object.material['color'] = '#FFD700'
+                elif 'Silver' in material_style or 'Platinum' in material_style:
+                    scene_object.material['color'] = '#C0C0C0'
+            
+            logger.info(f"✓ Design refined successfully for object {object_id}")
+        
+        result['object_id'] = object_id
+        result['session_id'] = session_id
+        
+        return JSONResponse(result)
+        
+    except Exception as e:
+        logger.exception('Design refinement failed')
+        return JSONResponse(status_code=500, content={
+            "success": False,
+            "error": str(e)
+        })
+
+
+@api_router.post("/ai/generate-variations")
+async def generate_variations(request: Request):
+    """
+    Generate multiple variations of a design concept.
+    
+    Request Body:
+        - base_prompt: Base design description
+        - variation_count: Number of variations (1-5)
+        - session_id: Optional session ID to add variations to
+    
+    Returns:
+        List of design variations
+    """
+    if not ENHANCED_AI_AVAILABLE or enhanced_ai_orchestrator is None:
+        return JSONResponse(status_code=503, content={
+            "success": False,
+            "error": "Enhanced AI orchestration not available"
+        })
+    
+    try:
+        data = await request.json()
+        base_prompt = data.get('base_prompt', '')
+        variation_count = min(int(data.get('variation_count', 3)), 5)  # Max 5 variations
+        session_id = data.get('session_id')
+        
+        if not base_prompt:
+            return JSONResponse(status_code=400, content={
+                "success": False,
+                "error": "base_prompt is required"
+            })
+        
+        logger.info(f"🎨 Generating {variation_count} variations of: {base_prompt}")
+        
+        # Generate variations
+        variations = enhanced_ai_orchestrator.batch_generate_variations(
+            base_prompt=base_prompt,
+            variation_count=variation_count
+        )
+        
+        # If session provided, add variations as objects
+        object_ids = []
+        if session_id:
+            session = active_sessions.get(session_id)
+            if session:
+                for i, variation in enumerate(variations):
+                    if variation.get('success', False):
+                        new_object = SceneObject(
+                            name=f"Variation {i+1}: {base_prompt[:30]}...",
+                            obj_type="ai_generated_variation"
+                        )
+                        
+                        # Apply material specs
+                        material_specs = variation.get('material_specifications', {})
+                        primary_material = material_specs.get('primary_material', {})
+                        if primary_material:
+                            new_object.material['color'] = primary_material.get('base_color', '#FFD700')
+                            new_object.material['roughness'] = primary_material.get('roughness', 0.2)
+                            new_object.material['metallic'] = primary_material.get('metallic', 0.8)
+                        
+                        # Position variations side by side
+                        new_object.transform['position'] = [i * 0.05, 0, 0]
+                        
+                        # Store construction plan
+                        new_object.geometry_data = {
+                            'construction_plan': variation.get('construction_plan', []),
+                            'presentation_plan': variation.get('presentation_plan', {}),
+                            'ai_metadata': variation.get('metadata', {})
+                        }
+                        
+                        session.objects[new_object.id] = new_object
+                        object_ids.append(new_object.id)
+        
+        return JSONResponse({
+            "success": True,
+            "variations": variations,
+            "variation_count": len(variations),
+            "session_id": session_id,
+            "object_ids": object_ids
+        })
+        
+    except Exception as e:
+        logger.exception('Variation generation failed')
+        return JSONResponse(status_code=500, content={
+            "success": False,
+            "error": str(e)
+        })
+
+
+@api_router.get("/ai/status")
+async def get_ai_status():
+    """
+    Get status of AI 3D model generation capabilities.
+    
+    Returns information about available AI providers and features.
+    """
+    status = {
+        "enhanced_ai_available": ENHANCED_AI_AVAILABLE,
+        "openai_configured": False,
+        "capabilities": {
+            "advanced_3d_generation": False,
+            "design_refinement": False,
+            "variation_generation": False,
+            "material_generation": False
+        }
+    }
+    
+    if ENHANCED_AI_AVAILABLE and enhanced_ai_orchestrator:
+        status["openai_configured"] = enhanced_ai_orchestrator.openai_enabled
+        status["multi_provider_available"] = enhanced_ai_orchestrator.multi_provider_enabled
+        
+        if enhanced_ai_orchestrator.openai_enabled:
+            status["capabilities"]["advanced_3d_generation"] = True
+            status["capabilities"]["design_refinement"] = True
+            status["capabilities"]["variation_generation"] = True
+            status["capabilities"]["material_generation"] = True
+            status["openai_model"] = enhanced_ai_orchestrator.ai_3d_generator.model
+    
+    return JSONResponse(status)
 
 @app.get("/")
 async def root():
