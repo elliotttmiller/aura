@@ -5,7 +5,8 @@ import {
   Grid,
   PerspectiveCamera,
   useProgress,
-  Html
+  Html,
+  Environment
 } from '@react-three/drei'
 import * as THREE from 'three'
 import GLBModel from '../GLBModel/GLBModel'
@@ -74,15 +75,6 @@ function Loader() {
   )
 }
 
-function SceneLighting() {
-  return (
-    <>
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[5, 10, 5]} intensity={1.2} castShadow />
-    </>
-  )
-}
-
 export default function Viewport({
   objects,
   selectedObjectId,
@@ -92,7 +84,7 @@ export default function Viewport({
   isGenerating
 }: ViewportProps) {
   const actions = useActions()
-  const [cameraPosition, _setCameraPosition] = useState<[number, number, number]>([0.8, 0.8, 0.8])
+  const [cameraPosition, _setCameraPosition] = useState<[number, number, number]>([1.2, 1.2, 1.2])
   const [showWireframe, setShowWireframe] = useState(false)
   const [showGrid, setShowGrid] = useState(true)
   const [renderMode, setRenderMode] = useState<'realistic' | 'studio' | 'night'>('realistic')
@@ -213,29 +205,158 @@ export default function Viewport({
             console.warn('WebGL diagnostics collection failed:', err)
           }
         }}
-        shadows={false}
+        shadows={true}
         gl={{
-          antialias: false,
+          antialias: true,
           alpha: false,
-          powerPreference: 'default',
+          powerPreference: 'high-performance',
           preserveDrawingBuffer: false,
           failIfMajorPerformanceCaveat: false,
           stencil: false,
-          depth: true
+          depth: true,
+          logarithmicDepthBuffer: true
         }}
-        dpr={[1, 1.5]}
+        dpr={[1, 2]}
         frameloop="demand"
         performance={{ min: 0.5, max: 1 }}
+        camera={{ position: cameraPosition, fov: 35, near: 0.01, far: 100 }}
       >
         <PerspectiveCamera makeDefault position={cameraPosition} fov={35} near={0.01} far={50} />
         <Suspense fallback={<Loader />}>
-          <SceneLighting />
-          <color attach="background" args={['#0f0f1e']} />
-          {/* Simplified environment - removed heavy presets that cause WebGL context loss */}
-          {!isEffectiveSafe && renderMode === 'realistic' && (<ambientLight intensity={0.3} />)}
-          {!isEffectiveSafe && renderMode === 'studio' && (<ambientLight intensity={0.4} />)}
-          {!isEffectiveSafe && renderMode === 'night' && (<ambientLight intensity={0.2} />)}
-          <Grid args={[10, 10]} cellColor="#667eea" sectionColor="#764ba2" position={[0, -0.5, 0]} fadeDistance={5} fadeStrength={1} cellSize={0.1} sectionSize={0.5} infiniteGrid visible={showGrid} />
+          {/* Professional Dark Studio Environment - Eye-friendly */}
+          {renderMode === 'studio' && <color attach="background" args={['#1a1b23']} />}
+          {renderMode === 'realistic' && <color attach="background" args={['#242530']} />}
+          {renderMode === 'night' && <color attach="background" args={['#0f0f14']} />}
+          
+          {/* Studio Lighting Setup */}
+          {renderMode === 'studio' && (
+            <>
+              {/* HDRI Environment for realistic reflections */}
+              <Environment 
+                preset="studio"
+                background={false}
+              />
+              
+              {/* Key light - main directional lighting with warmer temperature */}
+              <directionalLight 
+                position={[3, 5, 2]} 
+                intensity={1.2} 
+                color="#fff8e7"
+                castShadow
+                shadow-mapSize-width={2048}
+                shadow-mapSize-height={2048}
+                shadow-camera-far={30}
+                shadow-camera-left={-8}
+                shadow-camera-right={8}
+                shadow-camera-top={8}
+                shadow-camera-bottom={-8}
+                shadow-bias={-0.0001}
+              />
+              
+              {/* Fill light - cooler secondary lighting */}
+              <directionalLight 
+                position={[-2, 3, 1]} 
+                intensity={0.4} 
+                color="#e8f2ff"
+              />
+              
+              {/* Rim light for edge definition and material separation */}
+              <directionalLight 
+                position={[0, 2, -3]} 
+                intensity={0.3} 
+                color="#ddeeff"
+              />
+              
+              {/* Ambient light for shadow fill */}
+              <ambientLight intensity={0.15} color="#7c8db5" />
+            </>
+          )}
+          
+          {/* Realistic Lighting Setup */}
+          {renderMode === 'realistic' && (
+            <>
+              {/* Natural environment mapping */}
+              <Environment 
+                preset="city"
+                background={false}
+              />
+              
+              {/* Natural key light */}
+              <directionalLight 
+                position={[4, 6, 3]} 
+                intensity={1.0} 
+                color="#ffffff"
+                castShadow
+                shadow-mapSize-width={2048}
+                shadow-mapSize-height={2048}
+                shadow-camera-far={25}
+                shadow-camera-left={-6}
+                shadow-camera-right={6}
+                shadow-camera-top={6}
+                shadow-camera-bottom={-6}
+              />
+              
+              {/* Environmental fill */}
+              <directionalLight 
+                position={[-1, 4, 2]} 
+                intensity={0.35} 
+                color="#f0f4ff"
+              />
+              
+              {/* Ambient environmental lighting */}
+              <ambientLight intensity={0.25} color="#b8c5e0" />
+            </>
+          )}
+          
+          {/* Night Mode Lighting Setup */}
+          {renderMode === 'night' && (
+            <>
+              {/* Dark environment for night mood */}
+              <Environment 
+                preset="night"
+                background={false}
+              />
+              
+              {/* Moonlight key */}
+              <directionalLight 
+                position={[2, 8, 1]} 
+                intensity={0.8} 
+                color="#c8d4ff"
+                castShadow
+                shadow-mapSize-width={1024}
+                shadow-mapSize-height={1024}
+                shadow-camera-far={20}
+                shadow-camera-left={-5}
+                shadow-camera-right={5}
+                shadow-camera-top={5}
+                shadow-camera-bottom={-5}
+              />
+              
+              {/* Subtle fill */}
+              <directionalLight 
+                position={[-1, 2, 2]} 
+                intensity={0.2} 
+                color="#a8b8ff"
+              />
+              
+              {/* Minimal ambient */}
+              <ambientLight intensity={0.08} color="#6272a4" />
+            </>
+          )}
+          
+          {/* Professional Grid - Adaptive to mode */}
+          <Grid 
+            args={[20, 20]} 
+            cellColor={renderMode === 'night' ? '#2a2b35' : renderMode === 'realistic' ? '#3a3b45' : '#404155'} 
+            sectionColor={renderMode === 'night' ? '#404155' : renderMode === 'realistic' ? '#5a5b65' : '#6a6b75'} 
+            position={[0, -0.5, 0]} 
+            fadeDistance={8} 
+            fadeStrength={0.8} 
+            cellSize={0.1} 
+            sectionSize={1.0} 
+            infiniteGrid 
+            visible={showGrid} 
+          />
           {glbModels.map(obj => {
             // Only render AI-generated models with valid URLs
             if (!obj.url) {

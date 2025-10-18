@@ -32,9 +32,9 @@ export default function GLBModel({ url, parentModelId, selectedLayerId, onLayerS
       const size = box.getSize(new Vector3())
       const center = box.getCenter(new Vector3())
       
-      // Calculate scale to fit model nicely in view (target size around 0.8 units)
+      // Calculate scale to fit model nicely in view (target size around 0.5 units for better initial zoom)
       const maxDimension = Math.max(size.x, size.y, size.z)
-      const targetSize = 0.8
+      const targetSize = 0.5  // Reduced from 0.8 to 0.5 for less zoom
       const scale = maxDimension > 0 ? targetSize / maxDimension : 1
       
       // Apply scaling and centering
@@ -140,35 +140,6 @@ export default function GLBModel({ url, parentModelId, selectedLayerId, onLayerS
     }
   })
 
-  const handleClick = (event: ThreeEvent<MouseEvent>) => {
-    event.stopPropagation()
-    
-    // Find which mesh was clicked
-    const clickedObject = event.object
-    const clickedLayer = layers.find(layer => layer.mesh === clickedObject)
-    
-    if (clickedLayer) {
-  // ...existing code...
-      onLayerSelect(clickedLayer.id)
-    }
-  }
-
-  const handlePointerOver = (event: ThreeEvent<PointerEvent>) => {
-    event.stopPropagation()
-    const hoveredObject = event.object
-    const hoveredLayer = layers.find(layer => layer.mesh === hoveredObject)
-    
-    if (hoveredLayer) {
-      setHoverLayerId(hoveredLayer.id)
-      document.body.style.cursor = 'pointer'
-    }
-  }
-
-  const handlePointerOut = () => {
-    setHoverLayerId(null)
-    document.body.style.cursor = 'default'
-  }
-
   // Don't render if no scene is available
   if (!scene) {
     console.warn(`⚠️ GLBModel cannot render: No scene loaded for ${url}`)
@@ -176,13 +147,26 @@ export default function GLBModel({ url, parentModelId, selectedLayerId, onLayerS
   }
 
   return (
-    <group 
-      ref={groupRef} 
-      onClick={handleClick}
-      onPointerOver={handlePointerOver}
-      onPointerOut={handlePointerOut}
-    >
-      <primitive object={scene} />
+    <group ref={groupRef}>
+      {layers.map(({ id, mesh }) => (
+        <primitive 
+          key={id}
+          object={mesh.clone()} 
+          onClick={(event: ThreeEvent<MouseEvent>) => {
+            event.stopPropagation()
+            onLayerSelect(id)
+          }}
+          onPointerOver={(event: ThreeEvent<PointerEvent>) => {
+            event.stopPropagation()
+            setHoverLayerId(id)
+            document.body.style.cursor = 'pointer'
+          }}
+          onPointerOut={() => {
+            setHoverLayerId(null)
+            document.body.style.cursor = 'default'
+          }}
+        />
+      ))}
     </group>
   )
 }

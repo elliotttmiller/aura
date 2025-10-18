@@ -24,17 +24,23 @@
   position: absolute;
   top: 0;
   left: 0;
-  color: #fff;
-  background: rgba(0,0,0,0.5);
+  color: #a8b8ff;
+  background: rgba(26, 27, 35, 0.9);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   z-index: 100;
   font-size: 12px;
-  padding: 4px;
+  padding: 8px 12px;
+  border-radius: 0 0 12px 0;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+  border-right: 1px solid rgba(102, 126, 234, 0.2);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
-/* Advanced 3D Viewport - Premium Design */
+/* Advanced 3D Viewport - Professional Dark Theme */
 
 .viewport {
   position: relative;
-  background: radial-gradient(ellipse at center, #1a1a2e 0%, #0f0f1e 100%);
+  background: radial-gradient(ellipse at center, #1a1b23 0%, #0f0f14 100%);
   width: 100%;
   height: 100%;
   max-width: 100%;
@@ -45,6 +51,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  border: 1px solid rgba(102, 126, 234, 0.1);
 }
 
 .webgl-canvas {
@@ -67,11 +74,11 @@
   cursor: grabbing;
 }
 
-/* Empty State - Enhanced */
+/* Empty State - Enhanced Dark Theme */
 .viewport-empty {
   position: absolute;
   text-align: center;
-  color: #71717a;
+  color: #8b92b0;
   z-index: 10;
   animation: fadeIn 0.5s ease-out;
 }
@@ -90,9 +97,9 @@
 .empty-icon {
   font-size: 80px;
   margin-bottom: 24px;
-  opacity: 0.6;
+  opacity: 0.7;
   animation: float 3s ease-in-out infinite;
-  filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.3));
+  filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.4));
 }
 
 @keyframes float {
@@ -103,7 +110,7 @@
 .viewport-empty h3 {
   font-size: 28px;
   margin-bottom: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #8fa2ff 0%, #a8b8ff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -114,11 +121,11 @@
 .viewport-empty p {
   font-size: 16px;
   margin-bottom: 8px;
-  color: #a1a1aa;
+  color: #9ca3af;
 }
 
 .viewport-empty .hint {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #8fa2ff 0%, #a8b8ff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -141,36 +148,40 @@
 .controls-group {
   display: flex;
   gap: 8px;
-  background: rgba(15, 15, 30, 0.8);
+  background: rgba(26, 27, 35, 0.9);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(102, 126, 234, 0.2);
+  border: 1px solid rgba(102, 126, 234, 0.25);
   border-radius: 12px;
   padding: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .viewport-btn {
   padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  color: #e4e4e7;
+  color: #e4e7ec;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   letter-spacing: 0.3px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .viewport-btn:hover {
-  background: rgba(102, 126, 234, 0.2);
-  border-color: rgba(102, 126, 234, 0.4);
+  background: rgba(102, 126, 234, 0.25);
+  border-color: rgba(102, 126, 234, 0.5);
+  color: #ffffff;
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .viewport-btn:active {
@@ -179,14 +190,20 @@
 }
 
 .viewport-btn.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #8fa2ff 0%, #a8b8ff 100%);
+  border-color: #8fa2ff;
+  color: #1a1b23;
+  box-shadow: 0 4px 16px rgba(143, 162, 255, 0.5),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transform: scale(1.0);
+  font-weight: 700;
 }
 
 .viewport-btn.active:hover {
+  background: linear-gradient(135deg, #7d94ff 0%, #9fb0ff 100%);
   transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(143, 162, 255, 0.6),
+              inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 /* Performance Indicator */
@@ -198,7 +215,7 @@
 }
 
 .fps-badge {
-  background: rgba(15, 15, 30, 0.9);
+  background: rgba(26, 27, 35, 0.9);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(102, 126, 234, 0.3);
@@ -207,12 +224,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 .fps-label {
   font-size: 11px;
-  color: #a1a1aa;
+  color: #9ca3af;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -221,7 +238,7 @@
 .fps-value {
   font-size: 13px;
   font-weight: 700;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
